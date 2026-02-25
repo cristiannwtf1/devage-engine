@@ -7,11 +7,16 @@ export class MovementSystem {
     for (const [entityId, position] of gameState.positions) {
 
       const velocity = gameState.velocities.get(entityId)
-
       if (!velocity) continue
 
-      position.x += velocity.vx
-      position.y += velocity.vy
+      const newX = position.x + velocity.vx
+      const newY = position.y + velocity.vy
+
+      // 🔥 Aquí está la colisión contra el mapa
+      if (gameState.worldMap.isWalkable(newX, newY)) {
+        position.x = newX
+        position.y = newY
+      }
 
       console.log(
         "Entidad",

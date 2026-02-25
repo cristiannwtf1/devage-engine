@@ -1,5 +1,6 @@
 import { EntityId } from "../ecs/Entity"
 import { PositionComponent, HealthComponent, VelocityComponent } from "../ecs/Components"
+import { WorldMap } from "../world/WorldMap"
 
 export class GameState {
 
@@ -18,4 +19,11 @@ export class GameState {
   public healths: Map<EntityId, HealthComponent> = new Map()
 
   public velocities: Map<EntityId, VelocityComponent> = new Map()
+
+  // Mapa del mundo (tiles)
+  public worldMap: WorldMap
+
+  constructor(width: number = 20, height: number = 10) {
+    this.worldMap = new WorldMap(width, height)
+  }
 }
