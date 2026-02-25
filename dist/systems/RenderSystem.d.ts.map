@@ -1,0 +1,1 @@
+{"version":3,"file":"RenderSystem.d.ts","sourceRoot":"","sources":["../../src/systems/RenderSystem.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,SAAS,EAAE,MAAM,mBAAmB,CAAA;AAE7C,qBAAa,YAAY;IAEvB,OAAO,CAAC,KAAK,CAAK;IAClB,OAAO,CAAC,MAAM,CAAK;IAEZ,MAAM,CAAC,SAAS,EAAE,SAAS,GAAG,IAAI;CA6C1C"}

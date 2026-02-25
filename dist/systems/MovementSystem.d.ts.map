@@ -1,0 +1,1 @@
+{"version":3,"file":"MovementSystem.d.ts","sourceRoot":"","sources":["../../src/systems/MovementSystem.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,SAAS,EAAE,MAAM,mBAAmB,CAAA;AAE7C,qBAAa,cAAc;IAElB,MAAM,CAAC,SAAS,EAAE,SAAS,GAAG,IAAI;CAoB1C"}

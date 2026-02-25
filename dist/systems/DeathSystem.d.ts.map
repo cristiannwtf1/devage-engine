@@ -1,0 +1,1 @@
+{"version":3,"file":"DeathSystem.d.ts","sourceRoot":"","sources":["../../src/systems/DeathSystem.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,SAAS,EAAE,MAAM,mBAAmB,CAAA;AAE7C,qBAAa,WAAW;IAEf,MAAM,CAAC,SAAS,EAAE,SAAS,GAAG,IAAI;CAiB1C"}
