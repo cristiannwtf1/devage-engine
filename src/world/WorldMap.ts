@@ -17,6 +17,7 @@ export class WorldMap {
 
   // Generación procedural básica
   private generate(): void {
+    this.tiles = []
 
     for (let y = 0; y < this.height; y++) {
 
@@ -24,7 +25,7 @@ export class WorldMap {
 
       for (let x = 0; x < this.width; x++) {
 
-        // Bordes del mapa siempre serán pared
+        // Bordes siempre pared
         if (
           x === 0 ||
           y === 0 ||
@@ -34,10 +35,19 @@ export class WorldMap {
           row.push(TileType.Wall)
         } else {
 
-          // 10% probabilidad de generar pared interna
-          const isWall = Math.random() < 0.1
+          const random = Math.random()
 
-          row.push(isWall ? TileType.Wall : TileType.Floor)
+          // 10% muro interno
+          if (random < 0.10) {
+            row.push(TileType.Wall)
+
+          // 5% energía
+          } else if (random < 0.15) {
+            row.push(TileType.Energy)
+
+          } else {
+            row.push(TileType.Floor)
+          }
         }
       }
 
@@ -65,13 +75,55 @@ export class WorldMap {
     return tile ?? null
   }
 
+  public setTile(x: number, y: number, tile: TileType): void {
+
+    if (
+      x < 0 ||
+      y < 0 ||
+      x >= this.width ||
+      y >= this.height
+    ) {
+      return
+    }
+
+    const row = this.tiles[y]
+    if (!row) return
+
+    row[x] = tile
+  }
+
   // Indica si una celda es transitable
   public isWalkable(x: number, y: number): boolean {
-    return this.getTile(x, y) === TileType.Floor
+    const tile = this.getTile(x, y)
+    return tile === TileType.Floor || tile === TileType.Energy
   }
 
   // Devuelve toda la matriz (la usaremos en RenderSystem)
   public getTiles(): TileType[][] {
     return this.tiles
+  }
+
+  // Busca el tile de energía más cercano a las coordenadas dadas usando distancia Manhattan
+  public findNearestEnergy(fromX: number, fromY: number): { x: number; y: number } | null {
+
+    let closest: { x: number; y: number } | null = null
+    let minDistance = Infinity
+
+    for (let y = 0; y < this.height; y++) {
+      for (let x = 0; x < this.width; x++) {
+
+        if (this.getTile(x, y) === TileType.Energy) {
+
+          const distance = Math.abs(x - fromX) + Math.abs(y - fromY)
+
+          if (distance < minDistance) {
+            minDistance = distance
+            closest = { x, y }
+          }
+        }
+      }
+    }
+
+    return closest
   }
 }

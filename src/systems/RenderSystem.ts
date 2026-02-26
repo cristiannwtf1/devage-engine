@@ -1,5 +1,4 @@
 import { GameState } from "../core/GameState"
-import { TileType } from "../world/Tile"
 
 export class RenderSystem {
 
@@ -7,16 +6,22 @@ export class RenderSystem {
 
     console.clear()
 
+    const worldMap = gameState.worldMap
+
     console.log("========== DEVAGE ENGINE ==========")
     console.log("Tick:", gameState.tick)
     console.log("")
 
-    const worldMap = gameState.worldMap
+    let header = "   "
+    for (let x = 0; x < worldMap.width; x++) {
+      header += (x % 10) + " "
+    }
+    console.log(header)
 
-    // Crear copia visual del mapa usando getTile() de forma segura
     const grid: string[][] = []
 
     for (let y = 0; y < worldMap.height; y++) {
+
       const row: string[] = []
 
       for (let x = 0; x < worldMap.width; x++) {
@@ -27,9 +32,8 @@ export class RenderSystem {
       grid.push(row)
     }
 
-    // Dibujar entidades encima del mapa
+    // Dibujar entidades (worker o base según sea el caso)
     for (const [entityId, position] of gameState.positions) {
-
       if (
         position.x >= 0 &&
         position.x < worldMap.width &&
@@ -37,13 +41,34 @@ export class RenderSystem {
         position.y < worldMap.height
       ) {
         const row = grid[position.y]
-        if (row) row[position.x] = "E"
+        if (row) {
+          if (gameState.workers.has(entityId)) {
+            row[position.x] = "W"
+          } else {
+            row[position.x] = "B"
+          }
+        }
       }
     }
 
-    // Imprimir mapa final
-    for (const row of grid) {
-      console.log(row.join(" "))
+    // Imprimir
+    for (let y = 0; y < grid.length; y++) {
+      const rowNumber = y.toString().padStart(2, "0")
+      const row = grid[y]
+      if (row) {
+        console.log(rowNumber + " " + row.join(" "))
+      }
+    }
+
+    console.log("")
+
+    for (const [id, storage] of gameState.energyStorages) { 
+      console.log(`Worker ${id} Energy: ${storage.current}/${storage.capacity}`)
+    }
+
+    // DEBUG: mostrar estados de comportamiento
+    for (const [id, behavior] of gameState.behaviors) {
+      console.log(`Worker ${id} State: ${behavior.state}`)
     }
 
     console.log("")

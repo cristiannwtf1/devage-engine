@@ -1,6 +1,9 @@
 import { EntityId } from "../ecs/Entity"
 import { PositionComponent, HealthComponent, VelocityComponent } from "../ecs/Components"
 import { WorldMap } from "../world/WorldMap"
+import { EnergyStorageComponent, WorkerTagComponent } from "../ecs/Components"
+import { BehaviorComponent } from "../ecs/BehaviorComponent"
+
 
 export class GameState {
 
@@ -19,6 +22,14 @@ export class GameState {
   public healths: Map<EntityId, HealthComponent> = new Map()
 
   public velocities: Map<EntityId, VelocityComponent> = new Map()
+
+  // Mapas para energía y trabajadores
+  public energyStorages: Map<EntityId, EnergyStorageComponent> = new Map()
+
+  public workers: Map<EntityId, WorkerTagComponent> = new Map()
+
+  // Mapa para comportamientos de trabajadores
+  public behaviors: Map<EntityId, BehaviorComponent> = new Map()
 
   // Mapa del mundo (tiles)
   public worldMap: WorldMap

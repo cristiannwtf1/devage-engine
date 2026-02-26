@@ -12,3 +12,12 @@ export interface VelocityComponent {
   vx: number
   vy: number
 }
+
+export interface EnergyStorageComponent {
+  current: number
+  capacity: number
+}
+
+export interface WorkerTagComponent {
+  isWorker: true
+}
