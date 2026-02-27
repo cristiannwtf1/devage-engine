@@ -4,27 +4,24 @@ export class MovementSystem {
 
   public update(gameState: GameState): void {
 
-    for (const [entityId, position] of gameState.positions) {
+    for (const [entityId, target] of gameState.targets) {
 
-      const velocity = gameState.velocities.get(entityId)
-      if (!velocity) continue
+      const position = gameState.positions.get(entityId)
+      if (!position) continue
 
-      const newX = position.x + velocity.vx
-      const newY = position.y + velocity.vy
-
-      // 🔥 Aquí está la colisión contra el mapa
-      if (gameState.worldMap.isWalkable(newX, newY)) {
-        position.x = newX
-        position.y = newY
+      // Si ya llegó al destino → eliminar target
+      if (position.x === target.targetX && position.y === target.targetY) {
+        gameState.targets.delete(entityId)
+        continue
       }
 
-      console.log(
-        "Entidad",
-        entityId,
-        "nueva posición:",
-        position.x,
-        position.y
-      )
+      // Movimiento en X
+      if (position.x < target.targetX) position.x++
+      else if (position.x > target.targetX) position.x--
+
+      // Movimiento en Y
+      else if (position.y < target.targetY) position.y++
+      else if (position.y > target.targetY) position.y--
     }
   }
 }

@@ -1,9 +1,43 @@
 import { GameState } from "./core/GameState"
 import { GameEngine } from "./core/GameEngine"
 import { EntityId } from "./ecs/Entity"
+import { TileType } from "./world/Tile"
 
 // 1️⃣ Crear el mundo
 const gameState = new GameState(20, 10)
+
+//
+// ⚡ MIGRAR ENERGÍA DEL MAPA A SOURCES (ECS)
+//
+let nextEntityId = 1000  // IDs altos para sources
+
+for (let y = 0; y < gameState.worldMap.height; y++) {
+  for (let x = 0; x < gameState.worldMap.width; x++) {
+
+    if (gameState.worldMap.getTile(x, y) === TileType.Energy) {
+
+      const sourceId: EntityId = nextEntityId++
+      gameState.entities.add(sourceId)
+
+      // Posición del source
+      gameState.positions.set(sourceId, { x, y })
+
+      // Componente Source regenerable
+      gameState.sources.set(sourceId, {
+        energy: 10,
+        maxEnergy: 10,
+        regenRate: 1,
+        regenCooldown: 5,
+        currentCooldown: 0
+      })
+
+      // Limpiar tile del mapa
+      gameState.worldMap.setTile(x, y, TileType.Floor)
+    }
+  }
+}
+
+console.log("⚡ Sources creados:", gameState.sources.size)
 
 //
 // 🏠 CREAR BASE

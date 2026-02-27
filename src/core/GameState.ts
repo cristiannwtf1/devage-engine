@@ -3,12 +3,14 @@ import { PositionComponent, HealthComponent, VelocityComponent } from "../ecs/Co
 import { WorldMap } from "../world/WorldMap"
 import { EnergyStorageComponent, WorkerTagComponent } from "../ecs/Components"
 import { BehaviorComponent } from "../ecs/BehaviorComponent"
+import { TargetComponent } from "../ecs/TargetComponent"
+import { SourceComponent } from "../ecs/SourceComponent"
 
 
 export class GameState {
 
   // Contador de tiempo del mundo
-  public tick: number = 0
+  public tick: number = 0 
 
   // Conjunto de entidades existentes en el mundo
   public entities: Set<EntityId> = new Set()
@@ -30,6 +32,12 @@ export class GameState {
 
   // Mapa para comportamientos de trabajadores
   public behaviors: Map<EntityId, BehaviorComponent> = new Map()
+
+// Mapa para objetivos de trabajadores
+  public targets: Map<EntityId, TargetComponent> = new Map()
+
+  // Fuentes de energía regenerables
+  public sources: Map<EntityId, SourceComponent> = new Map()
 
   // Mapa del mundo (tiles)
   public worldMap: WorldMap

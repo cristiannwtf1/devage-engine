@@ -5,6 +5,11 @@ import { HealthSystem } from "../systems/HealthSystem"
 import { DeathSystem } from "../systems/DeathSystem"
 import { RenderSystem } from "../systems/RenderSystem"
 import { DepositSystem } from "../systems/DepositSystem"
+import { TargetSystem } from "../systems/TargetSystem"
+import { MovementSystem } from "../systems/MovementSystem"
+import { SourceRegenSystem } from "../systems/SourceRegenSystem"
+import { SpawnSystem } from "../systems/SpawnSystem"
+
 
 export class GameEngine {
     private gameState: GameState
@@ -16,6 +21,10 @@ export class GameEngine {
     private healthSystem: HealthSystem = new HealthSystem()
     private deathSystem: DeathSystem = new DeathSystem()
     private renderSystem: RenderSystem = new RenderSystem()
+    private targetSystem: TargetSystem = new TargetSystem()
+    private movementSystem: MovementSystem = new MovementSystem()
+    private sourceRegenSystem: SourceRegenSystem = new SourceRegenSystem()
+    private spawnSystem: SpawnSystem = new SpawnSystem()
 
 
     constructor(gameState: GameState, tickRate: number = 100) {
@@ -30,17 +39,23 @@ export class GameEngine {
         // 1️⃣ Decisiones
         this.behaviorSystem.update(this.gameState)
 
-        // 2️⃣ Recolección
-        this.harvestSystem.update(this.gameState)
+        // 2️⃣ Asignar objetivos
+        this.targetSystem.update(this.gameState)
 
-        // 3️⃣ Depósito
+        // 3️⃣ Movimiento hacia objetivo
+        this.movementSystem.update(this.gameState)
+
+        // 4️⃣ Interacciones
+        this.harvestSystem.update(this.gameState)
         this.depositSystem.update(this.gameState)
 
-        // 4️⃣ Sistemas secundarios
-    //    this.healthSystem.update(this.gameState)
-      //  this.deathSystem.update(this.gameState)
+        // 5️⃣ Spawn
+        this.spawnSystem.update(this.gameState)
 
-        // 5️⃣ Render final
+        // 6️⃣ Regeneración
+        this.sourceRegenSystem.update(this.gameState)
+
+        // 7️⃣ Render
         this.renderSystem.update(this.gameState)
     }
 

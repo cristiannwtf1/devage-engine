@@ -1,48 +1,37 @@
 import { GameState } from "../core/GameState"
-import { TileType } from "../world/Tile"
 
 export class TargetSystem {
 
   public update(gameState: GameState): void {
 
-    // 1️⃣ Crear set de tiles reservados
-    const reservedTiles = new Set<string>()
-
-    for (const target of gameState.targets.values()) {
-      reservedTiles.add(`${target.targetX},${target.targetY}`)
-    }
-
     for (const [entityId, behavior] of gameState.behaviors) {
 
       const position = gameState.positions.get(entityId)
-      if (!position) continue
+      const storage = gameState.energyStorages.get(entityId)
+
+      if (!position || !storage) continue
 
       // Si ya tiene target, no reasignar
       if (gameState.targets.has(entityId)) continue
 
       if (behavior.state === "harvesting") {
 
-        const energyPosition = this.findNearestEnergy(
+        const sourcePosition = this.findNearestSource(
           gameState,
           position.x,
-          position.y,
-          reservedTiles
+          position.y
         )
 
-        if (energyPosition) {
-
-          // Reservar inmediatamente
-          reservedTiles.add(`${energyPosition.x},${energyPosition.y}`)
-
+        if (sourcePosition) {
           gameState.targets.set(entityId, {
-            targetX: energyPosition.x,
-            targetY: energyPosition.y
+            targetX: sourcePosition.x,
+            targetY: sourcePosition.y
           })
         }
 
       } else if (behavior.state === "returning") {
 
-        // Buscar base (por ahora id 100 fijo)
+        // Base fija id 100 (por ahora)
         const basePosition = gameState.positions.get(100)
         if (!basePosition) continue
 
@@ -54,31 +43,29 @@ export class TargetSystem {
     }
   }
 
-  private findNearestEnergy(
+  private findNearestSource(
     gameState: GameState,
     startX: number,
-    startY: number,
-    reservedTiles: Set<string>
-  ) {
+    startY: number
+  ): { x: number, y: number } | null {
 
     let closest: { x: number, y: number } | null = null
     let minDistance = Infinity
 
-    for (let y = 0; y < gameState.worldMap.height; y++) {
-      for (let x = 0; x < gameState.worldMap.width; x++) {
+    for (const [sourceId, source] of gameState.sources) {
 
-        const tile = gameState.worldMap.getTile(x, y)
-        const key = `${x},${y}`
+      if (source.energy <= 0) continue
 
-        if (tile === TileType.Energy && !reservedTiles.has(key)) {
+      const position = gameState.positions.get(sourceId)
+      if (!position) continue
 
-          const distance = Math.abs(startX - x) + Math.abs(startY - y)
+      const distance =
+        Math.abs(startX - position.x) +
+        Math.abs(startY - position.y)
 
-          if (distance < minDistance) {
-            minDistance = distance
-            closest = { x, y }
-          }
-        }
+      if (distance < minDistance) {
+        minDistance = distance
+        closest = { x: position.x, y: position.y }
       }
     }
 
