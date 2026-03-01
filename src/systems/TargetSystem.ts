@@ -13,6 +13,28 @@ export class TargetSystem {
 
     const currentTarget = gameState.targets.get(entityId)
 
+    // 🧠 Validar si el target sigue siendo válido
+    if (currentTarget && behavior.state === "harvesting") {
+      // Buscar si existe source en esa posición
+      let sourceStillValid = false
+      for (const [sourceId, source] of gameState.sources) {
+        const sourcePosition = gameState.positions.get(sourceId)
+        if (!sourcePosition) continue
+        if (
+          sourcePosition.x === currentTarget.targetX &&
+          sourcePosition.y === currentTarget.targetY &&
+          source.energy > 0
+        ) {
+          sourceStillValid = true
+          break
+        }
+      }
+      if (!sourceStillValid) {
+        gameState.targets.delete(entityId)
+        gameState.paths.delete(entityId)
+      }
+    }
+
     // 🔥 Si tiene target y ya llegó → limpiar
     if (currentTarget) {
       if (
