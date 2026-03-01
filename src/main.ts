@@ -9,14 +9,14 @@ const gameState = new GameState(20, 10)
 //
 // ⚡ MIGRAR ENERGÍA DEL MAPA A SOURCES (ECS)
 //
-let nextEntityId = 1000  // IDs altos para sources
+
 
 for (let y = 0; y < gameState.worldMap.height; y++) {
   for (let x = 0; x < gameState.worldMap.width; x++) {
 
     if (gameState.worldMap.getTile(x, y) === TileType.Energy) {
 
-      const sourceId: EntityId = nextEntityId++
+      const sourceId: EntityId = gameState.createEntity()
       gameState.entities.add(sourceId)
 
       // Posición del source
@@ -78,10 +78,10 @@ console.log("Entidades activas:", gameState.entities.size)
 //
 //  Motor
 //
-const engine = new GameEngine(gameState, 400)
+const engine = new GameEngine(gameState, 200)
 engine.start()
 
 setTimeout(() => {
   engine.stop()
   console.log("🛑 Motor detenido")
-}, 15000)
+}, 60000)

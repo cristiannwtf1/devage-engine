@@ -4,47 +4,50 @@ export class MovementSystem {
 
   public update(gameState: GameState): void {
 
-    for (const [entityId, target] of gameState.targets) {
+    for (const [entityId, pathComponent] of gameState.paths) {
 
       const position = gameState.positions.get(entityId)
       if (!position) continue
 
-      // Si ya llegó al destino → eliminar target
-      if (position.x === target.targetX && position.y === target.targetY) {
-        gameState.targets.delete(entityId)
+      if (pathComponent.steps.length === 0) {
+        gameState.paths.delete(entityId)
         continue
       }
 
-      let newX = position.x
-      let newY = position.y
-
-      // Movimiento en X
-      if (position.x < target.targetX) newX++
-      else if (position.x > target.targetX) newX--
-      // Movimiento en Y
-      else if (position.y < target.targetY) newY++
-      else if (position.y > target.targetY) newY--
-
-      // Validar antes de mover
-      const isWalkable = gameState.worldMap.isWalkable(newX, newY)
-      const isOccupied = this.isPositionOccupied(gameState, newX, newY)
-
-      if (isWalkable && !isOccupied) {
-        position.x = newX
-        position.y = newY
+      const nextStep = pathComponent.steps[0]
+      if (!nextStep) {
+        gameState.paths.delete(entityId)
+        continue
       }
+
+      // Si el siguiente paso está ocupado ahora, cancelar path
+      if (this.isOccupied(gameState, entityId, nextStep.x, nextStep.y)) {
+        gameState.paths.delete(entityId)
+        continue
+      }
+
+      position.x = nextStep.x
+      position.y = nextStep.y
+
+      pathComponent.steps.shift()
     }
   }
 
-  private isPositionOccupied(gameState: GameState, x: number, y: number): boolean {
-
+  private isOccupied(
+    gameState: GameState,
+    selfId: number,
+    x: number,
+    y: number
+  ): boolean {
     for (const [entityId, position] of gameState.positions) {
-
-      if (position.x === x && position.y === y) {
-        return true
+      if (entityId === selfId) continue;
+      // SOLO bloquear si es otro worker
+      if (gameState.workers.has(entityId)) {
+        if (position.x === x && position.y === y) {
+          return true;
+        }
       }
     }
-
-    return false
+    return false;
   }
 }

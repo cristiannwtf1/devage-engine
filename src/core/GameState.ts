@@ -5,6 +5,7 @@ import { EnergyStorageComponent, WorkerTagComponent } from "../ecs/Components"
 import { BehaviorComponent } from "../ecs/BehaviorComponent"
 import { TargetComponent } from "../ecs/TargetComponent"
 import { SourceComponent } from "../ecs/SourceComponent"
+import { PathComponent } from "../ecs/PathComponent"
 
 
 export class GameState {
@@ -33,7 +34,10 @@ export class GameState {
   // Mapa para comportamientos de trabajadores
   public behaviors: Map<EntityId, BehaviorComponent> = new Map()
 
-// Mapa para objetivos de trabajadores
+  // Mapa para rutas de trabajadores
+  public paths: Map<EntityId, PathComponent> = new Map()
+
+  // Mapa para objetivos de trabajadores
   public targets: Map<EntityId, TargetComponent> = new Map()
 
   // Fuentes de energía regenerables
@@ -41,6 +45,12 @@ export class GameState {
 
   // Mapa del mundo (tiles)
   public worldMap: WorldMap
+
+  private nextEntityId: number = 1;
+
+  public createEntity(): EntityId {
+    return this.nextEntityId++;
+  }
 
   constructor(width: number = 20, height: number = 10) {
     this.worldMap = new WorldMap(width, height)

@@ -51,6 +51,23 @@ export class RenderSystem {
       }
     }
 
+    // Dibujar sources (energía)
+    for (const [sourceId, source] of gameState.sources) {
+      const position = gameState.positions.get(sourceId);
+      if (!position) continue;
+      if (
+        position.x >= 0 &&
+        position.x < worldMap.width &&
+        position.y >= 0 &&
+        position.y < worldMap.height
+      ) {
+        const row = grid[position.y];
+        if (row) {
+          row[position.x] = "S";
+        }
+      }
+    }
+
     // Imprimir
     for (let y = 0; y < grid.length; y++) {
       const rowNumber = y.toString().padStart(2, "0")
@@ -62,8 +79,9 @@ export class RenderSystem {
 
     console.log("")
 
-    for (const [id, storage] of gameState.energyStorages) { 
-      console.log(`Worker ${id} Energy: ${storage.current}/${storage.capacity}`)
+    for (const [id, storage] of gameState.energyStorages) {
+      if (!gameState.workers.has(id) && id !== 100) continue;
+      console.log(`Entity ${id} Energy: ${storage.current}/${storage.capacity}`);
     }
 
     // DEBUG: mostrar estados de comportamiento

@@ -9,6 +9,7 @@ import { TargetSystem } from "../systems/TargetSystem"
 import { MovementSystem } from "../systems/MovementSystem"
 import { SourceRegenSystem } from "../systems/SourceRegenSystem"
 import { SpawnSystem } from "../systems/SpawnSystem"
+import { PathfindingSystem } from "../systems/PathfindingSystem"
 
 
 export class GameEngine {
@@ -25,6 +26,7 @@ export class GameEngine {
     private movementSystem: MovementSystem = new MovementSystem()
     private sourceRegenSystem: SourceRegenSystem = new SourceRegenSystem()
     private spawnSystem: SpawnSystem = new SpawnSystem()
+    private pathfindingSystem: PathfindingSystem = new PathfindingSystem()
 
 
     constructor(gameState: GameState, tickRate: number = 100) {
@@ -42,20 +44,23 @@ export class GameEngine {
         // 2️⃣ Asignar objetivos
         this.targetSystem.update(this.gameState)
 
-        // 3️⃣ Movimiento hacia objetivo
+        // 3️⃣ Trazar rutas
+        this.pathfindingSystem.update(this.gameState)
+
+        // 4️⃣ Movimiento hacia objetivo
         this.movementSystem.update(this.gameState)
 
-        // 4️⃣ Interacciones
+        // 5️⃣ Interacciones
         this.harvestSystem.update(this.gameState)
         this.depositSystem.update(this.gameState)
 
-        // 5️⃣ Spawn
+        // 6️⃣ Spawn
         this.spawnSystem.update(this.gameState)
 
-        // 6️⃣ Regeneración
+        // 7️⃣ Regeneración
         this.sourceRegenSystem.update(this.gameState)
 
-        // 7️⃣ Render
+        // 8️⃣ Render
         this.renderSystem.update(this.gameState)
     }
 

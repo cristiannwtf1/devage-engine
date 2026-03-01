@@ -4,44 +4,57 @@ export class TargetSystem {
 
   public update(gameState: GameState): void {
 
-    for (const [entityId, behavior] of gameState.behaviors) {
+  for (const [entityId, behavior] of gameState.behaviors) {
 
-      const position = gameState.positions.get(entityId)
-      const storage = gameState.energyStorages.get(entityId)
+    const position = gameState.positions.get(entityId)
+    const storage = gameState.energyStorages.get(entityId)
 
-      if (!position || !storage) continue
+    if (!position || !storage) continue
 
-      // Si ya tiene target, no reasignar
-      if (gameState.targets.has(entityId)) continue
+    const currentTarget = gameState.targets.get(entityId)
 
-      if (behavior.state === "harvesting") {
-
-        const sourcePosition = this.findNearestSource(
-          gameState,
-          position.x,
-          position.y
-        )
-
-        if (sourcePosition) {
-          gameState.targets.set(entityId, {
-            targetX: sourcePosition.x,
-            targetY: sourcePosition.y
-          })
-        }
-
-      } else if (behavior.state === "returning") {
-
-        // Base fija id 100 (por ahora)
-        const basePosition = gameState.positions.get(100)
-        if (!basePosition) continue
-
-        gameState.targets.set(entityId, {
-          targetX: basePosition.x,
-          targetY: basePosition.y
-        })
+    // 🔥 Si tiene target y ya llegó → limpiar
+    if (currentTarget) {
+      if (
+        position.x === currentTarget.targetX &&
+        position.y === currentTarget.targetY
+      ) {
+        gameState.targets.delete(entityId)
+        gameState.paths.delete(entityId)
       }
     }
+
+    // 🔥 Si todavía tiene target válido → no reasignar
+    if (gameState.targets.has(entityId)) continue
+
+    // 🔥 Asignar nuevo target según estado
+    if (behavior.state === "harvesting") {
+
+      const sourcePosition = this.findNearestSource(
+        gameState,
+        position.x,
+        position.y
+      )
+
+      if (sourcePosition) {
+        gameState.targets.set(entityId, {
+          targetX: sourcePosition.x,
+          targetY: sourcePosition.y
+        })
+      }
+
+    } else if (behavior.state === "returning") {
+
+      const basePosition = gameState.positions.get(100)
+      if (!basePosition) continue
+
+      gameState.targets.set(entityId, {
+        targetX: basePosition.x,
+        targetY: basePosition.y
+      })
+    }
   }
+}
 
   private findNearestSource(
     gameState: GameState,
