@@ -6,6 +6,11 @@ export class SpawnSystem {
   private nextEntityId: number = 1000
   private spawnCost: number = 20
 
+  // 🧠 Balance variables
+  private spawnCooldown: number = 0
+  private spawnDelay: number = 5
+  private maxWorkers: number = 8
+
   public update(gameState: GameState): void {
 
     const baseId: EntityId = 100
@@ -14,14 +19,23 @@ export class SpawnSystem {
 
     if (!baseStorage || !basePosition) return
 
-    // Si no hay suficiente energía, no spawnear
+    // ⏳ Cooldown activo
+    if (this.spawnCooldown > 0) {
+      this.spawnCooldown--
+      return
+    }
+
+    // 👥 Límite de población
+    const workerCount = gameState.workers.size
+    if (workerCount >= this.maxWorkers) return
+
+    // 💰 Energía insuficiente
     if (baseStorage.current < this.spawnCost) return
 
-    // Crear nuevo worker
+    // 🚀 Crear nuevo worker
     const newWorkerId: EntityId = this.nextEntityId++
     gameState.entities.add(newWorkerId)
 
-    // Posición al lado de la base
     gameState.positions.set(newWorkerId, {
       x: basePosition.x + 1,
       y: basePosition.y
@@ -33,6 +47,9 @@ export class SpawnSystem {
     gameState.behaviors.set(newWorkerId, { state: "harvesting" })
 
     baseStorage.current -= this.spawnCost
+
+    // ⏳ Activar cooldown
+    this.spawnCooldown = this.spawnDelay
 
     console.log("🆕 Nuevo worker creado:", newWorkerId)
   }
