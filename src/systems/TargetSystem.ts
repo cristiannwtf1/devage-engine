@@ -1,4 +1,5 @@
 import { GameState } from "../core/GameState"
+import { computePathLength } from "../utils/PathUtils"
 
 export class TargetSystem {
 
@@ -30,6 +31,12 @@ export class TargetSystem {
         }
       }
       if (!sourceStillValid) {
+        // Liberar claim antes de borrar target
+        for (const [sourceId, claim] of gameState.sourceClaims) {
+          if (claim.currentClaimers.has(entityId)) {
+            claim.currentClaimers.delete(entityId)
+          }
+        }
         gameState.targets.delete(entityId)
         gameState.paths.delete(entityId)
       }
@@ -41,6 +48,12 @@ export class TargetSystem {
         position.x === currentTarget.targetX &&
         position.y === currentTarget.targetY
       ) {
+        // Liberar claim antes de borrar target
+        for (const [sourceId, claim] of gameState.sourceClaims) {
+          if (claim.currentClaimers.has(entityId)) {
+            claim.currentClaimers.delete(entityId)
+          }
+        }
         gameState.targets.delete(entityId)
         gameState.paths.delete(entityId)
       }
@@ -51,17 +64,21 @@ export class TargetSystem {
 
     // 🔥 Asignar nuevo target según estado
     if (behavior.state === "harvesting") {
-
-      const sourcePosition = this.findNearestSource(
+      const sourceData = this.findNearestSource(
         gameState,
         position.x,
-        position.y
+        position.y,
+        entityId
       )
 
-      if (sourcePosition) {
+      if (sourceData) {
+        // Registrar claim
+        const claim = gameState.sourceClaims.get(sourceData.sourceId)
+        claim?.currentClaimers.add(entityId)
+
         gameState.targets.set(entityId, {
-          targetX: sourcePosition.x,
-          targetY: sourcePosition.y
+          targetX: sourceData.x,
+          targetY: sourceData.y
         })
       }
 
@@ -81,26 +98,42 @@ export class TargetSystem {
   private findNearestSource(
     gameState: GameState,
     startX: number,
-    startY: number
-  ): { x: number, y: number } | null {
+    startY: number,
+    workerId: number
+  ): { x: number, y: number, sourceId: number } | null {
 
-    let closest: { x: number, y: number } | null = null
+    let closest: { x: number, y: number, sourceId: number } | null = null
     let minDistance = Infinity
 
     for (const [sourceId, source] of gameState.sources) {
-
       if (source.energy <= 0) continue
+
+      const claim = gameState.sourceClaims.get(sourceId)
+      if (!claim) continue
+
+      // 🚫 Si ya está llena la source, ignorarla
+      if (claim.currentClaimers.size >= claim.maxClaimers) continue
 
       const position = gameState.positions.get(sourceId)
       if (!position) continue
 
-      const distance =
-        Math.abs(startX - position.x) +
-        Math.abs(startY - position.y)
+      const pathLength = computePathLength(
+        gameState,
+        startX,
+        startY,
+        position.x,
+        position.y
+      )
 
-      if (distance < minDistance) {
-        minDistance = distance
-        closest = { x: position.x, y: position.y }
+      if (pathLength === null) continue
+
+      if (pathLength < minDistance) {
+        minDistance = pathLength
+        closest = {
+          x: position.x,
+          y: position.y,
+          sourceId
+        }
       }
     }
 
