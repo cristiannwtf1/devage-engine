@@ -8,6 +8,7 @@ import { TargetComponent } from "../ecs/TargetComponent"
 import { SourceComponent } from "../ecs/SourceComponent"
 import { PathComponent } from "../ecs/PathComponent"
 import { SourceClaimComponent } from "../ecs/SourceClaimComponent"
+import { StructureComponent } from "../ecs/StructureComponent"
 
 import { WorldMap } from "../world/WorldMap"
 
@@ -37,6 +38,8 @@ export class GameState {
   // Sources
   public sources: Map<EntityId, SourceComponent> = new Map()
   public sourceClaims: Map<EntityId, SourceClaimComponent> = new Map()
+
+  public structures: Map<EntityId, StructureComponent> = new Map()
 
   // Mapa del mundo
   public worldMap: WorldMap

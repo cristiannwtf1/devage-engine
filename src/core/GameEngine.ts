@@ -10,6 +10,7 @@ import { MovementSystem } from "../systems/MovementSystem"
 import { SourceRegenSystem } from "../systems/SourceRegenSystem"
 import { SpawnSystem } from "../systems/SpawnSystem"
 import { PathfindingSystem } from "../systems/PathfindingSystem"
+import { ConstructionSystem } from "../systems/ConstructionSystem"
 
 
 export class GameEngine {
@@ -27,6 +28,7 @@ export class GameEngine {
     private sourceRegenSystem: SourceRegenSystem = new SourceRegenSystem()
     private spawnSystem: SpawnSystem = new SpawnSystem()
     private pathfindingSystem: PathfindingSystem = new PathfindingSystem()
+    private constructionSystem = new ConstructionSystem()
 
 
     constructor(gameState: GameState, tickRate: number = 100) {
@@ -56,6 +58,7 @@ export class GameEngine {
 
         // 6️⃣ Spawn
         this.spawnSystem.update(this.gameState)
+        this.constructionSystem.update(this.gameState)
 
         // 7️⃣ Regeneración
         this.sourceRegenSystem.update(this.gameState)

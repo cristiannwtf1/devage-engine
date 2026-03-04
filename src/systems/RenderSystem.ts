@@ -12,6 +12,7 @@ export class RenderSystem {
     console.log("Tick:", gameState.tick)
     console.log("")
 
+    // Header columnas
     let header = "   "
     for (let x = 0; x < worldMap.width; x++) {
       header += (x % 10) + " "
@@ -20,6 +21,7 @@ export class RenderSystem {
 
     const grid: string[][] = []
 
+    // Construir grid base desde tiles
     for (let y = 0; y < worldMap.height; y++) {
 
       const row: string[] = []
@@ -32,7 +34,9 @@ export class RenderSystem {
       grid.push(row)
     }
 
-    // Dibujar entidades (worker o base según sea el caso)
+    // =====================================
+    // 1️⃣ Dibujar base y workers
+    // =====================================
     for (const [entityId, position] of gameState.positions) {
       if (
         position.x >= 0 &&
@@ -41,34 +45,61 @@ export class RenderSystem {
         position.y < worldMap.height
       ) {
         const row = grid[position.y]
-        if (row) {
-          if (gameState.workers.has(entityId)) {
-            row[position.x] = "W"
-          } else {
-            row[position.x] = "B"
-          }
+        if (!row) continue
+
+        if (gameState.workers.has(entityId)) {
+          row[position.x] = "W"
+        } else if (entityId === 100) {
+          row[position.x] = "B"
         }
       }
     }
 
-    // Dibujar sources (energía)
-    for (const [sourceId, source] of gameState.sources) {
-      const position = gameState.positions.get(sourceId);
-      if (!position) continue;
+    // =====================================
+    // 2️⃣ Dibujar sources
+    // =====================================
+    for (const [sourceId] of gameState.sources) {
+
+      const position = gameState.positions.get(sourceId)
+      if (!position) continue
+
       if (
         position.x >= 0 &&
         position.x < worldMap.width &&
         position.y >= 0 &&
         position.y < worldMap.height
       ) {
-        const row = grid[position.y];
+        const row = grid[position.y]
         if (row) {
-          row[position.x] = "S";
+          row[position.x] = "S"
         }
       }
     }
 
-    // Imprimir
+    // =====================================
+    // 3️⃣ Dibujar estructuras
+    // =====================================
+    for (const [entityId] of gameState.structures) {
+
+      const position = gameState.positions.get(entityId)
+      if (!position) continue
+
+      if (
+        position.x >= 0 &&
+        position.x < worldMap.width &&
+        position.y >= 0 &&
+        position.y < worldMap.height
+      ) {
+        const row = grid[position.y]
+        if (row) {
+          row[position.x] = "E"
+        }
+      }
+    }
+
+    // =====================================
+    // Imprimir grid
+    // =====================================
     for (let y = 0; y < grid.length; y++) {
       const rowNumber = y.toString().padStart(2, "0")
       const row = grid[y]
@@ -79,12 +110,15 @@ export class RenderSystem {
 
     console.log("")
 
+    // Mostrar energía base y workers
     for (const [id, storage] of gameState.energyStorages) {
-      if (!gameState.workers.has(id) && id !== 100) continue;
-      console.log(`Entity ${id} Energy: ${storage.current}/${storage.capacity}`);
+      if (!gameState.workers.has(id) && id !== 100) continue
+      console.log(`Entity ${id} Energy: ${storage.current}/${storage.capacity}`)
     }
 
-    // DEBUG: mostrar estados de comportamiento
+    console.log("")
+
+    // DEBUG: estados de comportamiento
     for (const [id, behavior] of gameState.behaviors) {
       console.log(`Worker ${id} State: ${behavior.state}`)
     }
