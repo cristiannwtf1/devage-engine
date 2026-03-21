@@ -56,14 +56,18 @@ export class GameEngine {
         this.harvestSystem.update(this.gameState)
         this.depositSystem.update(this.gameState)
 
-        // 6️⃣ Spawn
+        // 6️⃣ Daño y muertes
+        this.healthSystem.update(this.gameState)
+        this.deathSystem.update(this.gameState)
+
+        // 8️⃣ Spawn y construcción
         this.spawnSystem.update(this.gameState)
         this.constructionSystem.update(this.gameState)
 
-        // 7️⃣ Regeneración
+        // 9️⃣ Regeneración
         this.sourceRegenSystem.update(this.gameState)
 
-        // 8️⃣ Render
+        // 🔟 Render
         this.renderSystem.update(this.gameState)
     }
 

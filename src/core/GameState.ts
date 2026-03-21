@@ -12,7 +12,6 @@ import { StructureComponent } from "../ecs/StructureComponent"
 
 import { WorldMap } from "../world/WorldMap"
 
-
 export class GameState {
 
   // Contador de tiempo del mundo
@@ -39,7 +38,14 @@ export class GameState {
   public sources: Map<EntityId, SourceComponent> = new Map()
   public sourceClaims: Map<EntityId, SourceClaimComponent> = new Map()
 
+  // Estructuras
   public structures: Map<EntityId, StructureComponent> = new Map()
+
+  // Daño pendiente: se llena en combate, se aplica en HealthSystem
+  public pendingDamage: Map<EntityId, number> = new Map()
+
+  // 🔥 Referencia oficial a la base principal
+  public baseId: EntityId | null = null
 
   // Mapa del mundo
   public worldMap: WorldMap

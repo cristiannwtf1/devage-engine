@@ -13,7 +13,8 @@ export class SpawnSystem {
 
   public update(gameState: GameState): void {
 
-    const baseId: EntityId = 100
+    const baseId = gameState.baseId
+    if (baseId === null) return
     const baseStorage = gameState.energyStorages.get(baseId)
     const basePosition = gameState.positions.get(baseId)
 

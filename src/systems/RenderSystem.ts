@@ -47,11 +47,21 @@ export class RenderSystem {
         const row = grid[position.y]
         if (!row) continue
 
+
+
         if (gameState.workers.has(entityId)) {
           row[position.x] = "W"
-        } else if (entityId === 100) {
+        } else if (gameState.structures.has(entityId)) {
+          const structure = gameState.structures.get(entityId)
+          if (structure?.type === "extension") {
+            row[position.x] = "E"
+          }
+        } else {
           row[position.x] = "B"
         }
+
+
+
       }
     }
 
@@ -110,20 +120,24 @@ export class RenderSystem {
 
     console.log("")
 
-    // Mostrar energía base y workers
+    // Mostrar energía base
+    if (gameState.baseId !== null) {
+      const baseStorage = gameState.energyStorages.get(gameState.baseId)
+      if (baseStorage) {
+        const extensions = [...gameState.structures.values()].filter(s => s.type === "extension").length
+        console.log(`🏠 Base  Energy: ${baseStorage.current}/${baseStorage.capacity} | Extensions: ${extensions}`)
+      }
+    }
+
+    // Mostrar energía workers
     for (const [id, storage] of gameState.energyStorages) {
-      if (!gameState.workers.has(id) && id !== 100) continue
-      console.log(`Entity ${id} Energy: ${storage.current}/${storage.capacity}`)
+      if (!gameState.workers.has(id)) continue
+      const behavior = gameState.behaviors.get(id)
+      const state = behavior?.state ?? "?"
+      console.log(`👷 W#${id} Energy: ${storage.current}/${storage.capacity} | ${state}`)
     }
 
     console.log("")
-
-    // DEBUG: estados de comportamiento
-    for (const [id, behavior] of gameState.behaviors) {
-      console.log(`Worker ${id} State: ${behavior.state}`)
-    }
-
-    console.log("")
-    console.log("Entidades activas:", gameState.entities.size)
+    console.log(`Entidades activas: ${gameState.entities.size} | Workers: ${gameState.workers.size}`)
   }
 }

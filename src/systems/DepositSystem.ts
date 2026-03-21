@@ -4,19 +4,10 @@ export class DepositSystem {
 
   public update(gameState: GameState): void {
 
-    let baseId: number | null = null
-    let basePosition: { x: number; y: number } | null = null
-
-    // Buscar base (capacidad grande)
-    for (const [entityId, storage] of gameState.energyStorages) {
-      if (storage.capacity > 100) {
-        baseId = entityId
-        basePosition = gameState.positions.get(entityId) ?? null
-        break
-      }
-    }
-
-    if (!baseId || !basePosition) return
+    const baseId = gameState.baseId
+    if (baseId === null) return
+    const basePosition = gameState.positions.get(baseId) ?? null
+    if (!basePosition) return
 
     // Revisar workers
     for (const [entityId, behavior] of gameState.behaviors) {

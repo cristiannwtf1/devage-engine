@@ -84,7 +84,8 @@ export class TargetSystem {
 
     } else if (behavior.state === "returning") {
 
-      const basePosition = gameState.positions.get(100)
+      if (gameState.baseId === null) continue
+      const basePosition = gameState.positions.get(gameState.baseId)
       if (!basePosition) continue
 
       gameState.targets.set(entityId, {
