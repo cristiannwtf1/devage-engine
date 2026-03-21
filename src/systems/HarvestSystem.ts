@@ -1,41 +1,35 @@
 import { GameState } from "../core/GameState"
 
+const HARVEST_RANGE = 1
+
 export class HarvestSystem {
 
   public update(gameState: GameState): void {
 
     for (const [entityId, behavior] of gameState.behaviors) {
 
-      // Solo workers en estado harvesting
       if (behavior.state !== "harvesting") continue
 
       const position = gameState.positions.get(entityId)
       const storage = gameState.energyStorages.get(entityId)
-
       if (!position || !storage) continue
       if (storage.current >= storage.capacity) continue
 
-      // Buscar si existe un source en la misma posición
+      // Cosechar del source más cercano dentro de rango adyacente
       for (const [sourceId, source] of gameState.sources) {
+        const sourcePos = gameState.positions.get(sourceId)
+        if (!sourcePos) continue
 
-        const sourcePosition = gameState.positions.get(sourceId)
-        if (!sourcePosition) continue
+        const dist = Math.abs(sourcePos.x - position.x) +
+                     Math.abs(sourcePos.y - position.y)
 
-        const sameTile =
-          sourcePosition.x === position.x &&
-          sourcePosition.y === position.y
-
-        if (sameTile && source.energy > 0) {
-
-          // Transferir energía
+        if (dist <= HARVEST_RANGE && source.energy > 0) {
           source.energy -= 1
           storage.current += 1
 
-          // Si se vacía, activar cooldown
           if (source.energy <= 0) {
             source.currentCooldown = source.regenCooldown
           }
-
           break
         }
       }
