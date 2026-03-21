@@ -2,6 +2,9 @@ import { GameState } from "../core/GameState"
 
 export class MovementSystem {
 
+  // Ticks que un worker espera antes de recalcular path si está bloqueado
+  private waitCooldowns: Map<number, number> = new Map()
+
   public update(gameState: GameState): void {
 
     for (const [entityId, pathComponent] of gameState.paths) {
@@ -20,16 +23,24 @@ export class MovementSystem {
         continue
       }
 
-      // Si el siguiente paso está ocupado ahora, cancelar path
+      // Esperar cooldown si está bloqueado
+      const cooldown = this.waitCooldowns.get(entityId) ?? 0
+      if (cooldown > 0) {
+        this.waitCooldowns.set(entityId, cooldown - 1)
+        continue
+      }
+
+      // Si el siguiente paso está ocupado, esperar 2 ticks y luego recalcular
       if (this.isOccupied(gameState, entityId, nextStep.x, nextStep.y)) {
-        gameState.paths.delete(entityId)
+        this.waitCooldowns.set(entityId, 2)
+        gameState.paths.delete(entityId)  // fuerza recalculo de path alternativo
         continue
       }
 
       position.x = nextStep.x
       position.y = nextStep.y
-
       pathComponent.steps.shift()
+      this.waitCooldowns.delete(entityId)
     }
   }
 
@@ -40,14 +51,11 @@ export class MovementSystem {
     y: number
   ): boolean {
     for (const [entityId, position] of gameState.positions) {
-      if (entityId === selfId) continue;
-      // SOLO bloquear si es otro worker
+      if (entityId === selfId) continue
       if (gameState.workers.has(entityId)) {
-        if (position.x === x && position.y === y) {
-          return true;
-        }
+        if (position.x === x && position.y === y) return true
       }
     }
-    return false;
+    return false
   }
 }

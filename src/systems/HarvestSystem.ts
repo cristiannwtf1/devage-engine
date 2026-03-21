@@ -31,19 +31,9 @@ export class HarvestSystem {
           source.energy -= 1
           storage.current += 1
 
-          console.log(
-            "⚡ Worker",
-            entityId,
-            "recolectó energía. Total:",
-            storage.current,
-            "| Energía restante en source:",
-            source.energy
-          )
-
           // Si se vacía, activar cooldown
           if (source.energy <= 0) {
             source.currentCooldown = source.regenCooldown
-            console.log("⏳ Source en cooldown")
           }
 
           break
