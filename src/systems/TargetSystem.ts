@@ -13,24 +13,9 @@ export class TargetSystem {
 
       const currentTarget = gameState.targets.get(entityId)
 
-      // ── Limpiar target si el source se agotó ──────────────────
-      if (currentTarget && behavior.state === "harvesting") {
-        const sourceValid = this.sourceExistsAt(
-          gameState, currentTarget.targetX, currentTarget.targetY
-        )
-        if (!sourceValid) {
-          this.releaseClaim(gameState, entityId)
-          gameState.targets.delete(entityId)
-          gameState.paths.delete(entityId)
-        }
-      }
-
-      // ── Limpiar target si el worker cambió a returning ────────
-      // (se llenó → necesita ir a la base, no al source)
+      // ── Worker se llenó → limpiar target de source ───────────
       if (currentTarget && behavior.state === "returning") {
-        const isBaseTarget = gameState.baseId !== null &&
-          currentTarget.targetX === gameState.positions.get(gameState.baseId)?.x &&
-          currentTarget.targetY === gameState.positions.get(gameState.baseId)?.y
+        const isBaseTarget = this.isBaseTarget(gameState, currentTarget)
         if (!isBaseTarget) {
           this.releaseClaim(gameState, entityId)
           gameState.targets.delete(entityId)
@@ -38,13 +23,10 @@ export class TargetSystem {
         }
       }
 
-      // ── Detectar llegada exacta al source ────────────────────
-      if (gameState.targets.has(entityId) && currentTarget && behavior.state === "harvesting") {
-        const onTarget =
-          position.x === currentTarget.targetX &&
-          position.y === currentTarget.targetY
-        if (onTarget) {
-          // Llegó: libera claim y borra target para no seguir moviéndose
+      // ── Source del target se agotó → buscar otro ─────────────
+      if (currentTarget && behavior.state === "harvesting") {
+        const valid = this.sourceExistsAt(gameState, currentTarget.targetX, currentTarget.targetY)
+        if (!valid) {
           this.releaseClaim(gameState, entityId)
           gameState.targets.delete(entityId)
           gameState.paths.delete(entityId)
@@ -78,6 +60,13 @@ export class TargetSystem {
         })
       }
     }
+  }
+
+  private isBaseTarget(gameState: GameState, target: { targetX: number; targetY: number }): boolean {
+    if (gameState.baseId === null) return false
+    const basePos = gameState.positions.get(gameState.baseId)
+    if (!basePos) return false
+    return basePos.x === target.targetX && basePos.y === target.targetY
   }
 
   private sourceExistsAt(gameState: GameState, x: number, y: number): boolean {
