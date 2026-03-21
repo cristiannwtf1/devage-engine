@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>DEVAGE ENGINE</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0a0a0f;
+      color: #e0e0e0;
+      font-family: 'Courier New', monospace;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── HEADER ── */
+    #header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 16px;
+      background: #111120;
+      border-bottom: 1px solid #2a2a4a;
+    }
+
+    #header h1 {
+      font-size: 18px;
+      color: #7b8cde;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+
+    #tick-info {
+      font-size: 13px;
+      color: #555;
+    }
+
+    #tick-info span { color: #7b8cde; }
+
+    /* ── CONTROLES ── */
+    #controls {
+      display: flex;
+      gap: 8px;
+    }
+
+    button {
+      background: #1a1a2e;
+      border: 1px solid #3a3a6a;
+      color: #aab;
+      padding: 4px 14px;
+      font-family: inherit;
+      font-size: 13px;
+      cursor: pointer;
+      border-radius: 3px;
+      transition: background 0.15s;
+    }
+
+    button:hover { background: #2a2a4e; color: #fff; }
+    button.active { background: #2a2a6e; color: #7b8cde; border-color: #7b8cde; }
+
+    /* ── MAIN LAYOUT ── */
+    #main {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* ── CANVAS ── */
+    #canvas-wrapper {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #080810;
+      padding: 12px;
+    }
+
+    canvas {
+      image-rendering: pixelated;
+      border: 1px solid #1a1a3a;
+    }
+
+    /* ── PANEL LATERAL ── */
+    #panel {
+      width: 220px;
+      background: #0e0e1c;
+      border-left: 1px solid #1a1a3a;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      overflow-y: auto;
+    }
+
+    .panel-section h3 {
+      font-size: 10px;
+      letter-spacing: 2px;
+      color: #444;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      border-bottom: 1px solid #1a1a2e;
+      padding-bottom: 4px;
+    }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+
+    .stat-label { color: #666; }
+    .stat-value { color: #9ab; }
+    .stat-value.highlight { color: #7b8cde; }
+
+    /* Barra de energía */
+    .energy-bar-wrapper {
+      margin-top: 4px;
+    }
+
+    .energy-bar-bg {
+      background: #1a1a2e;
+      border-radius: 2px;
+      height: 6px;
+      overflow: hidden;
+      margin-top: 2px;
+    }
+
+    .energy-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #3a3aaa, #7b8cde);
+      border-radius: 2px;
+      transition: width 0.2s;
+    }
+
+    /* Lista de workers */
+    .worker-entry {
+      font-size: 11px;
+      margin-bottom: 5px;
+      padding: 4px 6px;
+      background: #111120;
+      border-radius: 3px;
+      border-left: 2px solid #3a3a6a;
+    }
+
+    .worker-entry .wid { color: #555; font-size: 10px; }
+    .worker-entry .wstate { color: #7b8cde; font-size: 10px; }
+    .worker-entry .wenergy { color: #5a8a5a; font-size: 10px; }
+
+    /* Leyenda */
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      margin-bottom: 4px;
+      color: #666;
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    /* Footer status */
+    #status-bar {
+      padding: 4px 12px;
+      font-size: 11px;
+      color: #333;
+      background: #080810;
+      border-top: 1px solid #1a1a2a;
+    }
+
+    #status-bar.connected { color: #3a6a3a; }
+    #status-bar.disconnected { color: #6a3a3a; }
+  </style>
+</head>
+<body>
+
+  <div id="header">
+    <h1>⚔ DEVAGE ENGINE</h1>
+    <div id="tick-info">Tick: <span id="tick">—</span></div>
+    <div id="controls">
+      <button id="btn-pause">⏸ Pausar</button>
+    </div>
+  </div>
+
+  <div id="main">
+    <div id="canvas-wrapper">
+      <canvas id="gameCanvas"></canvas>
+    </div>
+
+    <div id="panel">
+      <div class="panel-section">
+        <h3>Base</h3>
+        <div class="stat-row">
+          <span class="stat-label">Energía</span>
+          <span class="stat-value highlight" id="base-energy">—</span>
+        </div>
+        <div class="energy-bar-wrapper">
+          <div class="energy-bar-bg">
+            <div class="energy-bar-fill" id="base-energy-bar" style="width:0%"></div>
+          </div>
+        </div>
+        <div class="stat-row" style="margin-top:6px">
+          <span class="stat-label">Workers</span>
+          <span class="stat-value" id="worker-count">—</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Extensions</span>
+          <span class="stat-value" id="ext-count">—</span>
+        </div>
+      </div>
+
+      <div class="panel-section">
+        <h3>Workers</h3>
+        <div id="worker-list"></div>
+      </div>
+
+      <div class="panel-section">
+        <h3>Leyenda</h3>
+        <div class="legend-item"><div class="legend-dot" style="background:#3a5a8a"></div> Base</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#4a7a4a"></div> Worker</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#8a7a2a"></div> Source</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#5a3a8a"></div> Extension</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#2a2a2a"></div> Piso</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#111"></div> Muro</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="status-bar">Conectando...</div>
+
+  <script src="game.js"></script>
+</body>
+</html>
