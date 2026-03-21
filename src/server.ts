@@ -58,6 +58,11 @@ const wss = new WebSocketServer({ server })
 
 app.use(express.static(path.join(__dirname, "../public")))
 
+// ─── ENDPOINT DE DIAGNÓSTICO ──────────────────────────────
+app.get("/debug", (_req, res) => {
+  res.json(buildDiagnostic(gameState))
+})
+
 // ─── SERIALIZAR ESTADO PARA EL BROWSER ───────────────────
 function buildSnapshot(gs: GameState) {
   const tiles: string[][] = []
@@ -111,6 +116,51 @@ function buildSnapshot(gs: GameState) {
       : null,
     workerCount: gs.workers.size,
     extensions: [...gs.structures.values()].filter(s => s.type === "extension").length
+  }
+}
+
+// ─── DIAGNÓSTICO DETALLADO ────────────────────────────────
+function buildDiagnostic(gs: GameState) {
+  const workers = [...gs.workers.keys()].map(id => {
+    const pos      = gs.positions.get(id)
+    const behavior = gs.behaviors.get(id)
+    const storage  = gs.energyStorages.get(id)
+    const hasTarget = gs.targets.has(id)
+    const hasPath   = gs.paths.has(id)
+    return {
+      id,
+      pos:     pos ? `(${pos.x},${pos.y})` : "?",
+      state:   behavior?.state ?? "?",
+      energy:  storage ? `${storage.current}/${storage.capacity}` : "?",
+      hasTarget,
+      hasPath,
+      pathLen: gs.paths.get(id)?.steps.length ?? 0
+    }
+  })
+
+  const sources = [...gs.sources.entries()].map(([id, src]) => {
+    const pos    = gs.positions.get(id)
+    const claim  = gs.sourceClaims.get(id)
+    return {
+      id,
+      pos:      pos ? `(${pos.x},${pos.y})` : "?",
+      energy:   `${src.energy}/${src.maxEnergy}`,
+      cooldown: src.currentCooldown,
+      claimers: claim ? claim.currentClaimers.size : 0
+    }
+  })
+
+  const baseStorage = gs.baseId ? gs.energyStorages.get(gs.baseId) : null
+  const harvesting  = workers.filter(w => w.state === "harvesting").length
+  const returning   = workers.filter(w => w.state === "returning").length
+  const idle        = workers.filter(w => !w.hasTarget).length
+
+  return {
+    tick:        gs.tick,
+    base:        baseStorage ? `${baseStorage.current}/${baseStorage.capacity}` : "?",
+    workers:     { total: workers.length, harvesting, returning, idle, detail: workers },
+    sources:     { total: sources.length, active: sources.filter(s => s.energy !== "0/10").length, detail: sources },
+    extensions:  [...gs.structures.values()].filter(s => s.type === "extension").length
   }
 }
 

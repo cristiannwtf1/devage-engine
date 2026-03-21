@@ -68,7 +68,12 @@ export class GameEngine {
         // 8️⃣ Regeneración
         this.sourceRegenSystem.update(this.gameState)
 
-        // 9️⃣ Callback al servidor (broadcast al browser)
+        // 9️⃣ Log de estado cada 20 ticks
+        if (this.gameState.tick % 20 === 0) {
+          this.logStatus()
+        }
+
+        // 🔟 Callback al servidor (broadcast al browser)
         this.onTick?.()
     }
 
@@ -82,6 +87,21 @@ export class GameEngine {
             clearInterval(this.intervalId)
             this.intervalId = null
         }
+    }
+
+    private logStatus(): void {
+        const gs = this.gameState
+        const baseStorage = gs.baseId ? gs.energyStorages.get(gs.baseId) : null
+        const harvesting  = [...gs.behaviors.values()].filter(b => b.state === "harvesting").length
+        const returning   = [...gs.behaviors.values()].filter(b => b.state === "returning").length
+        const idle        = [...gs.workers.keys()].filter(id => !gs.targets.has(id)).length
+        const base        = baseStorage ? `${baseStorage.current}/${baseStorage.capacity}` : "?"
+        console.log(
+          `[T:${String(gs.tick).padStart(4,"0")}]  ` +
+          `Workers: ${gs.workers.size} | ` +
+          `cosechando: ${harvesting} | retornando: ${returning} | sin-tarea: ${idle} | ` +
+          `Base: ${base}`
+        )
     }
 
     public pause(): void {
