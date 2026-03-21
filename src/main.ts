@@ -9,8 +9,6 @@ const gameState = new GameState(20, 10)
 //
 // ⚡ MIGRAR ENERGÍA DEL MAPA A SOURCES (ECS)
 //
-
-
 for (let y = 0; y < gameState.worldMap.height; y++) {
   for (let x = 0; x < gameState.worldMap.width; x++) {
 
@@ -19,10 +17,8 @@ for (let y = 0; y < gameState.worldMap.height; y++) {
       const sourceId: EntityId = gameState.createEntity()
       gameState.entities.add(sourceId)
 
-      // Posición del source
       gameState.positions.set(sourceId, { x, y })
 
-      // Componente Source regenerable
       gameState.sources.set(sourceId, {
         energy: 10,
         maxEnergy: 10,
@@ -31,13 +27,11 @@ for (let y = 0; y < gameState.worldMap.height; y++) {
         currentCooldown: 0
       })
 
-      // 🧠 Control de concurrencia por fuente
       gameState.sourceClaims.set(sourceId, {
         maxClaimers: 2,
         currentClaimers: new Set()
       })
 
-      // Limpiar tile del mapa
       gameState.worldMap.setTile(x, y, TileType.Floor)
     }
   }
@@ -46,18 +40,21 @@ for (let y = 0; y < gameState.worldMap.height; y++) {
 console.log("⚡ Sources creados:", gameState.sources.size)
 
 //
-// 🏠 CREAR BASE
+// 🏠 CREAR BASE (CORRECTO)
 //
-const baseId: EntityId = 100
+const baseId: EntityId = gameState.createEntity()
 gameState.entities.add(baseId)
 
 gameState.positions.set(baseId, { x: 10, y: 2 })
 gameState.energyStorages.set(baseId, { current: 0, capacity: 1000 })
 
+// 🔥 Guardar referencia oficial
+gameState.baseId = baseId
+
 //
-//  CREAR WORKER 1
+// 👷 CREAR WORKER 1
 //
-const worker1: EntityId = 1
+const worker1: EntityId = gameState.createEntity()
 gameState.entities.add(worker1)
 
 gameState.positions.set(worker1, { x: 1, y: 5 })
@@ -67,9 +64,9 @@ gameState.energyStorages.set(worker1, { current: 0, capacity: 10 })
 gameState.behaviors.set(worker1, { state: "harvesting" })
 
 //
-//  CREAR WORKER 2
+// 👷 CREAR WORKER 2
 //
-const worker2: EntityId = 2
+const worker2: EntityId = gameState.createEntity()
 gameState.entities.add(worker2)
 
 gameState.positions.set(worker2, { x: 18, y: 5 })
@@ -82,7 +79,7 @@ console.log("🚀 Iniciando DEVAGE ENGINE...")
 console.log("Entidades activas:", gameState.entities.size)
 
 //
-//  Motor
+// 🧠 Motor
 //
 const engine = new GameEngine(gameState, 200)
 engine.start()
