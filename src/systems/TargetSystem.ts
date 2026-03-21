@@ -1,9 +1,6 @@
 import { GameState } from "../core/GameState"
 import { computePathLength } from "../utils/PathUtils"
 
-// Workers cosechan/depositan desde tiles adyacentes, no encima
-const HARVEST_RANGE = 1
-
 export class TargetSystem {
 
   public update(gameState: GameState): void {
@@ -16,7 +13,7 @@ export class TargetSystem {
 
       const currentTarget = gameState.targets.get(entityId)
 
-      // Validar que el source del target sigue teniendo energía
+      // ── Limpiar target si el source se agotó ──────────────────
       if (currentTarget && behavior.state === "harvesting") {
         const sourceValid = this.sourceExistsAt(
           gameState, currentTarget.targetX, currentTarget.targetY
@@ -28,26 +25,36 @@ export class TargetSystem {
         }
       }
 
-      // Detectar llegada al destino
-      if (gameState.targets.has(entityId) && currentTarget) {
-        const dist = Math.abs(position.x - currentTarget.targetX) +
-                     Math.abs(position.y - currentTarget.targetY)
-
-        const arrived = behavior.state === "harvesting"
-          ? dist <= HARVEST_RANGE   // cerca del source → puede cosechar
-          : dist === 0              // en la base → puede depositar
-
-        if (arrived) {
+      // ── Limpiar target si el worker cambió a returning ────────
+      // (se llenó → necesita ir a la base, no al source)
+      if (currentTarget && behavior.state === "returning") {
+        const isBaseTarget = gameState.baseId !== null &&
+          currentTarget.targetX === gameState.positions.get(gameState.baseId)?.x &&
+          currentTarget.targetY === gameState.positions.get(gameState.baseId)?.y
+        if (!isBaseTarget) {
           this.releaseClaim(gameState, entityId)
           gameState.targets.delete(entityId)
           gameState.paths.delete(entityId)
         }
       }
 
-      // Si ya tiene target válido → no reasignar
+      // ── Detectar llegada exacta al source ────────────────────
+      if (gameState.targets.has(entityId) && currentTarget && behavior.state === "harvesting") {
+        const onTarget =
+          position.x === currentTarget.targetX &&
+          position.y === currentTarget.targetY
+        if (onTarget) {
+          // Llegó: libera claim y borra target para no seguir moviéndose
+          this.releaseClaim(gameState, entityId)
+          gameState.targets.delete(entityId)
+          gameState.paths.delete(entityId)
+        }
+      }
+
+      // ── Si ya tiene target → no reasignar ────────────────────
       if (gameState.targets.has(entityId)) continue
 
-      // Asignar nuevo target según estado
+      // ── Asignar nuevo target ──────────────────────────────────
       if (behavior.state === "harvesting") {
         const sourceData = this.findNearestSource(
           gameState, position.x, position.y, entityId

@@ -25,7 +25,7 @@ for (let y = 0; y < gameState.worldMap.height; y++) {
         currentCooldown: 0
       })
       gameState.sourceClaims.set(sourceId, {
-        maxClaimers: 2,
+        maxClaimers: 1,
         currentClaimers: new Set()
       })
       gameState.worldMap.setTile(x, y, TileType.Floor)
