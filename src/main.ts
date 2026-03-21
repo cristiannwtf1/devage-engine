@@ -1,43 +1,90 @@
 import { GameState } from "./core/GameState"
 import { GameEngine } from "./core/GameEngine"
 import { EntityId } from "./ecs/Entity"
+import { TileType } from "./world/Tile"
 
 // 1️⃣ Crear el mundo
-const gameState = new GameState()
+const gameState = new GameState(20, 10)
 
-// 2️⃣ Crear una entidad
-const entityId: EntityId = 1
+//
+// ⚡ MIGRAR ENERGÍA DEL MAPA A SOURCES (ECS)
+//
+for (let y = 0; y < gameState.worldMap.height; y++) {
+  for (let x = 0; x < gameState.worldMap.width; x++) {
 
-// Registrar la entidad en el mundo
-gameState.entities.add(entityId)
+    if (gameState.worldMap.getTile(x, y) === TileType.Energy) {
 
-// Asignarle componentes
-gameState.positions.set(entityId, { x: 10, y: 5 })
-gameState.healths.set(entityId, { current: 20, max: 100 })
-gameState.positions.set(entityId, { x: 1, y: 5 })
-gameState.velocities.set(entityId, { vx: 1, vy: 0 })
+      const sourceId: EntityId = gameState.createEntity()
+      gameState.entities.add(sourceId)
 
-// Crear una segunda entidad de prueba
-const entity2: EntityId = 2
-gameState.entities.add(entity2)
-gameState.positions.set(entity2, { x: 18, y: 5 })
-gameState.healths.set(entity2, { current: 20, max: 100 })
-gameState.velocities.set(entity2, { vx: -1, vy: 0 })
+      gameState.positions.set(sourceId, { x, y })
 
+      gameState.sources.set(sourceId, {
+        energy: 10,
+        maxEnergy: 10,
+        regenRate: 1,
+        regenCooldown: 5,
+        currentCooldown: 0
+      })
 
+      gameState.sourceClaims.set(sourceId, {
+        maxClaimers: 2,
+        currentClaimers: new Set()
+      })
 
-console.log("Entidad creada:", entityId)
-console.log("Posición:", gameState.positions.get(entityId))
-console.log("Salud:", gameState.healths.get(entityId))
+      gameState.worldMap.setTile(x, y, TileType.Floor)
+    }
+  }
+}
 
-// 3️⃣ Crear el motor
+console.log("⚡ Sources creados:", gameState.sources.size)
+
+//
+// 🏠 CREAR BASE (CORRECTO)
+//
+const baseId: EntityId = gameState.createEntity()
+gameState.entities.add(baseId)
+
+gameState.positions.set(baseId, { x: 10, y: 2 })
+gameState.energyStorages.set(baseId, { current: 0, capacity: 1000 })
+
+// 🔥 Guardar referencia oficial
+gameState.baseId = baseId
+
+//
+// 👷 CREAR WORKER 1
+//
+const worker1: EntityId = gameState.createEntity()
+gameState.entities.add(worker1)
+
+gameState.positions.set(worker1, { x: 1, y: 5 })
+gameState.healths.set(worker1, { current: 20, max: 100 })
+gameState.workers.set(worker1, { isWorker: true })
+gameState.energyStorages.set(worker1, { current: 0, capacity: 10 })
+gameState.behaviors.set(worker1, { state: "harvesting" })
+
+//
+// 👷 CREAR WORKER 2
+//
+const worker2: EntityId = gameState.createEntity()
+gameState.entities.add(worker2)
+
+gameState.positions.set(worker2, { x: 18, y: 5 })
+gameState.healths.set(worker2, { current: 20, max: 100 })
+gameState.workers.set(worker2, { isWorker: true })
+gameState.energyStorages.set(worker2, { current: 0, capacity: 10 })
+gameState.behaviors.set(worker2, { state: "harvesting" })
+
+console.log("🚀 Iniciando DEVAGE ENGINE...")
+console.log("Entidades activas:", gameState.entities.size)
+
+//
+// 🧠 Motor
+//
 const engine = new GameEngine(gameState, 200)
-
-// 4️⃣ Iniciar motor
 engine.start()
 
-// Detener después de 5 segundos
 setTimeout(() => {
   engine.stop()
-  console.log("Motor detenido")
-}, 5000)
+  console.log("🛑 Motor detenido")
+}, 60000)
