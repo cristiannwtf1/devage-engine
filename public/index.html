@@ -324,116 +324,182 @@
     #status-bar.connected    { color: var(--cyan-d); }
     #status-bar.disconnected { color: var(--red-d); }
 
-    /* ── SELECCIÓN DE MISIONES ── */
+    /* ── SELECCIÓN DE MUNDOS ── */
     #mission-screen {
       position: fixed; inset: 0; z-index: 90;
-      background: #040810;
+      background: #020608;
       display: flex; flex-direction: column;
-      animation: screenFadeIn 0.5s ease forwards;
+      opacity: 0; animation: screenFadeIn 0.5s ease forwards;
     }
-    @keyframes screenFadeIn {
-      from { opacity: 0; } to { opacity: 1; }
-    }
+    @keyframes screenFadeIn { from { opacity: 0; } to { opacity: 1; } }
 
     #mission-header {
       display: flex; align-items: center; justify-content: space-between;
       padding: 14px 28px;
-      background: #050c16;
-      border-bottom: 1px solid #102040;
-      flex-shrink: 0;
+      background: rgba(4,8,16,0.8);
+      border-bottom: 1px solid #0c1830;
+      flex-shrink: 0; z-index: 2; position: relative;
     }
-    #btn-back-menu {
+    .ms-btn {
       background: transparent; border: 1px solid #102040;
       color: var(--text-d); font-family: inherit; font-size: 11px;
-      padding: 5px 14px; cursor: pointer; letter-spacing: 1px;
-      transition: all 0.2s;
+      padding: 5px 14px; cursor: pointer; letter-spacing: 1px; transition: all 0.2s;
     }
-    #btn-back-menu:hover { border-color: var(--cyan-d); color: var(--cyan); }
+    .ms-btn:hover { border-color: var(--cyan-d); color: var(--cyan); }
     #mission-title-area { text-align: center; }
     #mission-screen-title { font-size: 18px; color: var(--cyan); letter-spacing: 5px; display: block; text-shadow: 0 0 16px rgba(0,170,255,0.4); }
-    #mission-screen-sub   { font-size: 9px;  color: var(--text-d); letter-spacing: 3px; }
-    #mission-progress-info { font-size: 12px; color: var(--cyan); letter-spacing: 1px; }
+    #mission-screen-sub   { font-size: 9px; color: var(--text-d); letter-spacing: 3px; }
+    #mission-progress-info { font-size: 12px; color: var(--cyan-d); letter-spacing: 1px; }
 
-    #mission-map {
-      flex: 1; display: flex; align-items: center; justify-content: center;
-      gap: 0; padding: 40px 60px; overflow-x: auto;
+    /* ── VISTA DE MUNDOS ── */
+    #world-view {
+      flex: 1; display: flex; align-items: stretch;
+      overflow: hidden;
     }
 
-    .mission-connector {
-      width: 40px; height: 1px;
-      background: linear-gradient(90deg, #102040, #1a3060, #102040);
+    .world-card {
+      flex: 1; position: relative; cursor: pointer; overflow: hidden;
+      display: flex; flex-direction: column; justify-content: flex-end;
+      transition: flex 0.5s cubic-bezier(0.4,0,0.2,1);
+      border-right: 1px solid #0a1020;
+      opacity: 0; animation: worldIn 0.6s ease backwards;
+    }
+    #wcard-1 { animation-delay: 0.1s; }
+    #wcard-2 { animation-delay: 0.25s; }
+    #wcard-3 { animation-delay: 0.4s; }
+    @keyframes worldIn {
+      from { opacity: 0; transform: scaleY(0.95); }
+      to   { opacity: 1; transform: scaleY(1); }
+    }
+    .world-card:last-child { border-right: none; }
+    .world-card:hover:not(.locked) { flex: 1.4; }
+    .world-card.locked { cursor: not-allowed; }
+
+    /* Gradientes únicos por mundo */
+    #wcard-1 .world-bg { background: linear-gradient(180deg, #010810 0%, #001535 55%, #002d6a 100%); }
+    #wcard-2 .world-bg { background: linear-gradient(180deg, #020408 0%, #050e20 55%, #0a1840 100%); }
+    #wcard-3 .world-bg { background: linear-gradient(180deg, #040206 0%, #120408 55%, #240810 100%); }
+
+    .world-bg {
+      position: absolute; inset: 0;
+    }
+    /* Patrón de grilla sutil */
+    .world-bg::after {
+      content: '';
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+
+    .world-canvas { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0.18; }
+
+    .world-content {
+      position: relative; z-index: 2;
+      padding: 28px 24px; display: flex; flex-direction: column; gap: 8px;
+    }
+
+    .world-season {
+      font-size: 9px; letter-spacing: 4px; text-transform: uppercase;
+      opacity: 0.4;
+    }
+    #wcard-1 .world-season { color: #00aaff; }
+    #wcard-2 .world-season { color: #44ccaa; }
+    #wcard-3 .world-season { color: #ff5544; }
+
+    .world-icon-big {
+      font-size: 36px; line-height: 1;
+      text-shadow: 0 0 20px currentColor;
+    }
+    #wcard-1 .world-icon-big { color: #0077cc; }
+    #wcard-2 .world-icon-big { color: #228866; }
+    #wcard-3 .world-icon-big { color: #882222; }
+
+    .world-name {
+      font-size: 20px; font-weight: bold; letter-spacing: 4px;
+    }
+    #wcard-1 .world-name { color: #00aaff; text-shadow: 0 0 20px rgba(0,170,255,0.4); }
+    #wcard-2 .world-name { color: #44ccaa; text-shadow: 0 0 20px rgba(68,204,170,0.3); }
+    #wcard-3 .world-name { color: #ff5544; text-shadow: 0 0 20px rgba(255,85,68,0.4); }
+
+    .world-tagline { font-size: 10px; color: rgba(255,255,255,0.35); letter-spacing: 2px; }
+    .world-desc    { font-size: 10px; color: rgba(255,255,255,0.45); line-height: 1.7; max-width: 280px; margin-top: 4px; }
+
+    .world-missions-row {
+      display: flex; justify-content: space-between; align-items: center; margin-top: 8px;
+      font-size: 9px; color: rgba(255,255,255,0.3); letter-spacing: 1px;
+    }
+    .world-stars-row { display: flex; gap: 2px; }
+    .wstar { font-size: 10px; color: rgba(255,255,255,0.12); }
+    .wstar.earned { color: #ffcc00; text-shadow: 0 0 6px rgba(255,200,0,0.5); }
+
+    .world-lock-overlay {
+      position: absolute; inset: 0; z-index: 3;
+      background: rgba(2,6,8,0.65);
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+    }
+    .world-lock-icon { font-size: 22px; opacity: 0.3; }
+    .world-lock-text { font-size: 9px; color: rgba(255,255,255,0.2); letter-spacing: 3px; }
+
+    /* ── VISTA DE MISIONES (dentro de un mundo) ── */
+    #season-view {
+      flex: 1; display: flex; flex-direction: column;
+    }
+    #season-view-header {
+      display: flex; align-items: center; gap: 16px;
+      padding: 12px 24px;
+      border-bottom: 1px solid #0c1830;
       flex-shrink: 0;
-      position: relative;
     }
-    .mission-connector::after {
-      content: '›'; position: absolute; right: -6px; top: -9px;
-      color: #1a3060; font-size: 16px;
+    #season-view-title { font-size: 14px; letter-spacing: 3px; }
+    #season-mission-grid {
+      flex: 1; display: flex; flex-wrap: wrap; align-content: flex-start;
+      gap: 12px; padding: 24px; overflow-y: auto;
     }
-
-    .mission-node {
-      width: 150px; min-height: 160px;
-      border: 1px solid #0c1628;
-      background: #050c16;
-      padding: 18px 16px; cursor: pointer;
-      display: flex; flex-direction: column; align-items: center; gap: 6px;
-      text-align: center; position: relative;
-      transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
-      flex-shrink: 0;
-      animation: nodeIn 0.4s ease backwards;
+    .smnode {
+      width: 160px; border: 1px solid #0c1628; background: #050c16;
+      padding: 16px 14px; cursor: pointer;
+      display: flex; flex-direction: column; gap: 6px;
+      transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+      animation: nodeIn 0.35s ease backwards;
     }
-    #mnode-1 { animation-delay: 0.05s; }
-    #mnode-2 { animation-delay: 0.15s; }
-    #mnode-3 { animation-delay: 0.25s; }
-    #mnode-4 { animation-delay: 0.35s; }
-    #mnode-5 { animation-delay: 0.45s; }
     @keyframes nodeIn {
-      from { opacity: 0; transform: translateY(12px); }
+      from { opacity: 0; transform: translateY(10px); }
       to   { opacity: 1; transform: translateY(0); }
     }
-
-    .mission-node.locked { opacity: 0.4; cursor: not-allowed; filter: grayscale(0.6); }
-    .mission-node.completed { border-color: #102040; }
-    .mission-node.completed .mnode-icon { color: var(--cyan); text-shadow: 0 0 10px rgba(0,170,255,0.5); }
-    .mission-node.active {
-      border-color: var(--cyan);
-      box-shadow: 0 0 24px rgba(0,170,255,0.2);
-      transform: translateY(-4px);
+    .smnode.locked { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
+    .smnode:hover:not(.locked) {
+      border-color: var(--cyan-d); transform: translateY(-3px);
+      box-shadow: 0 0 14px rgba(0,170,255,0.12);
     }
-    .mission-node:not(.locked):hover {
-      border-color: var(--cyan-d);
-      box-shadow: 0 0 18px rgba(0,170,255,0.15);
-      transform: translateY(-4px);
-    }
-
-    .mnode-number { font-size: 9px; color: var(--text-d); letter-spacing: 2px; }
-    .mnode-icon   { font-size: 22px; color: #0d2040; transition: color 0.2s; }
-    .mnode-name   { font-size: 11px; color: var(--text); letter-spacing: 0.5px; line-height: 1.4; }
-    .mnode-concept{ font-size: 9px; color: var(--text-d); letter-spacing: 1px; margin-top: 2px; }
-    .mnode-stars  { display: flex; gap: 3px; margin-top: 6px; }
-    .mstar { font-size: 12px; color: #0d2040; transition: color 0.2s; }
-    .mstar.earned { color: #ffcc00; text-shadow: 0 0 6px rgba(255,200,0,0.5); }
+    .smnode.active { border-color: var(--cyan); box-shadow: 0 0 20px rgba(0,170,255,0.2); }
+    .smn-num     { font-size: 9px; color: var(--text-d); letter-spacing: 2px; }
+    .smn-name    { font-size: 11px; color: var(--text); line-height: 1.4; }
+    .smn-concept { font-size: 9px; color: var(--text-d); letter-spacing: 1px; margin-top: 2px; }
+    .smn-stars   { display: flex; gap: 2px; margin-top: 4px; }
+    .smstar      { font-size: 10px; color: #0d2040; }
+    .smstar.earned { color: #ffcc00; }
 
     #mission-detail {
-      flex-shrink: 0; height: 110px;
-      background: #050c16;
-      border-top: 1px solid #102040;
-      display: flex; align-items: center; justify-content: center;
-      padding: 0 60px;
+      flex-shrink: 0; height: 100px;
+      background: #050c16; border-top: 1px solid #0c1830;
+      display: flex; align-items: center; padding: 0 24px; gap: 24px;
     }
-    #mission-detail-inner {
-      display: flex; align-items: center; gap: 32px; width: 100%; max-width: 800px;
-    }
-    #detail-title   { font-size: 16px; color: var(--cyan); letter-spacing: 3px; min-width: 200px; }
-    #detail-concept { font-size: 9px; color: var(--text-d); letter-spacing: 2px; min-width: 160px; }
+    #detail-title   { font-size: 14px; color: var(--cyan); letter-spacing: 3px; min-width: 180px; }
+    #detail-concept { font-size: 9px; color: var(--text-d); letter-spacing: 2px; min-width: 140px; }
     #detail-desc    { font-size: 10px; color: var(--text); line-height: 1.6; flex: 1; }
     #btn-start-mission {
       background: transparent; border: 1px solid var(--cyan);
       color: var(--cyan); font-family: inherit; font-size: 11px;
-      padding: 8px 22px; cursor: pointer; letter-spacing: 2px; flex-shrink: 0;
+      padding: 8px 20px; cursor: pointer; letter-spacing: 2px; flex-shrink: 0;
       transition: all 0.2s; text-transform: uppercase;
     }
     #btn-start-mission:hover:not(:disabled) { background: rgba(0,170,255,0.08); box-shadow: 0 0 16px rgba(0,170,255,0.2); }
     #btn-start-mission:disabled { opacity: 0.3; cursor: not-allowed; border-color: var(--border2); color: var(--text-d); }
+
+    .smstar { font-size: 10px; color: #0d2040; }
+    .smstar.earned { color: #ffcc00; }
 
     /* ── MENÚ PRINCIPAL ── */
     #menu-screen {
@@ -506,8 +572,10 @@
       outline: none;
       opacity: 0;
     }
-    #card-campaign { animation: cardIn 0.5s ease 1.1s forwards; }
-    #card-vs-ai    { animation: cardIn 0.5s ease 1.25s forwards; }
+    #card-campaign   { animation: cardIn 0.5s ease 1.1s  forwards; }
+    #card-vs-ai      { animation: cardIn 0.5s ease 1.25s forwards; }
+    #card-sandbox    { animation: cardIn 0.5s ease 1.4s  forwards; }
+    #card-challenges { animation: cardIn 0.5s ease 1.55s forwards; }
     @keyframes cardIn {
       from { opacity: 0; transform: translateY(18px); }
       to   { opacity: 1; transform: translateY(0); }
@@ -640,99 +708,90 @@
   </div>
   <!-- ═══════════════════════════════════════════════════════════════════== -->
 
-  <!-- ═══════════════════════ SELECCIÓN DE MISIONES ═══════════════════════ -->
+  <!-- ═══════════════════════ SELECCIÓN DE MUNDOS ════════════════════════ -->
   <div id="mission-screen" style="display:none">
+
     <div id="mission-header">
-      <button id="btn-back-menu">← Menú</button>
+      <button class="ms-btn" id="btn-back-menu">← Menú</button>
       <div id="mission-title-area">
         <span id="mission-screen-title">CAMPAÑA</span>
-        <span id="mission-screen-sub">Selecciona tu misión</span>
+        <span id="mission-screen-sub">Elige tu mundo</span>
       </div>
       <div id="mission-progress-info">
-        <span id="missions-done">0</span><span style="color:var(--text-d)">/5 completadas</span>
+        <span id="missions-done">0</span><span style="color:var(--text-d)">/17 completadas</span>
       </div>
     </div>
 
-    <div id="mission-map">
+    <!-- Vista: 3 mundos -->
+    <div id="world-view">
 
-      <div class="mission-node completed" id="mnode-1" data-mission="1">
-        <div class="mnode-number">01</div>
-        <div class="mnode-icon">◈</div>
-        <div class="mnode-name">Tu primer ejército</div>
-        <div class="mnode-concept">if · else · for...in</div>
-        <div class="mnode-stars">
-          <span class="mstar" id="mstar-1-1">★</span>
-          <span class="mstar" id="mstar-1-2">★</span>
-          <span class="mstar" id="mstar-1-3">★</span>
+      <div class="world-card" id="wcard-1">
+        <div class="world-bg"></div>
+        <canvas class="world-canvas" id="wcanvas-1"></canvas>
+        <div class="world-content">
+          <div class="world-season">Season I</div>
+          <div class="world-icon-big">◈</div>
+          <div class="world-name">La Colonia</div>
+          <div class="world-tagline">Los fundamentos · JavaScript desde cero</div>
+          <div class="world-desc">Construye tu primera base, cosecha energía, escribe tus primeros bucles. Sin experiencia previa necesaria.</div>
+          <div class="world-missions-row">
+            <span>6 misiones</span>
+            <div class="world-stars-row" id="wstars-1"></div>
+          </div>
         </div>
       </div>
 
-      <div class="mission-connector"></div>
-
-      <div class="mission-node locked" id="mnode-2" data-mission="2">
-        <div class="mnode-number">02</div>
-        <div class="mnode-icon">⬡</div>
-        <div class="mnode-name">Trabaja en equipo</div>
-        <div class="mnode-concept">funciones · reutilización</div>
-        <div class="mnode-stars">
-          <span class="mstar" id="mstar-2-1">★</span>
-          <span class="mstar" id="mstar-2-2">★</span>
-          <span class="mstar" id="mstar-2-3">★</span>
+      <div class="world-card locked" id="wcard-2">
+        <div class="world-bg"></div>
+        <canvas class="world-canvas" id="wcanvas-2"></canvas>
+        <div class="world-lock-overlay">
+          <div class="world-lock-icon">⬡</div>
+          <div class="world-lock-text">Completa Season I</div>
+        </div>
+        <div class="world-content">
+          <div class="world-season">Season II</div>
+          <div class="world-icon-big">⬡</div>
+          <div class="world-name">La Expansión</div>
+          <div class="world-tagline">Funciones · Algoritmos · Construcción</div>
+          <div class="world-desc">Tu código crece en sofisticación. Closures, optimización de rutas, economía avanzada.</div>
+          <div class="world-missions-row"><span>6 misiones</span></div>
         </div>
       </div>
 
-      <div class="mission-connector"></div>
-
-      <div class="mission-node locked" id="mnode-3" data-mission="3">
-        <div class="mnode-number">03</div>
-        <div class="mnode-icon">◇</div>
-        <div class="mnode-name">El algoritmo</div>
-        <div class="mnode-concept">Math · optimización</div>
-        <div class="mnode-stars">
-          <span class="mstar" id="mstar-3-1">★</span>
-          <span class="mstar" id="mstar-3-2">★</span>
-          <span class="mstar" id="mstar-3-3">★</span>
+      <div class="world-card locked" id="wcard-3">
+        <div class="world-bg"></div>
+        <canvas class="world-canvas" id="wcanvas-3"></canvas>
+        <div class="world-lock-overlay">
+          <div class="world-lock-icon">⬟</div>
+          <div class="world-lock-text">Completa Season II</div>
         </div>
-      </div>
-
-      <div class="mission-connector"></div>
-
-      <div class="mission-node locked" id="mnode-4" data-mission="4">
-        <div class="mnode-number">04</div>
-        <div class="mnode-icon">⬡</div>
-        <div class="mnode-name">Expansión</div>
-        <div class="mnode-concept">objetos · construcción</div>
-        <div class="mnode-stars">
-          <span class="mstar" id="mstar-4-1">★</span>
-          <span class="mstar" id="mstar-4-2">★</span>
-          <span class="mstar" id="mstar-4-3">★</span>
-        </div>
-      </div>
-
-      <div class="mission-connector"></div>
-
-      <div class="mission-node locked" id="mnode-5" data-mission="5">
-        <div class="mnode-number">05</div>
-        <div class="mnode-icon">⬟</div>
-        <div class="mnode-name">La gran final</div>
-        <div class="mnode-concept">estrategia completa</div>
-        <div class="mnode-stars">
-          <span class="mstar" id="mstar-5-1">★</span>
-          <span class="mstar" id="mstar-5-2">★</span>
-          <span class="mstar" id="mstar-5-3">★</span>
+        <div class="world-content">
+          <div class="world-season">Season III</div>
+          <div class="world-icon-big">⬟</div>
+          <div class="world-name">La Guerra</div>
+          <div class="world-tagline">Combate · Defensa · Dominio total</div>
+          <div class="world-desc">Ataque, defensa, IA adaptativa. Solo el mejor algoritmo sobrevive la guerra total.</div>
+          <div class="world-missions-row"><span>5 misiones</span></div>
         </div>
       </div>
 
     </div>
 
-    <div id="mission-detail">
-      <div id="mission-detail-inner">
+    <!-- Vista: misiones de la season seleccionada -->
+    <div id="season-view" style="display:none">
+      <div id="season-view-header">
+        <button class="ms-btn" id="btn-back-worlds">← Mundos</button>
+        <span id="season-view-title"></span>
+      </div>
+      <div id="season-mission-grid"></div>
+      <div id="mission-detail">
         <div id="detail-title">—</div>
         <div id="detail-concept"></div>
         <div id="detail-desc"></div>
         <button id="btn-start-mission" disabled>Selecciona una misión</button>
       </div>
     </div>
+
   </div>
   <!-- ═══════════════════════════════════════════════════════════════════== -->
 

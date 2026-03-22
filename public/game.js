@@ -774,6 +774,10 @@ function drawMenuBg() {
       }
     }
   }
+
+  // Juego real corriendo en el fondo (muy sutil)
+  drawGamePreview()
+
   requestAnimationFrame(drawMenuBg)
 }
 
@@ -818,30 +822,50 @@ for (const id in Game.workers) {
 }
 `
   },
+  // ── Season I ─────────────────────────────────────────────
   2: {
-    title: "Trabaja en equipo",
-    concept: "funciones · reutilización de código",
-    desc: "Crea una función findNearest() para reutilizarla con todos tus workers. Aprenderás cómo organizar tu código.",
-    code: null  // se desbloquea al completar misión 1
+    title: "Tu primera función",
+    concept: "function · parámetros · return",
+    desc: "Extrae la lógica de búsqueda en una función findNearest(). Aprende cómo organizar código reutilizable.",
+    code: null
   },
   3: {
-    title: "El algoritmo",
-    concept: "Math · optimización de rutas",
-    desc: "Optimiza la distancia que recorren tus workers. Aprenderás Math.abs, Math.min y cómo medir eficiencia.",
+    title: "El algoritmo óptimo",
+    concept: "Math.abs · optimización · distancia Manhattan",
+    desc: "¿Cuál fuente conviene más? Aprende a comparar y elegir la mejor opción con matemáticas simples.",
     code: null
   },
   4: {
-    title: "Expansión",
-    concept: "objetos · construcción · economía",
-    desc: "Construye extensiones para aumentar la capacidad de tu base. Aprenderás a manejar estado entre ticks.",
+    title: "Memoria de workers",
+    concept: "objetos como estado · persistencia entre ticks",
+    desc: "Asigna fuentes específicas a cada worker para evitar colisiones. Aprende a mantener estado.",
     code: null
   },
   5: {
-    title: "La gran final",
-    concept: "estrategia completa · IA difícil",
-    desc: "Aplica todo lo que aprendiste. La IA juega con su estrategia más agresiva. Solo el mejor código gana.",
+    title: "Expansión económica",
+    concept: "construcción · economía avanzada",
+    desc: "Construye extensiones para escalar tu capacidad. Aprende a tomar decisiones estratégicas con código.",
     code: null
-  }
+  },
+  6: {
+    title: "El fin de la colonia",
+    concept: "estrategia completa · IA agresiva",
+    desc: "Misión final de Season I. La IA juega a máxima velocidad. Demuestra que aprendiste todo.",
+    code: null
+  },
+  // ── Season II ────────────────────────────────────────────
+  7:  { title: "Exploración", concept: "closures · alcance de variables", desc: "Aprende closures creando funciones que recuerdan el contexto.", code: null },
+  8:  { title: "Rutas eficientes", concept: "arrays · sort · algoritmos", desc: "Ordena fuentes por distancia. Aprende a manipular arrays.", code: null },
+  9:  { title: "Prioridades", concept: "condicionales complejas · lógica", desc: "Decide cuándo depositar vs cuándo seguir cosechando.", code: null },
+  10: { title: "División del trabajo", concept: "modularidad · responsabilidad", desc: "Especializa workers: unos cosechan, otros construyen.", code: null },
+  11: { title: "La economía perfecta", concept: "optimización · métricas", desc: "Maximiza energía por tick. Aprende a medir eficiencia.", code: null },
+  12: { title: "Dominio total", concept: "Season II completa", desc: "Integra todo lo de Season II. Derrota la IA adaptativa.", code: null },
+  // ── Season III ───────────────────────────────────────────
+  13: { title: "Primera sangre", concept: "combate · salud · evasión", desc: "Aprende a esquivar workers enemigos y proteger los tuyos.", code: null },
+  14: { title: "Defensa perimetral", concept: "posicionamiento · zonas", desc: "Crea una zona de defensa alrededor de tu base.", code: null },
+  15: { title: "El contraataque", concept: "agresividad · timing", desc: "Aprende cuándo atacar para maximizar el daño a la IA.", code: null },
+  16: { title: "Guerrilla", concept: "micro-management · reacciones", desc: "Control individual de unidades en situaciones críticas.", code: null },
+  17: { title: "La guerra total", concept: "estrategia completa · Season III", desc: "El desafío definitivo. IA en su modo más difícil. Solo el mejor código gana.", code: null }
 }
 
 // Progreso guardado en localStorage
@@ -895,6 +919,83 @@ for (const id in Game.workers) {
 }
 `
 
+// ── Juego en el fondo del menú ───────────────────────────
+function drawGamePreview() {
+  const snap = currSnapshot
+  if (!snap || !snap.entities) return
+
+  const w = menuBgCanvas.width, h = menuBgCanvas.height
+  const gW = snap.mapWidth * CELL, gH = snap.mapHeight * CELL
+  const scale = Math.min(w * 0.85 / gW, h * 0.85 / gH)
+  const ox = (w - gW * scale) / 2
+  const oy = (h - gH * scale) / 2
+
+  mctx.save()
+
+  // Grid sutil del mapa
+  mctx.strokeStyle = "rgba(0,170,255,0.04)"
+  mctx.lineWidth = 0.5
+  for (let row = 0; row <= snap.mapHeight; row++) {
+    mctx.beginPath()
+    mctx.moveTo(ox, oy + row * CELL * scale)
+    mctx.lineTo(ox + gW * scale, oy + row * CELL * scale)
+    mctx.stroke()
+  }
+  for (let col = 0; col <= snap.mapWidth; col++) {
+    mctx.beginPath()
+    mctx.moveTo(ox + col * CELL * scale, oy)
+    mctx.lineTo(ox + col * CELL * scale, oy + gH * scale)
+    mctx.stroke()
+  }
+
+  const now = Date.now()
+  for (const e of snap.entities) {
+    const cx = ox + (e.x + 0.5) * CELL * scale
+    const cy = oy + (e.y + 0.5) * CELL * scale
+    const r  = CELL * scale * 0.38
+
+    mctx.shadowBlur = 0
+    if (e.type === "worker") {
+      const pulse = 0.6 + 0.4 * Math.sin(now * 0.004 + e.id * 0.8)
+      mctx.globalAlpha = 0.35 * pulse
+      mctx.beginPath(); mctx.arc(cx, cy, r, 0, Math.PI * 2)
+      mctx.fillStyle = "#00aaff"
+      mctx.shadowColor = "#00aaff"; mctx.shadowBlur = 6
+      mctx.fill()
+    } else if (e.type === "ai-worker") {
+      const pulse = 0.6 + 0.4 * Math.sin(now * 0.004 + e.id * 1.2)
+      mctx.globalAlpha = 0.3 * pulse
+      mctx.beginPath(); mctx.arc(cx, cy, r, 0, Math.PI * 2)
+      mctx.fillStyle = "#ff7700"
+      mctx.shadowColor = "#ff7700"; mctx.shadowBlur = 6
+      mctx.fill()
+    } else if (e.type === "base") {
+      mctx.globalAlpha = 0.25
+      mctx.strokeStyle = "#00aaff"; mctx.lineWidth = 1.5
+      mctx.shadowColor = "#00aaff"; mctx.shadowBlur = 8
+      mctx.strokeRect(cx - r, cy - r, r * 2, r * 2)
+    } else if (e.type === "ai-base") {
+      mctx.globalAlpha = 0.22
+      mctx.strokeStyle = "#ff4433"; mctx.lineWidth = 1.5
+      mctx.shadowColor = "#ff4433"; mctx.shadowBlur = 8
+      mctx.strokeRect(cx - r, cy - r, r * 2, r * 2)
+    } else if (e.type === "source") {
+      const pulse = 0.4 + 0.6 * Math.sin(now * 0.003 + e.x + e.y)
+      mctx.globalAlpha = 0.2 * pulse
+      mctx.beginPath()
+      mctx.moveTo(cx, cy - r); mctx.lineTo(cx + r, cy)
+      mctx.lineTo(cx, cy + r); mctx.lineTo(cx - r, cy)
+      mctx.closePath()
+      mctx.fillStyle = "#ffcc00"
+      mctx.shadowColor = "#ffcc00"; mctx.shadowBlur = 5
+      mctx.fill()
+    }
+  }
+
+  mctx.shadowBlur = 0; mctx.globalAlpha = 1
+  mctx.restore()
+}
+
 // ── Cerrar menú principal ─────────────────────────────────
 function hideMenu(cb) {
   menuActive = false
@@ -904,64 +1005,164 @@ function hideMenu(cb) {
   setTimeout(() => { menuScreen.style.display = "none"; cb && cb() }, 750)
 }
 
-// ── Pantalla de selección de misiones ─────────────────────
-let missionScreen    = null
-let selectedMission  = null
+// ── Mundo → misiones ─────────────────────────────────────
+const WORLDS = {
+  1: { name: "La Colonia", season: "Season I",   color: "#00aaff", missions: [1,2,3,4,5,6] },
+  2: { name: "La Expansión", season: "Season II", color: "#44ccaa", missions: [7,8,9,10,11,12] },
+  3: { name: "La Guerra",  season: "Season III", color: "#ff5544", missions: [13,14,15,16,17] }
+}
+
+let selectedMission = null
+let selectedWorld   = null
 
 function openMissionScreen() {
-  missionScreen = document.getElementById("mission-screen")
-  missionScreen.style.display = "flex"
-  refreshMissionNodes()
+  document.getElementById("mission-screen").style.display = "flex"
+  document.getElementById("world-view").style.display     = "flex"
+  document.getElementById("season-view").style.display    = "none"
+  refreshWorldCards()
 }
 
-function refreshMissionNodes() {
+function refreshWorldCards() {
   const progress = getMissionProgress()
-  let totalDone  = 0
+  let total = 0
+  for (const id of Object.keys(MISSIONS)) if (progress[id]) total++
+  document.getElementById("missions-done").textContent = total
 
-  for (let i = 1; i <= 5; i++) {
-    const node    = document.getElementById(`mnode-${i}`)
-    const stars   = progress[i] || 0
-    if (!node) continue
+  // Season 1 siempre desbloqueada; S2 si completó todas S1; S3 si completó todas S2
+  const s1done = WORLDS[1].missions.every(id => progress[id] > 0)
+  const s2done = WORLDS[2].missions.every(id => progress[id] > 0)
 
-    if (stars > 0) totalDone++
+  document.getElementById("wcard-2").classList.toggle("locked", !s1done)
+  document.getElementById("wcard-3").classList.toggle("locked", !s2done)
 
-    // Estado del nodo
-    node.classList.remove("locked", "completed")
-    if (i === 1 || progress[i - 1]) {
-      node.classList.add("completed")   // desbloqueado
-    } else {
-      node.classList.add("locked")
-    }
-
-    // Estrellas
-    for (let s = 1; s <= 3; s++) {
-      const star = document.getElementById(`mstar-${i}-${s}`)
-      if (star) star.classList.toggle("earned", s <= stars)
-    }
+  // Estrellas por mundo
+  for (const [wid, world] of Object.entries(WORLDS)) {
+    const container = document.getElementById(`wstars-${wid}`)
+    if (!container) continue
+    const total = world.missions.reduce((acc, mid) => acc + (progress[mid] || 0), 0)
+    const max   = world.missions.length * 3
+    container.innerHTML = Array.from({ length: world.missions.length },
+      (_, i) => `<span class="wstar ${(i + 1) * 3 <= total ? "earned" : ""}">★</span>`
+    ).join("")
   }
 
-  document.getElementById("missions-done").textContent = totalDone
+  // Clicks en cards de mundos
+  for (let wid = 1; wid <= 3; wid++) {
+    const card = document.getElementById(`wcard-${wid}`)
+    if (!card || card.classList.contains("locked")) continue
+    card.onclick = () => openSeasonView(wid)
+  }
 
-  // Eventos de click en nodos
-  for (let i = 1; i <= 5; i++) {
-    const node = document.getElementById(`mnode-${i}`)
-    if (!node || node.classList.contains("locked")) continue
-    node.onclick = () => selectMissionNode(i)
+  // Animar world canvases
+  for (let wid = 1; wid <= 3; wid++) drawWorldCanvas(wid)
+}
+
+function drawWorldCanvas(wid) {
+  const canvas = document.getElementById(`wcanvas-${wid}`)
+  if (!canvas) return
+  const w = canvas.offsetWidth, h = canvas.offsetHeight
+  canvas.width = w; canvas.height = h
+
+  const snap = currSnapshot
+  if (!snap || !snap.entities) return
+
+  const ctx2 = canvas.getContext("2d")
+  const gW = snap.mapWidth * CELL, gH = snap.mapHeight * CELL
+  const scale = Math.min(w * 0.9 / gW, h * 0.9 / gH)
+  const ox = (w - gW * scale) / 2, oy = (h - gH * scale) / 2
+  const now = Date.now()
+
+  ctx2.clearRect(0, 0, w, h)
+  for (const e of snap.entities) {
+    const cx = ox + (e.x + 0.5) * CELL * scale
+    const cy = oy + (e.y + 0.5) * CELL * scale
+    const r  = CELL * scale * 0.3
+
+    if (e.type === "worker") {
+      const pulse = 0.5 + 0.5 * Math.sin(now * 0.005 + e.id)
+      ctx2.globalAlpha = 0.5 * pulse
+      ctx2.beginPath(); ctx2.arc(cx, cy, r, 0, Math.PI * 2)
+      ctx2.fillStyle = "#00aaff"; ctx2.shadowColor = "#00aaff"; ctx2.shadowBlur = 4
+      ctx2.fill()
+    } else if (e.type === "ai-worker") {
+      const pulse = 0.5 + 0.5 * Math.sin(now * 0.005 + e.id)
+      ctx2.globalAlpha = 0.45 * pulse
+      ctx2.beginPath(); ctx2.arc(cx, cy, r, 0, Math.PI * 2)
+      ctx2.fillStyle = "#ff7700"; ctx2.shadowColor = "#ff7700"; ctx2.shadowBlur = 4
+      ctx2.fill()
+    } else if (e.type === "source") {
+      const pulse = 0.3 + 0.7 * Math.sin(now * 0.004 + e.x)
+      ctx2.globalAlpha = 0.35 * pulse
+      ctx2.beginPath(); ctx2.arc(cx, cy, r * 0.7, 0, Math.PI * 2)
+      ctx2.fillStyle = "#ffcc00"; ctx2.fill()
+    }
+    ctx2.shadowBlur = 0; ctx2.globalAlpha = 1
+  }
+  // Redibujar ~every 200ms while world view is open
+  if (document.getElementById("world-view").style.display !== "none") {
+    setTimeout(() => drawWorldCanvas(wid), 180)
   }
 }
 
-function selectMissionNode(id) {
+function openSeasonView(wid) {
+  selectedWorld = wid
+  const world = WORLDS[wid]
+
+  document.getElementById("world-view").style.display  = "none"
+  document.getElementById("season-view").style.display = "flex"
+
+  const titleEl = document.getElementById("season-view-title")
+  titleEl.textContent = world.season + " — " + world.name
+  titleEl.style.color = world.color
+
+  buildMissionGrid(wid)
+}
+
+function buildMissionGrid(wid) {
+  const progress  = getMissionProgress()
+  const world     = WORLDS[wid]
+  const grid      = document.getElementById("season-mission-grid")
+  grid.innerHTML  = ""
+  selectedMission = null
+
+  document.getElementById("detail-title").textContent   = "—"
+  document.getElementById("detail-concept").textContent = ""
+  document.getElementById("detail-desc").textContent    = ""
+  document.getElementById("btn-start-mission").disabled = true
+  document.getElementById("btn-start-mission").textContent = "Selecciona una misión"
+
+  world.missions.forEach((mid, idx) => {
+    const m       = MISSIONS[mid]
+    const stars   = progress[mid] || 0
+    const isLocked = mid > 1 && !progress[mid - 1] && !progress[world.missions[0]]
+    const unlocked = mid === world.missions[0] || progress[mid - 1] > 0
+
+    const node = document.createElement("div")
+    node.className = `smnode ${unlocked ? "" : "locked"}`
+    node.style.animationDelay = `${idx * 0.06}s`
+    node.innerHTML = `
+      <div class="smn-num">${String(mid).padStart(2,"0")}</div>
+      <div class="smn-name">${m.title}</div>
+      <div class="smn-concept">${m.concept}</div>
+      <div class="smn-stars">
+        ${"★★★".split("").map((s,i) => `<span class="smstar ${i < stars ? "earned" : ""}">${s}</span>`).join("")}
+      </div>`
+
+    if (unlocked) node.onclick = () => selectMissionInGrid(mid, node)
+    grid.appendChild(node)
+  })
+}
+
+function selectMissionInGrid(id, nodeEl) {
   selectedMission = id
   const m = MISSIONS[id]
 
-  // Quitar active de todos
-  document.querySelectorAll(".mission-node").forEach(n => n.classList.remove("active"))
-  document.getElementById(`mnode-${id}`).classList.add("active")
+  document.querySelectorAll(".smnode").forEach(n => n.classList.remove("active"))
+  nodeEl.classList.add("active")
 
   document.getElementById("detail-title").textContent   = m.title
   document.getElementById("detail-concept").textContent = m.concept
   document.getElementById("detail-desc").textContent    = m.desc
-
   const btn = document.getElementById("btn-start-mission")
   btn.disabled    = false
   btn.textContent = `▶ Iniciar misión ${id}`
@@ -981,10 +1182,16 @@ document.getElementById("btn-back-menu").addEventListener("click", () => {
   drawMenuBg()
 })
 
+document.getElementById("btn-back-worlds").addEventListener("click", () => {
+  document.getElementById("season-view").style.display = "none"
+  document.getElementById("world-view").style.display  = "flex"
+  refreshWorldCards()
+})
+
 function startMission(id) {
   document.getElementById("mission-screen").style.display = "none"
   const m = MISSIONS[id]
-  const code = m.code || MISSION_1
+  const code = m.code || MISSIONS[1].code
   codeEditor.value = code
   localStorage.setItem("codestrike_script", code)
   setTimeout(() => btnRun.click(), 100)
@@ -1018,7 +1225,7 @@ document.addEventListener("keydown", e => {
 })
 
 window.addEventListener("resize", () => {
-  if (menuActive) initMenuBg()
+  if (menuActive) { initMenuBg(); drawMenuBg() }
 })
 
 initMenuBg()
