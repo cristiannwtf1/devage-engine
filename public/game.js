@@ -648,8 +648,16 @@ function updatePanel(snap) {
     banner.className    = snap.winner === "player" ? "player" : "ai"
     banner.textContent  = snap.winner === "player" ? "⬡ VICTORIA" : "◈ DERROTA"
     banner.style.display = "block"
-    if (snap.winner === "player") addEvent("¡VICTORIA! Base llena", "ev-player", snap.tick)
-    else addEvent("DERROTA — IA llenó su base", "ev-ai", snap.tick)
+    if (snap.winner === "player") {
+      addEvent("¡VICTORIA! Base llena", "ev-player", snap.tick)
+      // Guardar progreso si estamos en campaña
+      if (currentMode === "campaign" && selectedMission) {
+        const stars = snap.winTick < 300 ? 3 : snap.winTick < 500 ? 2 : 1
+        saveMissionProgress(selectedMission, stars)
+      }
+    } else {
+      addEvent("DERROTA — IA llenó su base", "ev-ai", snap.tick)
+    }
   }
 }
 
@@ -769,6 +777,83 @@ function drawMenuBg() {
   requestAnimationFrame(drawMenuBg)
 }
 
+// ── Datos de las misiones ────────────────────────────────
+const MISSIONS = {
+  1: {
+    title: "Tu primer ejército",
+    concept: "if · else · for...in · variables",
+    desc: "Controla tus workers para que recolecten energía y la lleven a tu base. Aprenderás los bloques fundamentales de JavaScript.",
+    code: `// ═══════════════════════════════════════════════
+//  CODESTRIKE · MISIÓN 1 — "Tu primer ejército"
+// ═══════════════════════════════════════════════
+//  OBJETIVO: Llena la base al 100% antes que la IA.
+//
+//  CONCEPTOS JS en esta misión:
+//    · Variables (const, let)
+//    · Condicionales (if / else)
+//    · Bucles (for...in)
+// ═══════════════════════════════════════════════
+
+for (const id in Game.workers) {
+  const w = Game.workers[id]   // cada worker
+
+  if (w.energy < w.energyCapacity) {
+    // Busca la fuente de energía más cercana
+    let nearest = null
+    let minDist = Infinity
+
+    for (const sid in Game.sources) {
+      const s = Game.sources[sid]
+      if (s.energy > 0) {
+        const d = Math.abs(w.x - s.x) + Math.abs(w.y - s.y)
+        if (d < minDist) { minDist = d; nearest = s }
+      }
+    }
+
+    if (nearest) w.harvest(nearest.id)   // ir a cosechar
+
+  } else {
+    w.transfer(Game.base.id)   // depositar en base
+  }
+}
+`
+  },
+  2: {
+    title: "Trabaja en equipo",
+    concept: "funciones · reutilización de código",
+    desc: "Crea una función findNearest() para reutilizarla con todos tus workers. Aprenderás cómo organizar tu código.",
+    code: null  // se desbloquea al completar misión 1
+  },
+  3: {
+    title: "El algoritmo",
+    concept: "Math · optimización de rutas",
+    desc: "Optimiza la distancia que recorren tus workers. Aprenderás Math.abs, Math.min y cómo medir eficiencia.",
+    code: null
+  },
+  4: {
+    title: "Expansión",
+    concept: "objetos · construcción · economía",
+    desc: "Construye extensiones para aumentar la capacidad de tu base. Aprenderás a manejar estado entre ticks.",
+    code: null
+  },
+  5: {
+    title: "La gran final",
+    concept: "estrategia completa · IA difícil",
+    desc: "Aplica todo lo que aprendiste. La IA juega con su estrategia más agresiva. Solo el mejor código gana.",
+    code: null
+  }
+}
+
+// Progreso guardado en localStorage
+function getMissionProgress() {
+  try { return JSON.parse(localStorage.getItem("cs_progress") || "{}") } catch { return {} }
+}
+function saveMissionProgress(missionId, stars) {
+  const p = getMissionProgress()
+  if (!p[missionId] || p[missionId] < stars) p[missionId] = stars
+  localStorage.setItem("cs_progress", JSON.stringify(p))
+}
+
 // ── Template de la Misión 1 ───────────────────────────────
 const MISSION_1 = `// ═══════════════════════════════════════════════
 //  CODESTRIKE · MISIÓN 1 — "Tu primer ejército"
@@ -810,29 +895,122 @@ for (const id in Game.workers) {
 }
 `
 
-// ── Seleccionar modo y cerrar el menú ─────────────────────
-function selectMode(mode) {
+// ── Cerrar menú principal ─────────────────────────────────
+function hideMenu(cb) {
   menuActive = false
-  menuScreen.style.transition = "opacity 0.8s ease"
-  menuScreen.style.opacity    = "0"
+  menuScreen.style.transition    = "opacity 0.7s ease"
+  menuScreen.style.opacity       = "0"
   menuScreen.style.pointerEvents = "none"
-  setTimeout(() => { menuScreen.style.display = "none" }, 850)
+  setTimeout(() => { menuScreen.style.display = "none"; cb && cb() }, 750)
+}
 
-  if (mode === "campaign") {
-    codeEditor.value = MISSION_1
-    localStorage.setItem("codestrike_script", MISSION_1)
-    // Auto-ejecuta el script después de que el menú desaparece
-    setTimeout(() => btnRun.click(), 950)
+// ── Pantalla de selección de misiones ─────────────────────
+let missionScreen    = null
+let selectedMission  = null
+
+function openMissionScreen() {
+  missionScreen = document.getElementById("mission-screen")
+  missionScreen.style.display = "flex"
+  refreshMissionNodes()
+}
+
+function refreshMissionNodes() {
+  const progress = getMissionProgress()
+  let totalDone  = 0
+
+  for (let i = 1; i <= 5; i++) {
+    const node    = document.getElementById(`mnode-${i}`)
+    const stars   = progress[i] || 0
+    if (!node) continue
+
+    if (stars > 0) totalDone++
+
+    // Estado del nodo
+    node.classList.remove("locked", "completed")
+    if (i === 1 || progress[i - 1]) {
+      node.classList.add("completed")   // desbloqueado
+    } else {
+      node.classList.add("locked")
+    }
+
+    // Estrellas
+    for (let s = 1; s <= 3; s++) {
+      const star = document.getElementById(`mstar-${i}-${s}`)
+      if (star) star.classList.toggle("earned", s <= stars)
+    }
+  }
+
+  document.getElementById("missions-done").textContent = totalDone
+
+  // Eventos de click en nodos
+  for (let i = 1; i <= 5; i++) {
+    const node = document.getElementById(`mnode-${i}`)
+    if (!node || node.classList.contains("locked")) continue
+    node.onclick = () => selectMissionNode(i)
   }
 }
 
-document.getElementById("card-campaign").addEventListener("click", () => selectMode("campaign"))
-document.getElementById("card-vs-ai").addEventListener("click",    () => selectMode("vs-ai"))
+function selectMissionNode(id) {
+  selectedMission = id
+  const m = MISSIONS[id]
+
+  // Quitar active de todos
+  document.querySelectorAll(".mission-node").forEach(n => n.classList.remove("active"))
+  document.getElementById(`mnode-${id}`).classList.add("active")
+
+  document.getElementById("detail-title").textContent   = m.title
+  document.getElementById("detail-concept").textContent = m.concept
+  document.getElementById("detail-desc").textContent    = m.desc
+
+  const btn = document.getElementById("btn-start-mission")
+  btn.disabled    = false
+  btn.textContent = `▶ Iniciar misión ${id}`
+}
+
+document.getElementById("btn-start-mission").addEventListener("click", () => {
+  if (!selectedMission) return
+  startMission(selectedMission)
+})
+
+document.getElementById("btn-back-menu").addEventListener("click", () => {
+  document.getElementById("mission-screen").style.display = "none"
+  menuScreen.style.display   = "flex"
+  menuScreen.style.opacity   = "1"
+  menuScreen.style.pointerEvents = "auto"
+  menuActive = true
+  drawMenuBg()
+})
+
+function startMission(id) {
+  document.getElementById("mission-screen").style.display = "none"
+  const m = MISSIONS[id]
+  const code = m.code || MISSION_1
+  codeEditor.value = code
+  localStorage.setItem("codestrike_script", code)
+  setTimeout(() => btnRun.click(), 100)
+}
+
+// ── Seleccionar modo ──────────────────────────────────────
+let currentMode = null
+
+function selectMode(mode) {
+  currentMode = mode
+  if (mode === "campaign") {
+    hideMenu(() => openMissionScreen())
+  } else {
+    hideMenu(null)
+  }
+}
+
+document.getElementById("card-campaign").addEventListener("click",  () => selectMode("campaign"))
+document.getElementById("card-vs-ai").addEventListener("click",     () => selectMode("vs-ai"))
+document.getElementById("card-sandbox").addEventListener("click",   () => selectMode("sandbox"))
 
 document.addEventListener("keydown", e => {
   if (!menuActive) return
   if (e.key === "1") selectMode("campaign")
   if (e.key === "2") selectMode("vs-ai")
+  if (e.key === "3") selectMode("sandbox")
   if (e.key === "Enter") {
     const focused = document.activeElement
     if (focused && focused.classList.contains("menu-card")) focused.click()
