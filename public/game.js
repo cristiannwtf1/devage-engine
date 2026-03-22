@@ -332,6 +332,23 @@ function drawBase(px, py, cx, cy, isAI) {
     ctx.stroke()
   })
 
+  // Arco de progreso hacia la victoria
+  const baseData = isAI ? currSnapshot?.aiBase : currSnapshot?.base
+  if (baseData && baseData.capacity > 0) {
+    const prog = baseData.energy / baseData.capacity
+    if (prog > 0.01) {
+      ctx.globalAlpha = 0.65
+      ctx.shadowColor = glow
+      ctx.shadowBlur  = 5
+      ctx.strokeStyle = glow
+      ctx.lineWidth   = 2
+      ctx.beginPath()
+      ctx.arc(cx, cy, CELL * 0.47, -Math.PI / 2, -Math.PI / 2 + prog * Math.PI * 2)
+      ctx.stroke()
+      ctx.globalAlpha = 1
+    }
+  }
+
   // Núcleo central pulsante
   ctx.fillStyle  = glow
   ctx.shadowBlur = 6 * pulse
@@ -461,7 +478,7 @@ function drawExtension(px, py, cx, cy, isAI) {
   ctx.font = `${Math.floor(CELL * 0.44)}px 'Courier New'`
   ctx.textAlign    = "center"
   ctx.textBaseline = "middle"
-  ctx.fillText(isAI ? "X" : "E", cx, cy + 1)
+  ctx.fillText(isAI ? "\u2297" : "\u2295", cx, cy + 1)
 }
 
 // ─── HISTORIAL DE ENERGÍA (sparklines) ───────────────────
@@ -662,6 +679,22 @@ function updatePanel(snap) {
   prevAiWorkers   = snap.aiWorkerCount ?? 0
   prevAiExtCount  = snap.aiExtensions  ?? 0
 
+  // ── Panel misión: progreso en vivo + pista automática ────
+  if (currentMode === "campaign" && activeMissionId && snap.base) {
+    const pct = Math.round(snap.base.energy / snap.base.capacity * 100)
+    document.getElementById("mp-base-pct").textContent          = `${pct}%`
+    document.getElementById("mp-progress-bar-fill").style.width = `${pct}%`
+
+    const hint = MISSIONS[activeMissionId]?.hint
+    if (hint && snap.tick > 60 && pct < 10) {
+      const hintEl = document.getElementById("mp-hint")
+      if (hintEl.style.display === "none") {
+        document.getElementById("mp-hint-text").textContent = hint
+        hintEl.style.display = "block"
+      }
+    }
+  }
+
   // Victoria
   const banner = document.getElementById("victory-banner")
   if (snap.winner && banner.style.display === "none") {
@@ -839,6 +872,7 @@ const MISSIONS = {
       "Llena la base al 100% antes que la IA",
       "Aprende: variables, if/else, for...in"
     ],
+    hint: "Usa for (const id in Game.workers) para iterar. Si w.energy < w.energyCapacity → w.harvest(fuenteId). Si está lleno → w.transfer(Game.base.id).",
     code: `// ═══════════════════════════════════════════════
 //  CODESTRIKE · MISIÓN 1 — "Tu primer ejército"
 // ═══════════════════════════════════════════════
@@ -912,6 +946,7 @@ for (const id in Game.workers) {
       "Llena la base antes que la IA",
       "Aprende: function, parámetros, return"
     ],
+    hint: "Crea function findNearest(worker, sources) { } antes del bucle. Itera las fuentes, calcula Math.abs(w.x-s.x)+Math.abs(w.y-s.y) y retorna la más cercana.",
     code: `// ═══════════════════════════════════════════════
 //  CODESTRIKE · MISIÓN 2 — "Tu primera función"
 // ═══════════════════════════════════════════════
@@ -984,6 +1019,7 @@ for (const id in Game.workers) {
       "Supera a la IA en velocidad de acumulación",
       "Aprende: Math.abs, optimización, scoring"
     ],
+    hint: "Puntuación = source.energy / (distancia + 1). Mayor puntuación = mejor fuente. Elige el máximo en vez del mínimo de distancia.",
     code: `// ═══════════════════════════════════════════════
 //  CODESTRIKE · MISIÓN 3 — "El algoritmo óptimo"
 // ═══════════════════════════════════════════════
@@ -1064,6 +1100,7 @@ for (const id in Game.workers) {
       "Usa Game.memory para guardar las asignaciones",
       "Aprende: persistencia de estado, objetos, Set"
     ],
+    hint: "Las variables locales se reinician cada tick. Usa Game.memory.asignaciones = {} para guardar qué fuente tiene cada worker entre ticks.",
     code: `// ═══════════════════════════════════════════════
 //  OBJETIVO: Llena la base sin que los workers
 //            se "pisen" entre sí.
@@ -1144,6 +1181,7 @@ for (const id in Game.workers) {
       "Usa Game.base.energy / capacity para tomar decisiones",
       "Demuestra que dominaste Season I completo"
     ],
+    hint: "const ratio = Game.base.energy / Game.base.capacity. Combina todo lo aprendido: findNearest, scoring, Game.memory. La IA es más rápida — necesitas ser más eficiente desde el tick 1.",
     code: `// ═══════════════════════════════════════════════
 //  CODESTRIKE · MISIÓN 5 — "Expansión económica"
 // ═══════════════════════════════════════════════
@@ -1704,7 +1742,10 @@ function getMissionDifficulty(id) {
   return MISSION_DIFFICULTY[id] || "expert"
 }
 
+let activeMissionId = null
+
 function showMissionPanel(id) {
+  activeMissionId = id
   const m = MISSIONS[id]
   if (!m) return
   const panel = document.getElementById("mission-panel")
@@ -1715,6 +1756,10 @@ function showMissionPanel(id) {
   objDiv.innerHTML = (m.objectives || []).map(o =>
     `<div class="mp-obj"><span class="mp-obj-dot">◦</span>${o}</div>`
   ).join("")
+  // Reset progreso y pista
+  document.getElementById("mp-base-pct").textContent       = "0%"
+  document.getElementById("mp-progress-bar-fill").style.width = "0%"
+  document.getElementById("mp-hint").style.display         = "none"
   panel.style.display = "block"
 }
 

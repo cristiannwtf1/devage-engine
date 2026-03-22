@@ -278,6 +278,38 @@
     }
     .mp-obj-dot { color: var(--cyan-d); flex-shrink: 0; }
 
+    /* Barra de progreso de base dentro del panel misión */
+    #mp-progress { margin-top: 8px; }
+    #mp-progress-label {
+      display: flex; justify-content: space-between;
+      font-size: 8px; letter-spacing: 2px; color: var(--text-d); margin-bottom: 3px;
+    }
+    #mp-base-pct { color: var(--cyan); }
+    #mp-progress-bar-bg {
+      height: 3px; background: var(--bg);
+      border: 1px solid var(--border); overflow: hidden;
+    }
+    #mp-progress-bar-fill {
+      height: 100%; width: 0%;
+      background: linear-gradient(90deg, #003d80, #00aaff);
+      box-shadow: 0 0 6px rgba(0,170,255,0.5);
+      transition: width 0.3s;
+    }
+
+    /* Pista automática */
+    #mp-hint {
+      display: none;
+      margin-top: 8px; padding: 6px 8px;
+      background: rgba(255,200,0,0.03);
+      border: 1px solid rgba(255,200,0,0.12);
+      border-left: 2px solid #664400;
+    }
+    #mp-hint-label {
+      font-size: 8px; letter-spacing: 2px; color: #886600;
+      text-transform: uppercase; margin-bottom: 4px;
+    }
+    #mp-hint-text { font-size: 9px; color: #886622; line-height: 1.6; }
+
     /* ── EDITOR ── */
     #editor-panel {
       border-top: 1px solid var(--border2);
@@ -1185,6 +1217,19 @@
         <div id="mp-title">—</div>
         <div id="mp-concept"></div>
         <div id="mp-objectives"></div>
+        <div id="mp-progress">
+          <div id="mp-progress-label">
+            <span>BASE</span>
+            <span id="mp-base-pct">0%</span>
+          </div>
+          <div id="mp-progress-bar-bg">
+            <div id="mp-progress-bar-fill"></div>
+          </div>
+        </div>
+        <div id="mp-hint">
+          <div id="mp-hint-label">⚑ PISTA</div>
+          <div id="mp-hint-text"></div>
+        </div>
       </div>
 
       <div id="panel-top">
