@@ -4,6 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "dev": "npx ts-node src/server.ts",
+    "stop": "node -e \"const fs=require('fs'); const pid=parseInt(fs.readFileSync('.server.pid','utf8')); process.kill(pid); fs.unlinkSync('.server.pid'); console.log('Servidor detenido.')\" 2>/dev/null || echo 'No hay servidor corriendo.'",
+    "build": "npx tsc",
+    "start": "node dist/server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -11,7 +15,13 @@
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {
+    "@types/express": "^5.0.6",
     "@types/node": "^25.3.0",
+    "@types/ws": "^8.18.1",
     "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "ws": "^8.20.0"
   }
 }

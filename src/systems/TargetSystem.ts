@@ -5,139 +5,91 @@ export class TargetSystem {
 
   public update(gameState: GameState): void {
 
-  for (const [entityId, behavior] of gameState.behaviors) {
+    for (const [entityId, behavior] of gameState.behaviors) {
 
-    const position = gameState.positions.get(entityId)
-    const storage = gameState.energyStorages.get(entityId)
+      const position = gameState.positions.get(entityId)
+      const storage  = gameState.energyStorages.get(entityId)
+      if (!position || !storage) continue
 
-    if (!position || !storage) continue
+      const currentTarget = gameState.targets.get(entityId)
 
-    const currentTarget = gameState.targets.get(entityId)
-
-    // 🧠 Validar si el target sigue siendo válido
-    if (currentTarget && behavior.state === "harvesting") {
-      // Buscar si existe source en esa posición
-      let sourceStillValid = false
-      for (const [sourceId, source] of gameState.sources) {
-        const sourcePosition = gameState.positions.get(sourceId)
-        if (!sourcePosition) continue
-        if (
-          sourcePosition.x === currentTarget.targetX &&
-          sourcePosition.y === currentTarget.targetY &&
-          source.energy > 0
-        ) {
-          sourceStillValid = true
-          break
+      // ── Source del target se agotó → soltar y buscar otro ────
+      if (currentTarget && behavior.state === "harvesting") {
+        if (!this.sourceExistsAt(gameState, currentTarget.targetX, currentTarget.targetY)) {
+          gameState.targets.delete(entityId)
+          gameState.paths.delete(entityId)
         }
       }
-      if (!sourceStillValid) {
-        // Liberar claim antes de borrar target
-        for (const [sourceId, claim] of gameState.sourceClaims) {
-          if (claim.currentClaimers.has(entityId)) {
-            claim.currentClaimers.delete(entityId)
-          }
+
+      // ── Ya tiene target válido → no reasignar ─────────────────
+      if (gameState.targets.has(entityId)) continue
+
+      // ── Asignar nuevo target según estado ─────────────────────
+      if (behavior.state === "harvesting") {
+        const src = this.findBestSource(gameState, position.x, position.y, entityId)
+        if (src) {
+          gameState.targets.set(entityId, { targetX: src.x, targetY: src.y })
         }
-        gameState.targets.delete(entityId)
-        gameState.paths.delete(entityId)
+
+      } else if (behavior.state === "returning") {
+        if (gameState.baseId === null) continue
+        const basePos = gameState.positions.get(gameState.baseId)
+        if (!basePos) continue
+        gameState.targets.set(entityId, { targetX: basePos.x, targetY: basePos.y })
       }
-    }
-
-    // 🔥 Si tiene target y ya llegó → limpiar
-    if (currentTarget) {
-      if (
-        position.x === currentTarget.targetX &&
-        position.y === currentTarget.targetY
-      ) {
-        // Liberar claim antes de borrar target
-        for (const [sourceId, claim] of gameState.sourceClaims) {
-          if (claim.currentClaimers.has(entityId)) {
-            claim.currentClaimers.delete(entityId)
-          }
-        }
-        gameState.targets.delete(entityId)
-        gameState.paths.delete(entityId)
-      }
-    }
-
-    // 🔥 Si todavía tiene target válido → no reasignar
-    if (gameState.targets.has(entityId)) continue
-
-    // 🔥 Asignar nuevo target según estado
-    if (behavior.state === "harvesting") {
-      const sourceData = this.findNearestSource(
-        gameState,
-        position.x,
-        position.y,
-        entityId
-      )
-
-      if (sourceData) {
-        // Registrar claim
-        const claim = gameState.sourceClaims.get(sourceData.sourceId)
-        claim?.currentClaimers.add(entityId)
-
-        gameState.targets.set(entityId, {
-          targetX: sourceData.x,
-          targetY: sourceData.y
-        })
-      }
-
-    } else if (behavior.state === "returning") {
-
-      if (gameState.baseId === null) continue
-      const basePosition = gameState.positions.get(gameState.baseId)
-      if (!basePosition) continue
-
-      gameState.targets.set(entityId, {
-        targetX: basePosition.x,
-        targetY: basePosition.y
-      })
     }
   }
-}
 
-  private findNearestSource(
+  // Fuente sin target apuntando a ella, con energía, y path accesible
+  private findBestSource(
     gameState: GameState,
     startX: number,
     startY: number,
-    workerId: number
-  ): { x: number, y: number, sourceId: number } | null {
+    selfId: number
+  ): { x: number; y: number } | null {
 
-    let closest: { x: number, y: number, sourceId: number } | null = null
-    let minDistance = Infinity
+    // Sources ya ocupadas: otro worker las tiene como target O está físicamente encima
+    const occupied = new Set<string>()
+    for (const [wId, target] of gameState.targets) {
+      if (wId === selfId) continue
+      occupied.add(`${target.targetX},${target.targetY}`)
+    }
+    for (const [wId, pos] of gameState.positions) {
+      if (wId === selfId) continue
+      if (gameState.workers.has(wId)) {
+        occupied.add(`${pos.x},${pos.y}`)
+      }
+    }
+
+    let best: { x: number; y: number } | null = null
+    let minDist = Infinity
 
     for (const [sourceId, source] of gameState.sources) {
       if (source.energy <= 0) continue
 
-      const claim = gameState.sourceClaims.get(sourceId)
-      if (!claim) continue
+      const pos = gameState.positions.get(sourceId)
+      if (!pos) continue
 
-      // 🚫 Si ya está llena la source, ignorarla
-      if (claim.currentClaimers.size >= claim.maxClaimers) continue
+      // Saltar si está ocupada (target de otro worker o worker encima)
+      if (occupied.has(`${pos.x},${pos.y}`)) continue
 
-      const position = gameState.positions.get(sourceId)
-      if (!position) continue
+      const dist = computePathLength(gameState, startX, startY, pos.x, pos.y)
+      if (dist === null) continue
 
-      const pathLength = computePathLength(
-        gameState,
-        startX,
-        startY,
-        position.x,
-        position.y
-      )
-
-      if (pathLength === null) continue
-
-      if (pathLength < minDistance) {
-        minDistance = pathLength
-        closest = {
-          x: position.x,
-          y: position.y,
-          sourceId
-        }
+      if (dist < minDist) {
+        minDist = dist
+        best = { x: pos.x, y: pos.y }
       }
     }
 
-    return closest
+    return best
+  }
+
+  private sourceExistsAt(gameState: GameState, x: number, y: number): boolean {
+    for (const [sourceId, source] of gameState.sources) {
+      const pos = gameState.positions.get(sourceId)
+      if (pos && pos.x === x && pos.y === y && source.energy > 0) return true
+    }
+    return false
   }
 }

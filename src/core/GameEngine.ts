@@ -3,7 +3,6 @@ import { BehaviorSystem } from "../systems/BehaviorSystem"
 import { HarvestSystem } from "../systems/HarvestSystem"
 import { HealthSystem } from "../systems/HealthSystem"
 import { DeathSystem } from "../systems/DeathSystem"
-import { RenderSystem } from "../systems/RenderSystem"
 import { DepositSystem } from "../systems/DepositSystem"
 import { TargetSystem } from "../systems/TargetSystem"
 import { MovementSystem } from "../systems/MovementSystem"
@@ -11,45 +10,52 @@ import { SourceRegenSystem } from "../systems/SourceRegenSystem"
 import { SpawnSystem } from "../systems/SpawnSystem"
 import { PathfindingSystem } from "../systems/PathfindingSystem"
 import { ConstructionSystem } from "../systems/ConstructionSystem"
-
+import { PlayerScriptSystem } from "../systems/PlayerScriptSystem"
 
 export class GameEngine {
     private gameState: GameState
     private tickRate: number
+    private onTick: (() => void) | null
     private intervalId: NodeJS.Timeout | null = null
-    private behaviorSystem: BehaviorSystem = new BehaviorSystem()
-    private harvestSystem: HarvestSystem = new HarvestSystem()
-    private depositSystem: DepositSystem = new DepositSystem()
-    private healthSystem: HealthSystem = new HealthSystem()
-    private deathSystem: DeathSystem = new DeathSystem()
-    private renderSystem: RenderSystem = new RenderSystem()
-    private targetSystem: TargetSystem = new TargetSystem()
-    private movementSystem: MovementSystem = new MovementSystem()
-    private sourceRegenSystem: SourceRegenSystem = new SourceRegenSystem()
-    private spawnSystem: SpawnSystem = new SpawnSystem()
-    private pathfindingSystem: PathfindingSystem = new PathfindingSystem()
-    private constructionSystem = new ConstructionSystem()
+    private paused: boolean = false
 
+    private behaviorSystem     = new BehaviorSystem()
+    private harvestSystem      = new HarvestSystem()
+    private depositSystem      = new DepositSystem()
+    private healthSystem       = new HealthSystem()
+    private deathSystem        = new DeathSystem()
+    private targetSystem       = new TargetSystem()
+    private movementSystem     = new MovementSystem()
+    private sourceRegenSystem  = new SourceRegenSystem()
+    private spawnSystem        = new SpawnSystem()
+    private pathfindingSystem  = new PathfindingSystem()
+    private constructionSystem  = new ConstructionSystem()
+    private playerScriptSystem  = new PlayerScriptSystem()
 
-    constructor(gameState: GameState, tickRate: number = 100) {
+    constructor(gameState: GameState, tickRate: number = 200, onTick: (() => void) | null = null) {
         this.gameState = gameState
-        this.tickRate = tickRate
+        this.tickRate  = tickRate
+        this.onTick    = onTick
     }
 
     public step(): void {
-        this.gameState.tick++
-        console.log("Tick actual:", this.gameState.tick)
+        if (this.paused) return
 
-        // 1️⃣ Decisiones
+        this.gameState.tick++
+
+        // 1️⃣ Decisiones de comportamiento
         this.behaviorSystem.update(this.gameState)
 
-        // 2️⃣ Asignar objetivos
+        // 1.5 Script del jugador (puede sobreescribir targets antes de TargetSystem)
+        this.playerScriptSystem.update(this.gameState)
+
+        // 2️⃣ Asignar objetivos (fallback para workers sin target)
         this.targetSystem.update(this.gameState)
 
         // 3️⃣ Trazar rutas
         this.pathfindingSystem.update(this.gameState)
 
-        // 4️⃣ Movimiento hacia objetivo
+        // 4️⃣ Movimiento
         this.movementSystem.update(this.gameState)
 
         // 5️⃣ Interacciones
@@ -60,22 +66,25 @@ export class GameEngine {
         this.healthSystem.update(this.gameState)
         this.deathSystem.update(this.gameState)
 
-        // 8️⃣ Spawn y construcción
+        // 7️⃣ Spawn y construcción
         this.spawnSystem.update(this.gameState)
         this.constructionSystem.update(this.gameState)
 
-        // 9️⃣ Regeneración
+        // 8️⃣ Regeneración
         this.sourceRegenSystem.update(this.gameState)
 
-        // 🔟 Render
-        this.renderSystem.update(this.gameState)
+        // 9️⃣ Log de estado cada 20 ticks
+        if (this.gameState.tick % 20 === 0) {
+          this.logStatus()
+        }
+
+        // 🔟 Callback al servidor (broadcast al browser)
+        this.onTick?.()
     }
 
     public start(): void {
         if (this.intervalId) return
-        this.intervalId = setInterval(() => {
-            this.step()
-        }, this.tickRate)
+        this.intervalId = setInterval(() => this.step(), this.tickRate)
     }
 
     public stop(): void {
@@ -83,5 +92,30 @@ export class GameEngine {
             clearInterval(this.intervalId)
             this.intervalId = null
         }
+    }
+
+    private logStatus(): void {
+        const gs = this.gameState
+        const baseStorage = gs.baseId ? gs.energyStorages.get(gs.baseId) : null
+        const harvesting  = [...gs.behaviors.values()].filter(b => b.state === "harvesting").length
+        const returning   = [...gs.behaviors.values()].filter(b => b.state === "returning").length
+        const idle        = [...gs.workers.keys()].filter(id => !gs.targets.has(id)).length
+        const base        = baseStorage ? `${baseStorage.current}/${baseStorage.capacity}` : "?"
+        console.log(
+          `[T:${String(gs.tick).padStart(4,"0")}]  ` +
+          `Workers: ${gs.workers.size} | ` +
+          `cosechando: ${harvesting} | retornando: ${returning} | sin-tarea: ${idle} | ` +
+          `Base: ${base}`
+        )
+    }
+
+    public pause(): void {
+        this.paused = true
+        console.log("⏸  Juego pausado")
+    }
+
+    public resume(): void {
+        this.paused = false
+        console.log("▶️  Juego reanudado")
     }
 }
