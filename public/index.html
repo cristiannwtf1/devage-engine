@@ -186,17 +186,59 @@
     .energy-bar-fill.player { background: linear-gradient(90deg, #006644, #00ffbb); box-shadow: 0 0 6px rgba(0,255,187,0.5); }
     .energy-bar-fill.enemy  { background: linear-gradient(90deg, #660000, #ff5500); box-shadow: 0 0 6px rgba(255,80,0,0.5); }
 
-    .worker-entry {
-      font-size: 10px;
-      margin-bottom: 4px;
-      padding: 3px 6px;
+    /* Sparkline canvas */
+    .sparkline { display: block; width: 100%; height: 36px; margin-top: 5px; }
+
+    /* Dominancia */
+    #dominance-bar-bg {
+      height: 10px;
       background: var(--bg);
-      border-left: 2px solid var(--cyan-d);
-      letter-spacing: 0.3px;
+      border: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
+      margin-top: 4px;
     }
-    .worker-entry .wid     { color: var(--text-d); }
-    .worker-entry .wstate  { color: var(--cyan); font-size: 9px; }
-    .worker-entry .wenergy { color: #558855; font-size: 9px; }
+    #dominance-player {
+      position: absolute; left: 0; top: 0; bottom: 0;
+      background: linear-gradient(90deg, #003322, #00ffbb);
+      transition: width 0.4s;
+    }
+    #dominance-ai {
+      position: absolute; right: 0; top: 0; bottom: 0;
+      background: linear-gradient(270deg, #330000, #ff5500);
+      transition: width 0.4s;
+    }
+    #dominance-center {
+      position: absolute; left: 50%; top: 0; bottom: 0;
+      width: 1px; background: var(--border2);
+    }
+    .dominance-labels {
+      display: flex; justify-content: space-between;
+      font-size: 8px; letter-spacing: 1px;
+      color: var(--text-d); margin-top: 3px;
+    }
+
+    /* Worker dots */
+    #worker-dots { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+    .wdot {
+      width: 10px; height: 10px; border-radius: 50%;
+      border: 1px solid transparent;
+      cursor: default;
+    }
+
+    /* Event log */
+    #event-log { display: flex; flex-direction: column; gap: 2px; }
+    .event-entry {
+      font-size: 9px; letter-spacing: 0.3px;
+      color: var(--text-d);
+      padding: 2px 0;
+      border-bottom: 1px solid var(--border);
+      display: flex; gap: 5px; align-items: baseline;
+    }
+    .event-entry .etick { color: var(--text-d); opacity: 0.5; flex-shrink: 0; }
+    .event-entry.ev-player { color: var(--cyan-d); }
+    .event-entry.ev-ai     { color: #cc5533; }
+    .event-entry.ev-world  { color: #998800; }
 
     /* Leyenda */
     .legend-item {
@@ -301,8 +343,9 @@
     <div id="panel">
       <div id="panel-top">
 
+        <!-- ── JUGADOR ── -->
         <div class="panel-section player">
-          <h3>Jugador</h3>
+          <h3>◈ Jugador</h3>
           <div class="stat-row">
             <span class="stat-label">Energía</span>
             <span class="stat-value player-val" id="base-energy">—</span>
@@ -310,18 +353,18 @@
           <div class="energy-bar-bg">
             <div class="energy-bar-fill player" id="base-energy-bar" style="width:0%"></div>
           </div>
-          <div class="stat-row" style="margin-top:6px">
+          <canvas id="sparkline-player" class="sparkline"></canvas>
+          <div class="stat-row" style="margin-top:4px">
             <span class="stat-label">Workers</span>
             <span class="stat-value" id="worker-count">—</span>
-          </div>
-          <div class="stat-row">
-            <span class="stat-label">Extensions</span>
+            <span class="stat-label" style="margin-left:8px">Ext</span>
             <span class="stat-value" id="ext-count">—</span>
           </div>
         </div>
 
+        <!-- ── IA ── -->
         <div class="panel-section enemy">
-          <h3>IA Enemiga</h3>
+          <h3>◈ IA Enemiga</h3>
           <div class="stat-row">
             <span class="stat-label">Energía</span>
             <span class="stat-value enemy-val" id="ai-energy">—</span>
@@ -329,29 +372,40 @@
           <div class="energy-bar-bg">
             <div class="energy-bar-fill enemy" id="ai-energy-bar" style="width:0%"></div>
           </div>
-          <div class="stat-row" style="margin-top:6px">
+          <canvas id="sparkline-ai" class="sparkline"></canvas>
+          <div class="stat-row" style="margin-top:4px">
             <span class="stat-label">Workers</span>
             <span class="stat-value" id="ai-worker-count">—</span>
-          </div>
-          <div class="stat-row">
-            <span class="stat-label">Extensions</span>
+            <span class="stat-label" style="margin-left:8px">Ext</span>
             <span class="stat-value" id="ai-ext-count">—</span>
           </div>
         </div>
 
+        <!-- ── DOMINANCIA ── -->
         <div class="panel-section">
-          <h3>Workers</h3>
-          <div id="worker-list"></div>
+          <h3>Dominancia</h3>
+          <div id="dominance-bar-bg">
+            <div id="dominance-player"></div>
+            <div id="dominance-ai"></div>
+            <div id="dominance-center"></div>
+          </div>
+          <div class="dominance-labels">
+            <span id="dom-player-pct" style="color:var(--cyan-d)">50%</span>
+            <span style="color:var(--text-d)">vs</span>
+            <span id="dom-ai-pct" style="color:#cc5533">50%</span>
+          </div>
         </div>
 
+        <!-- ── WORKERS GRID ── -->
         <div class="panel-section">
-          <h3>Leyenda</h3>
-          <div class="legend-item"><div class="legend-dot" style="border:2px solid #55bbff"></div> Base jugador</div>
-          <div class="legend-item"><div class="legend-dot" style="border:2px solid #00ffbb"></div> Worker (W)</div>
-          <div class="legend-item"><div class="legend-dot" style="border:2px solid #ffcc00"></div> Source ⚡</div>
-          <div class="legend-item"><div class="legend-dot" style="border:2px solid #aa66ff"></div> Extension (E)</div>
-          <div class="legend-item"><div class="legend-dot" style="border:2px solid #ff5555"></div> Base IA</div>
-          <div class="legend-item"><div class="legend-dot" style="border:2px solid #ff9900"></div> Worker IA (A)</div>
+          <h3>Fuerza de trabajo</h3>
+          <div id="worker-dots"></div>
+        </div>
+
+        <!-- ── LOG DE EVENTOS ── -->
+        <div class="panel-section">
+          <h3>Eventos</h3>
+          <div id="event-log"></div>
         </div>
 
       </div>

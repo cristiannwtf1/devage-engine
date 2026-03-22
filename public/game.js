@@ -333,40 +333,203 @@ function drawExtension(px, py, cx, cy, isAI) {
   ctx.fillText(isAI ? "X" : "E", cx, cy + 1)
 }
 
-// ─── PANEL LATERAL ────────────────────────────────────────
+// ─── HISTORIAL DE ENERGÍA (sparklines) ───────────────────
+const HISTORY_LEN    = 60
+const playerHistory  = []
+const aiHistory      = []
+
+// ─── EVENTOS ──────────────────────────────────────────────
+const eventLog       = []
+const MAX_EVENTS     = 6
+let prevWorkerCount  = 0
+let prevAiWorkers    = 0
+let prevExtCount     = 0
+let prevAiExtCount   = 0
+
+function addEvent(text, type = "ev-world", tick = 0) {
+  eventLog.unshift({ text, type, tick })
+  if (eventLog.length > MAX_EVENTS) eventLog.pop()
+  renderEventLog()
+}
+
+function renderEventLog() {
+  const el = document.getElementById("event-log")
+  el.innerHTML = ""
+  for (const ev of eventLog) {
+    const div = document.createElement("div")
+    div.className = `event-entry ${ev.type}`
+    div.innerHTML = `<span class="etick">[${String(ev.tick).padStart(4,"0")}]</span> ${ev.text}`
+    el.appendChild(div)
+  }
+}
+
+// ─── SPARKLINE ────────────────────────────────────────────
+function drawSparkline(canvasEl, history, color, glowColor) {
+  const w = canvasEl.offsetWidth || 230
+  const h = 36
+  canvasEl.width  = w
+  canvasEl.height = h
+
+  const sc = canvasEl.getContext("2d")
+  sc.clearRect(0, 0, w, h)
+
+  if (history.length < 2) return
+
+  const max = Math.max(...history, 1)
+  const pts = history.map((v, i) => ({
+    x: (i / (HISTORY_LEN - 1)) * w,
+    y: h - 2 - (v / max) * (h - 4)
+  }))
+
+  // Fill bajo la línea
+  sc.beginPath()
+  sc.moveTo(pts[0].x, h)
+  for (const p of pts) sc.lineTo(p.x, p.y)
+  sc.lineTo(pts[pts.length - 1].x, h)
+  sc.closePath()
+  const grad = sc.createLinearGradient(0, 0, 0, h)
+  grad.addColorStop(0, glowColor + "44")
+  grad.addColorStop(1, "transparent")
+  sc.fillStyle = grad
+  sc.fill()
+
+  // Línea
+  sc.beginPath()
+  sc.moveTo(pts[0].x, pts[0].y)
+  for (const p of pts) sc.lineTo(p.x, p.y)
+  sc.strokeStyle = color
+  sc.lineWidth   = 1.5
+  sc.shadowColor = glowColor
+  sc.shadowBlur  = 4
+  sc.stroke()
+
+  // Punto final
+  const last = pts[pts.length - 1]
+  sc.beginPath()
+  sc.arc(last.x, last.y, 2.5, 0, Math.PI * 2)
+  sc.fillStyle  = color
+  sc.shadowBlur = 6
+  sc.fill()
+}
+
+// ─── WORKER DOTS ──────────────────────────────────────────
+function renderWorkerDots(snap) {
+  const container = document.getElementById("worker-dots")
+  container.innerHTML = ""
+
+  const playerWorkers = snap.entities.filter(e => e.type === "worker")
+  const aiWorkers     = snap.entities.filter(e => e.type === "ai-worker")
+
+  const makeDot = (state, isAI) => {
+    const d = document.createElement("div")
+    d.className = "wdot"
+    if (isAI) {
+      d.style.background     = state === "harvesting" ? "#ff8800" : "#882200"
+      d.style.borderColor    = state === "harvesting" ? "#ffaa44" : "#554400"
+      d.style.boxShadow      = state === "harvesting" ? "0 0 5px #ff8800" : "none"
+    } else {
+      d.style.background     = state === "harvesting" ? "#00cc88" : "#004433"
+      d.style.borderColor    = state === "harvesting" ? "#00ffbb" : "#003322"
+      d.style.boxShadow      = state === "harvesting" ? "0 0 5px #00ffbb" : "none"
+    }
+    d.title = `${isAI ? "IA" : "W"} — ${state}`
+    return d
+  }
+
+  // Separador visual: jugador arriba, IA abajo
+  if (playerWorkers.length > 0) {
+    const label = document.createElement("div")
+    label.style.cssText = "width:100%;font-size:8px;color:#334466;letter-spacing:2px;margin-bottom:2px"
+    label.textContent = "TÚ"
+    container.appendChild(label)
+    const row = document.createElement("div")
+    row.style.cssText = "display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px"
+    playerWorkers.forEach(w => row.appendChild(makeDot(w.state, false)))
+    container.appendChild(row)
+  }
+
+  if (aiWorkers.length > 0) {
+    const label = document.createElement("div")
+    label.style.cssText = "width:100%;font-size:8px;color:#442222;letter-spacing:2px;margin-bottom:2px"
+    label.textContent = "IA"
+    container.appendChild(label)
+    const row = document.createElement("div")
+    row.style.cssText = "display:flex;flex-wrap:wrap;gap:4px"
+    aiWorkers.forEach(w => row.appendChild(makeDot(w.state, true)))
+    container.appendChild(row)
+  }
+}
+
+// ─── DOMINANCIA ───────────────────────────────────────────
+function updateDominance(snap) {
+  const pe = snap.base   ? snap.base.energy   : 0
+  const ae = snap.aiBase ? snap.aiBase.energy : 0
+  const total = pe + ae
+
+  const playerPct = total > 0 ? pe / total : 0.5
+  const aiPct     = total > 0 ? ae / total : 0.5
+
+  document.getElementById("dominance-player").style.width = `${playerPct * 100}%`
+  document.getElementById("dominance-ai").style.width     = `${aiPct * 100}%`
+  document.getElementById("dom-player-pct").textContent   = `${(playerPct * 100).toFixed(0)}%`
+  document.getElementById("dom-ai-pct").textContent       = `${(aiPct * 100).toFixed(0)}%`
+}
+
+// ─── PANEL PRINCIPAL ──────────────────────────────────────
 function updatePanel(snap) {
+  // ── Jugador ────────────────────────────────────────────
   if (snap.base) {
     const pct = (snap.base.energy / snap.base.capacity * 100).toFixed(0)
     document.getElementById("base-energy").textContent =
       `${snap.base.energy} / ${snap.base.capacity}`
     document.getElementById("base-energy-bar").style.width = `${pct}%`
+    playerHistory.push(snap.base.energy)
+    if (playerHistory.length > HISTORY_LEN) playerHistory.shift()
+    drawSparkline(
+      document.getElementById("sparkline-player"),
+      playerHistory, "#00cc88", "#00ffbb"
+    )
   }
   document.getElementById("worker-count").textContent = snap.workerCount
   document.getElementById("ext-count").textContent    = snap.extensions
 
+  // ── IA ─────────────────────────────────────────────────
   if (snap.aiBase) {
     const pct = (snap.aiBase.energy / snap.aiBase.capacity * 100).toFixed(0)
     document.getElementById("ai-energy").textContent =
       `${snap.aiBase.energy} / ${snap.aiBase.capacity}`
     document.getElementById("ai-energy-bar").style.width = `${pct}%`
+    aiHistory.push(snap.aiBase.energy)
+    if (aiHistory.length > HISTORY_LEN) aiHistory.shift()
+    drawSparkline(
+      document.getElementById("sparkline-ai"),
+      aiHistory, "#cc5500", "#ff8800"
+    )
   }
   document.getElementById("ai-worker-count").textContent = snap.aiWorkerCount ?? 0
   document.getElementById("ai-ext-count").textContent    = snap.aiExtensions ?? 0
 
-  const list    = document.getElementById("worker-list")
-  list.innerHTML = ""
-  const workers = snap.entities.filter(e => e.type === "worker")
-  for (const w of workers) {
-    const div = document.createElement("div")
-    div.className = "worker-entry"
-    const ep = w.energy ? `${w.energy.current}/${w.energy.capacity}` : "—"
-    div.innerHTML = `
-      <div class="wid">W#${w.id} <span style="color:#333">(${w.x},${w.y})</span></div>
-      <div class="wstate">▸ ${w.state ?? "?"}</div>
-      <div class="wenergy">⚡ ${ep}</div>
-    `
-    list.appendChild(div)
-  }
+  // ── Dominancia ─────────────────────────────────────────
+  updateDominance(snap)
+
+  // ── Worker dots ────────────────────────────────────────
+  renderWorkerDots(snap)
+
+  // ── Eventos ────────────────────────────────────────────
+  const tick = snap.tick
+  if (snap.workerCount > prevWorkerCount)
+    addEvent("Worker spawneado", "ev-player", tick)
+  if (snap.extensions > prevExtCount)
+    addEvent("Extension construida", "ev-player", tick)
+  if ((snap.aiWorkerCount ?? 0) > prevAiWorkers)
+    addEvent("IA: worker spawneado", "ev-ai", tick)
+  if ((snap.aiExtensions ?? 0) > prevAiExtCount)
+    addEvent("IA: extension construida", "ev-ai", tick)
+
+  prevWorkerCount = snap.workerCount
+  prevExtCount    = snap.extensions
+  prevAiWorkers   = snap.aiWorkerCount ?? 0
+  prevAiExtCount  = snap.aiExtensions  ?? 0
 }
 
 // ─── ERRORES DE SCRIPT ────────────────────────────────────
