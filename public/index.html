@@ -675,6 +675,54 @@
 
 
     /* ── MODAL PRÓXIMAMENTE ── */
+    /* ── Modal selector de dificultad ── */
+    #modal-difficulty {
+      display: none;
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(4,8,16,0.92);
+      align-items: center; justify-content: center;
+    }
+    #modal-difficulty.open { display: flex; }
+    .diff-title {
+      font-size: 11px; letter-spacing: 5px; color: var(--cyan);
+      margin-bottom: 6px; text-shadow: 0 0 16px rgba(0,170,255,0.4);
+    }
+    .diff-subtitle {
+      font-size: 10px; letter-spacing: 2px; color: var(--text-d);
+      margin-bottom: 28px;
+    }
+    .diff-options { display: flex; flex-direction: column; gap: 8px; margin-bottom: 28px; }
+    .diff-btn {
+      background: transparent; border: 1px solid #0c2040;
+      color: var(--text); padding: 10px 24px;
+      font-family: var(--font-mono); font-size: 11px; letter-spacing: 3px;
+      cursor: pointer; text-align: left; transition: all 0.15s;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .diff-btn:hover, .diff-btn.selected {
+      border-color: var(--cyan-d); color: var(--cyan);
+      background: rgba(0,170,255,0.06);
+      box-shadow: 0 0 12px rgba(0,170,255,0.1);
+    }
+    .diff-btn .diff-label { font-size: 12px; letter-spacing: 3px; }
+    .diff-btn .diff-desc  { font-size: 9px; color: var(--text-d); letter-spacing: 1px; }
+    .diff-btn.selected .diff-desc { color: var(--cyan-d); }
+    .diff-launch {
+      width: 100%; padding: 12px; font-family: var(--font-mono);
+      font-size: 11px; letter-spacing: 5px; background: transparent;
+      border: 1px solid var(--cyan-d); color: var(--cyan); cursor: pointer;
+      transition: all 0.2s;
+    }
+    .diff-launch:hover {
+      background: rgba(0,170,255,0.1); box-shadow: 0 0 20px rgba(0,170,255,0.2);
+    }
+    .diff-back {
+      display: block; margin-top: 12px; font-size: 9px;
+      letter-spacing: 2px; color: var(--text-d); background: none;
+      border: none; cursor: pointer; font-family: var(--font-mono);
+    }
+    .diff-back:hover { color: var(--text); }
+
     #modal-soon {
       display: none;
       position: fixed; inset: 0; z-index: 200;
@@ -1155,7 +1203,8 @@
             <span class="stat-label" style="font-size:9px">Workers <span class="stat-value" id="worker-count">—</span></span>
             <span class="stat-label" style="font-size:9px">Ext <span class="stat-value" id="ext-count">—</span></span>
           </div>
-          <!-- IA -->
+          <!-- IA (oculto en sandbox) -->
+          <div id="panel-ai-section">
           <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px">
             <span class="stat-label" style="color:#aa3333;font-size:9px;letter-spacing:2px">⬟ IA</span>
             <span class="stat-value enemy-val" id="ai-energy" style="font-size:10px">—</span>
@@ -1166,6 +1215,12 @@
           <div style="display:flex;justify-content:space-between">
             <span class="stat-label" style="font-size:9px">Workers <span class="stat-value" id="ai-worker-count">—</span></span>
             <span class="stat-label" style="font-size:9px">Ext <span class="stat-value" id="ai-ext-count">—</span></span>
+          </div>
+          <!-- Badge modo libre (solo sandbox) -->
+          <div id="sandbox-badge" style="display:none;margin-top:6px;padding:4px 0;text-align:center;
+            font-size:9px;letter-spacing:3px;color:#44ff88;border:1px solid #1a4a2a;border-radius:2px;">
+            MODO LIBRE
+          </div>
           </div>
         </div>
         <!-- sparklines ocultos — se mantienen para la lógica JS -->
@@ -1292,6 +1347,34 @@ for (const id in Game.workers) {
       </div>
       <div class="modal-soon-hint">// próximamente en CODESTRIKE v3.0</div>
       <button class="modal-soon-close" id="btn-close-modal">Volver al menú</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════ MODAL SELECTOR DIFICULTAD ══════════════════ -->
+  <div id="modal-difficulty">
+    <div class="modal-box" style="min-width:340px">
+      <div class="diff-title">VS INTELIGENCIA ARTIFICIAL</div>
+      <div class="diff-subtitle">Selecciona la dificultad del oponente</div>
+      <div class="diff-options">
+        <button class="diff-btn" data-diff="easy">
+          <span class="diff-label">FÁCIL</span>
+          <span class="diff-desc">5 workers · Aprende sin presión</span>
+        </button>
+        <button class="diff-btn selected" data-diff="medium">
+          <span class="diff-label">MEDIO</span>
+          <span class="diff-desc">8 workers · Partida equilibrada</span>
+        </button>
+        <button class="diff-btn" data-diff="hard">
+          <span class="diff-label">DIFÍCIL</span>
+          <span class="diff-desc">10 workers · Requiere código eficiente</span>
+        </button>
+        <button class="diff-btn" data-diff="expert">
+          <span class="diff-label">EXPERTO</span>
+          <span class="diff-desc">12 workers · Sin piedad</span>
+        </button>
+      </div>
+      <button class="diff-launch" id="btn-diff-launch">[ INICIAR PARTIDA ]</button>
+      <button class="diff-back" id="btn-diff-back">← Volver al menú</button>
     </div>
   </div>
 

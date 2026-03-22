@@ -1360,6 +1360,14 @@ function hideMenu(cb) {
   setTimeout(() => { menuScreen.style.display = "none"; cb && cb() }, 750)
 }
 
+function showMenu() {
+  menuActive = true
+  menuScreen.style.display       = "flex"
+  menuScreen.style.transition    = "opacity 0.4s ease"
+  menuScreen.style.pointerEvents = "auto"
+  requestAnimationFrame(() => { menuScreen.style.opacity = "1" })
+}
+
 // ── Mundo → misiones ─────────────────────────────────────
 const WORLDS = {
   1: { name: "La Colonia", season: "Season I",   color: "#00aaff", missions: [1,2,3,4,5,6] },
@@ -1722,10 +1730,12 @@ function launchMission(id) {
   localStorage.setItem("codestrike_script", code)
 
   const difficulty = getMissionDifficulty(id)
+  currentGameMode  = "campaign"
+  setSandboxUI(false)
   fetch("/api/reset", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ difficulty })
+    body: JSON.stringify({ difficulty, mode: "campaign" })
   })
     .then(() => setTimeout(() => btnRun.click(), 150))
     .catch(() => setTimeout(() => btnRun.click(), 150))
@@ -1738,14 +1748,80 @@ function startMission(id) {
 }
 
 // ── Seleccionar modo ──────────────────────────────────────
-let currentMode = null
+let currentMode     = null
+let currentGameMode = "vs-ia"  // modo activo del servidor (vs-ia | sandbox | campaign)
 
 function selectMode(mode) {
   currentMode = mode
   if (mode === "campaign") {
     hideMenu(() => openMissionScreen())
+  } else if (mode === "vs-ai") {
+    hideMenu(() => openDifficultyModal())
+  } else if (mode === "sandbox") {
+    hideMenu(() => launchSandbox())
+  }
+}
+
+// ── Modal de dificultad (VS IA) ───────────────────────────
+const modalDiff   = document.getElementById("modal-difficulty")
+let selectedDiff  = "medium"
+
+document.querySelectorAll(".diff-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".diff-btn").forEach(b => b.classList.remove("selected"))
+    btn.classList.add("selected")
+    selectedDiff = btn.dataset.diff
+  })
+})
+
+document.getElementById("btn-diff-launch").addEventListener("click", () => {
+  modalDiff.classList.remove("open")
+  launchVsIA(selectedDiff)
+})
+
+document.getElementById("btn-diff-back").addEventListener("click", () => {
+  modalDiff.classList.remove("open")
+  showMenu()
+})
+
+function openDifficultyModal() {
+  modalDiff.classList.add("open")
+}
+
+function launchVsIA(difficulty) {
+  currentGameMode = "vs-ia"
+  setSandboxUI(false)
+  fetch("/api/reset", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ difficulty, mode: "vs-ia" })
+  })
+}
+
+function launchSandbox() {
+  currentGameMode = "sandbox"
+  setSandboxUI(true)
+  fetch("/api/reset", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ mode: "sandbox" })
+  })
+}
+
+function setSandboxUI(isSandbox) {
+  const aiSection   = document.getElementById("panel-ai-section")
+  const sandboxBadge = document.getElementById("sandbox-badge")
+  if (isSandbox) {
+    // Ocultar stats de IA, mostrar badge MODO LIBRE
+    aiSection.querySelectorAll(
+      "#ai-energy, .energy-bar-bg:last-of-type, #ai-energy-bar, #ai-worker-count, #ai-ext-count"
+    ).forEach(el => { if (el) el.closest(".energy-bar-bg, div") })
+    sandboxBadge.style.display = "block"
+    document.getElementById("ai-energy").textContent = "—"
+    document.getElementById("ai-worker-count").textContent = "—"
+    document.getElementById("ai-ext-count").textContent = "—"
   } else {
-    hideMenu(null)
+    sandboxBadge.style.display = "none"
   }
 }
 
