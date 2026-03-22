@@ -6,18 +6,21 @@ export class DepositSystem {
 
   public update(gameState: GameState): void {
 
-    const baseId = gameState.baseId
-    if (baseId === null) return
-    const basePosition = gameState.positions.get(baseId)
-    if (!basePosition) return
-    const baseStorage = gameState.energyStorages.get(baseId)
-    if (!baseStorage) return
-
     for (const [entityId, behavior] of gameState.behaviors) {
       if (behavior.state !== "returning") continue
 
+      // Cada worker deposita en SU base (jugador o IA)
+      const homeBaseId = gameState.aiWorkers.has(entityId)
+        ? gameState.aiBaseId
+        : gameState.baseId
+      if (homeBaseId === null) continue
+
+      const basePosition = gameState.positions.get(homeBaseId)
+      const baseStorage  = gameState.energyStorages.get(homeBaseId)
+      if (!basePosition || !baseStorage) continue
+
       const position = gameState.positions.get(entityId)
-      const storage = gameState.energyStorages.get(entityId)
+      const storage  = gameState.energyStorages.get(entityId)
       if (!position || !storage) continue
 
       const dist = Math.abs(position.x - basePosition.x) +
@@ -28,7 +31,6 @@ export class DepositSystem {
         baseStorage.current += Math.min(storage.current, space)
         storage.current = 0
         behavior.state = "harvesting"
-        // Limpiar target para que busque uno nuevo
         gameState.targets.delete(entityId)
         gameState.paths.delete(entityId)
       }

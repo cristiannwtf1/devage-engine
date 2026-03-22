@@ -42,8 +42,12 @@ export class GameState {
   // Daño pendiente: se llena en combate, se aplica en HealthSystem
   public pendingDamage: Map<EntityId, number> = new Map()
 
-  // 🔥 Referencia oficial a la base principal
+  // 🔥 Referencia oficial a la base principal (jugador)
   public baseId: EntityId | null = null
+
+  // 🤖 IA — base y workers del enemigo
+  public aiBaseId:  EntityId | null = null
+  public aiWorkers: Set<EntityId>   = new Set()
 
   // Script del jugador (JS como string) + último error de ejecución
   public playerScript: string | null = null
