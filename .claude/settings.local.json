@@ -13,7 +13,20 @@
       "Bash(node -e \"const fs=require\\(''fs''\\); const pid=parseInt\\(fs.readFileSync\\(''.server.pid'',''utf8''\\)\\); process.kill\\(pid\\); fs.unlinkSync\\(''.server.pid''\\); console.log\\(''Detenido PID:'', pid\\);\")",
       "Bash(node -e \"const fs=require\\(''fs''\\); const pid=parseInt\\(fs.readFileSync\\(''.server.pid'',''utf8''\\)\\); process.kill\\(pid\\); fs.unlinkSync\\(''.server.pid''\\); console.log\\(''Detenido:'', pid\\);\")",
       "Bash(git add:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(npm run:*)",
+      "Bash(npx ts-node:*)",
+      "Bash(curl -s http://localhost:3000)",
+      "Bash(npx kill-port:*)",
+      "Bash(xargs -r taskkill //F //PID)",
+      "Bash(python -m json.tool)",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(''''Tick:'''', d[''''tick'''']\\); print\\(''''Sources:'''', d[''''sources''''][''''total'''']\\); [print\\(f''''  src {s[id]}: {s[pos]}''''\\) for s in d[''''sources''''][''''detail''''][:5]]\")",
+      "Bash(curl -s http://localhost:3000/api/status)",
+      "Bash(curl -s http://localhost:3000/)",
+      "Bash(npm start:*)",
+      "Bash(node:*)",
+      "Bash(grep -E \"\\(//|function|class|const [A-Z]\\)\")",
+      "Bash(git commit:*)"
     ]
   }
 }

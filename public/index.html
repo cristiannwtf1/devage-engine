@@ -112,7 +112,7 @@
     #canvas-wrapper::before { top: 8px; left: 8px; border-width: 2px 0 0 2px; }
     #canvas-wrapper::after  { bottom: 8px; right: 8px; border-width: 0 2px 2px 0; }
 
-    canvas { image-rendering: pixelated; flex-shrink: 0; }
+    canvas { flex-shrink: 0; }
 
     /* ── PANEL ── */
     #panel {
@@ -125,12 +125,12 @@
     }
 
     #panel-top {
-      padding: 10px;
+      padding: 8px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 6px;
       overflow-y: auto;
-      max-height: 52%;
+      max-height: 36%;
       flex-shrink: 0;
     }
 
@@ -247,6 +247,37 @@
     }
     .legend-dot { width: 9px; height: 9px; flex-shrink: 0; }
 
+    /* ── PANEL MISIÓN ── */
+    /* Inspirado en el panel de objetivos de juegos como CodeCombat/Screeps */
+    #mission-panel {
+      display: none;
+      border-left: 2px solid var(--cyan-d);
+      padding: 8px 10px;
+      background: #040c18;
+      border-bottom: 1px solid var(--border2);
+      flex-shrink: 0;
+    }
+    #mp-badge {
+      font-size: 8px; letter-spacing: 3px; color: var(--cyan-d);
+      text-transform: uppercase; margin-bottom: 3px;
+      opacity: 0.8;
+    }
+    #mp-title {
+      font-size: 12px; color: var(--cyan);
+      letter-spacing: 1px; margin-bottom: 3px;
+      text-shadow: 0 0 10px rgba(0,170,255,0.3);
+    }
+    #mp-concept {
+      font-size: 9px; color: #4a8844;
+      letter-spacing: 0.5px; margin-bottom: 7px;
+    }
+    .mp-obj {
+      font-size: 9px; color: var(--text-d);
+      padding: 2px 0; letter-spacing: 0.3px;
+      display: flex; align-items: baseline; gap: 5px;
+    }
+    .mp-obj-dot { color: var(--cyan-d); flex-shrink: 0; }
+
     /* ── EDITOR ── */
     #editor-panel {
       border-top: 1px solid var(--border2);
@@ -277,7 +308,7 @@
     .script-status.idle   { color: var(--text-d); }
 
     #code-editor {
-      flex: 1; min-height: 80px;
+      flex: 1; min-height: 160px;
       background: #030306;
       border: 1px solid var(--border2);
       color: #7799ee;
@@ -501,126 +532,412 @@
     .smstar { font-size: 10px; color: #0d2040; }
     .smstar.earned { color: #ffcc00; }
 
-    /* ── MENÚ PRINCIPAL ── */
+    /* ── MENÚ PRINCIPAL v3 — TERMINAL ── */
     #menu-screen {
       position: fixed; inset: 0; z-index: 100;
-      background: #040810;
+      background: #030608;
       display: flex; align-items: center; justify-content: center;
     }
 
     #menu-bg {
       position: absolute; inset: 0; width: 100%; height: 100%;
-      pointer-events: none;
+      pointer-events: none; opacity: 0.4;
     }
 
     #menu-content {
       position: relative; z-index: 1;
       display: flex; flex-direction: column; align-items: center;
-      gap: 28px;
+      gap: 22px;
     }
 
     #menu-logo {
-      font-size: clamp(40px, 6vw, 70px);
-      font-weight: bold;
-      letter-spacing: 10px;
-      color: #00aaff;
-      text-shadow: 0 0 30px rgba(0,170,255,0.7), 0 0 70px rgba(0,170,255,0.4);
+      font-size: clamp(34px, 5vw, 64px);
+      font-weight: bold; letter-spacing: 14px; color: #00aaff;
+      text-shadow: 0 0 30px rgba(0,170,255,0.7), 0 0 80px rgba(0,170,255,0.35);
       animation: logoIn 0.9s ease forwards, logoPulse 3s ease-in-out 0.9s infinite;
       opacity: 0;
     }
     @keyframes logoIn {
-      from { opacity: 0; transform: scale(0.9) translateY(-8px); letter-spacing: 20px; }
-      to   { opacity: 1; transform: scale(1)   translateY(0);   letter-spacing: 10px; }
+      from { opacity: 0; transform: translateY(-8px); letter-spacing: 28px; }
+      to   { opacity: 1; transform: translateY(0);   letter-spacing: 14px; }
     }
     @keyframes logoPulse {
-      0%,100% { text-shadow: 0 0 30px rgba(0,170,255,0.6), 0 0 70px rgba(0,170,255,0.3); }
-      50%     { text-shadow: 0 0 45px rgba(0,170,255,0.9), 0 0 100px rgba(0,170,255,0.5); }
+      0%,100% { text-shadow: 0 0 30px rgba(0,170,255,0.6), 0 0 80px rgba(0,170,255,0.25); }
+      50%     { text-shadow: 0 0 50px rgba(0,170,255,0.95), 0 0 110px rgba(0,170,255,0.45); }
     }
 
     #menu-subtitle {
-      font-size: 11px; letter-spacing: 4px; color: #1e3a5a; text-transform: uppercase;
-      opacity: 0; animation: subtitleIn 0.8s ease 0.7s forwards;
+      font-size: 10px; letter-spacing: 5px; color: #1e3a5a;
+      text-transform: uppercase; margin-top: -12px;
+      opacity: 0; animation: menuFadeIn 0.8s ease 0.7s forwards;
     }
-    @keyframes subtitleIn {
-      from { opacity: 0; letter-spacing: 10px; }
-      to   { opacity: 1; letter-spacing: 4px; }
-    }
+    @keyframes menuFadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-    #menu-divider {
-      width: 0; height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(0,170,255,0.4), transparent);
-      animation: dividerIn 0.8s ease 1.0s forwards;
-    }
-    @keyframes dividerIn {
-      from { width: 0; opacity: 0; }
-      to   { width: 280px; opacity: 1; }
-    }
-
-    #menu-cards { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; max-width: 960px; }
-
-    .locked-card { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
-
-    .menu-card {
-      width: 220px;
-      border: 1px solid #0c1628;
-      background: #050c16;
-      padding: 26px 22px;
-      cursor: pointer;
+    /* ── CAJA TERMINAL ── */
+    #menu-box {
+      width: min(660px, 90vw);
+      background: rgba(3, 8, 18, 0.9);
+      border: 1px solid #0c1830;
       position: relative;
-      display: flex; flex-direction: column; gap: 10px;
-      transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s, background 0.2s;
-      outline: none;
-      opacity: 0;
+      opacity: 0; animation: menuFadeIn 0.6s ease 0.85s forwards;
     }
-    #card-campaign   { animation: cardIn 0.5s ease 1.1s  forwards; }
-    #card-vs-ai      { animation: cardIn 0.5s ease 1.25s forwards; }
-    #card-sandbox    { animation: cardIn 0.5s ease 1.4s  forwards; }
-    #card-challenges { animation: cardIn 0.5s ease 1.55s forwards; }
-    @keyframes cardIn {
-      from { opacity: 0; transform: translateY(18px); }
-      to   { opacity: 1; transform: translateY(0); }
+    #menu-box::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, #00aaff 25%, #004499 50%, #00aaff 75%, transparent);
+      opacity: 0.7;
     }
-    .menu-card:hover, .menu-card:focus {
-      border-color: #00aaff;
-      box-shadow: 0 0 30px rgba(0,170,255,0.18), inset 0 0 20px rgba(0,170,255,0.04);
-      transform: translateY(-5px);
-      background: #060f1c;
+    #menu-box-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 7px 16px; border-bottom: 1px solid #0a1628;
+      font-size: 9px; letter-spacing: 3px; color: #1e3a5a;
     }
+    #menu-box-header .mbh-version { color: #0d2040; }
 
-    .card-keybind {
-      position: absolute; top: 10px; right: 10px;
-      font-size: 9px; letter-spacing: 1px; color: #1e3a5a;
-      border: 1px solid #0c1628; padding: 1px 5px;
-      transition: color 0.2s, border-color 0.2s;
+    /* ── ITEMS ── */
+    .menu-item {
+      display: flex; align-items: center; gap: 14px;
+      padding: 17px 20px 15px 26px;
+      border-bottom: 1px solid #07101c;
+      border-left: 3px solid transparent;
+      cursor: pointer; position: relative;
+      transition: background 0.18s, border-left-color 0.18s;
+      opacity: 0; animation: menuFadeIn 0.45s ease both;
     }
-    .menu-card:hover .card-keybind { color: #0088cc; border-color: #0088cc; }
+    .menu-item:last-of-type { border-bottom: none; }
+    #mitem-1 { animation-delay: 1.0s; }
+    #mitem-2 { animation-delay: 1.13s; }
+    #mitem-3 { animation-delay: 1.26s; }
+    #mitem-4 { animation-delay: 1.39s; cursor: not-allowed; opacity: 0; }
 
-    .card-icon  { font-size: 24px; color: #0077bb; margin-bottom: 2px; }
-    .menu-card:hover .card-icon { color: #00aaff; text-shadow: 0 0 12px rgba(0,170,255,0.5); }
-
-    .card-title {
-      font-size: 20px; color: #0088cc; letter-spacing: 5px;
-      transition: color 0.2s, text-shadow 0.2s;
+    /* Cursor › en hover */
+    .menu-item::before {
+      content: '›';
+      position: absolute; left: 10px; font-size: 15px;
+      opacity: 0; transition: opacity 0.15s, transform 0.15s;
+      transform: translateX(-4px);
     }
-    .menu-card:hover .card-title { color: #00aaff; text-shadow: 0 0 16px rgba(0,170,255,0.4); }
+    .menu-item:hover:not(.mi-locked)::before { opacity: 1; transform: translateX(0); }
 
-    .card-desc {
-      font-size: 10px; color: #1e3a5a; line-height: 1.7; letter-spacing: 0.3px; flex: 1;
-      transition: color 0.2s;
-    }
-    .menu-card:hover .card-desc { color: #7799cc; }
+    #mitem-1:hover { background: rgba(0,170,255,0.05); border-left-color: #00aaff; }
+    #mitem-1::before { color: #00aaff; }
+    #mitem-2:hover { background: rgba(255,68,51,0.05); border-left-color: #ff4433; }
+    #mitem-2::before { color: #ff4433; }
+    #mitem-3:hover { background: rgba(68,204,136,0.05); border-left-color: #44cc88; }
+    #mitem-3::before { color: #44cc88; }
+    #mitem-4 { opacity: 0.38 !important; }
 
-    .card-badge {
-      font-size: 8px; letter-spacing: 2px; color: #1e3a5a;
-      padding: 2px 8px; border: 1px solid #0c1628; align-self: flex-start;
-      text-transform: uppercase; transition: color 0.2s, border-color 0.2s;
-    }
-    .menu-card:hover .card-badge { color: #00aaff; border-color: #00aaff; }
-
-    #menu-hint {
+    .mi-num {
       font-size: 9px; letter-spacing: 2px; color: #0d2040;
-      opacity: 0; animation: cardIn 0.5s ease 1.45s forwards;
+      min-width: 26px; flex-shrink: 0;
     }
+
+    .mi-icon {
+      font-size: 20px; flex-shrink: 0; min-width: 26px;
+      color: #1e3a5a; transition: color 0.18s, text-shadow 0.18s;
+    }
+    #mitem-1:hover .mi-icon { color: #00aaff; text-shadow: 0 0 16px rgba(0,170,255,0.75); }
+    #mitem-2:hover .mi-icon { color: #ff4433; text-shadow: 0 0 16px rgba(255,68,51,0.75); }
+    #mitem-3:hover .mi-icon { color: #44cc88; text-shadow: 0 0 16px rgba(68,204,136,0.75); }
+
+    .mi-info { flex: 1; min-width: 0; }
+
+    .mi-title {
+      font-size: 15px; letter-spacing: 5px; color: #2a4a7a;
+      transition: color 0.18s, text-shadow 0.18s;
+    }
+    #mitem-1:hover .mi-title { color: #00aaff; text-shadow: 0 0 14px rgba(0,170,255,0.4); }
+    #mitem-2:hover .mi-title { color: #ff4433; text-shadow: 0 0 14px rgba(255,68,51,0.4); }
+    #mitem-3:hover .mi-title { color: #44cc88; text-shadow: 0 0 14px rgba(68,204,136,0.4); }
+
+    .mi-desc {
+      font-size: 9px; letter-spacing: 0.8px; color: #0d2040;
+      margin-top: 4px; line-height: 1.55; transition: color 0.18s;
+    }
+    #mitem-1:hover .mi-desc { color: #336688; }
+    #mitem-2:hover .mi-desc { color: #664433; }
+    #mitem-3:hover .mi-desc { color: #226644; }
+
+    .mi-badge {
+      font-size: 8px; letter-spacing: 2px; padding: 2px 8px;
+      border: 1px solid #0c1628; color: #0d2040; flex-shrink: 0;
+      text-transform: uppercase; transition: color 0.18s, border-color 0.18s;
+    }
+    #mitem-1:hover .mi-badge { color: #006699; border-color: #003355; }
+    #mitem-2:hover .mi-badge { color: #993322; border-color: #441111; }
+    #mitem-3:hover .mi-badge { color: #227755; border-color: #0a3322; }
+
+    #menu-box-footer {
+      padding: 7px 16px; border-top: 1px solid #0a1628;
+      font-size: 8px; letter-spacing: 2px; color: #0d2040; text-align: center;
+      opacity: 0; animation: menuFadeIn 0.4s ease 1.55s forwards;
+    }
+
+
+    /* ── MODAL PRÓXIMAMENTE ── */
+    #modal-soon {
+      display: none;
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(4,8,16,0.88);
+      align-items: center; justify-content: center;
+    }
+    #modal-soon.open { display: flex; }
+    .modal-box {
+      background: #050c16;
+      border: 1px solid #0c1628;
+      padding: 40px 52px;
+      text-align: center;
+      position: relative;
+      max-width: 440px;
+    }
+    .modal-box::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+    }
+    .modal-soon-icon { font-size: 42px; margin-bottom: 16px; opacity: 0.8; }
+    .modal-soon-title { font-size: 20px; color: var(--cyan); letter-spacing: 5px; margin-bottom: 10px; text-shadow: 0 0 16px rgba(0,170,255,0.4); }
+    .modal-soon-sub { font-size: 12px; color: var(--text); letter-spacing: 2px; margin-bottom: 8px; line-height: 1.8; }
+    .modal-soon-hint { font-size: 10px; color: var(--text-d); letter-spacing: 1px; margin-top: 24px; }
+    .modal-soon-close {
+      margin-top: 28px;
+      background: transparent; border: 1px solid var(--border2);
+      color: var(--text-d); padding: 8px 24px;
+      font-family: inherit; font-size: 11px; letter-spacing: 2px;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .modal-soon-close:hover { border-color: var(--cyan-d); color: var(--cyan); box-shadow: 0 0 8px rgba(0,170,255,0.15); }
+
+    /* ── MODAL ABANDONAR PARTIDA ── */
+    #modal-abandon {
+      display: none;
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(4,8,16,0.92);
+      align-items: center; justify-content: center;
+    }
+    #modal-abandon.open { display: flex; }
+    #modal-abandon .modal-box::before {
+      background: linear-gradient(90deg, transparent, var(--red), transparent);
+    }
+    .abandon-icon   { font-size: 36px; margin-bottom: 14px; opacity: 0.7; }
+    .abandon-title  { font-size: 18px; color: var(--red); letter-spacing: 5px; margin-bottom: 10px;
+                      text-shadow: 0 0 14px rgba(255,60,40,0.5); }
+    .abandon-sub    { font-size: 11px; color: var(--text); letter-spacing: 1px; line-height: 1.8; margin-bottom: 6px; }
+    .abandon-hint   { font-size: 9px; color: var(--text-d); letter-spacing: 1px; margin-top: 18px; }
+    .abandon-btns   { display: flex; gap: 12px; margin-top: 24px; justify-content: center; }
+    #btn-abandon-confirm {
+      background: transparent; border: 1px solid var(--red-d);
+      color: #cc3322; padding: 8px 24px;
+      font-family: inherit; font-size: 11px; letter-spacing: 2px;
+      cursor: pointer; transition: all 0.15s;
+    }
+    #btn-abandon-confirm:hover { border-color: var(--red); color: var(--red); box-shadow: 0 0 10px rgba(255,60,40,0.2); }
+    #btn-abandon-restart {
+      background: transparent; border: 1px solid #004488;
+      color: #0077cc; padding: 8px 18px;
+      font-family: inherit; font-size: 11px; letter-spacing: 2px;
+      cursor: pointer; transition: all 0.15s;
+    }
+    #btn-abandon-restart:hover { border-color: var(--cyan-d); color: var(--cyan); box-shadow: 0 0 8px rgba(0,170,255,0.15); }
+    #btn-abandon-cancel {
+      background: transparent; border: 1px solid var(--border2);
+      color: var(--text); padding: 8px 18px;
+      font-family: inherit; font-size: 11px; letter-spacing: 2px;
+      cursor: pointer; transition: all 0.15s;
+    }
+    #btn-abandon-cancel:hover { border-color: var(--cyan-d); color: var(--cyan); box-shadow: 0 0 8px rgba(0,170,255,0.15); }
+
+    /* ── BRIEFING DE MISIÓN ── */
+    #briefing-screen {
+      position: fixed; inset: 0; z-index: 95;
+      background: #020508;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; animation: screenFadeIn 0.5s ease forwards;
+    }
+
+    #briefing-bg {
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse 60% 50% at 20% 50%, rgba(0,40,80,0.25) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 60% at 80% 50%, rgba(40,0,20,0.2) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    /* Scanlines sutiles en el briefing */
+    #briefing-bg::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: repeating-linear-gradient(
+        0deg, transparent, transparent 3px, rgba(0,0,8,0.12) 3px, rgba(0,0,8,0.12) 4px
+      );
+      pointer-events: none;
+    }
+
+    #briefing-content {
+      position: relative; z-index: 1;
+      width: min(780px, 92vw);
+      display: flex; flex-direction: column; gap: 0;
+      border: 1px solid #0c1830;
+    }
+
+    /* Línea de neón superior */
+    #briefing-content::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, #00aaff 30%, #ff3322 50%, #00aaff 70%, transparent);
+      opacity: 0.5;
+    }
+
+    #briefing-topbar {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 18px;
+      background: rgba(3,8,18,0.95);
+      border-bottom: 1px solid #0c1830;
+      font-size: 9px; letter-spacing: 3px; color: #1e3a5a;
+    }
+    #briefing-topbar .btb-signal {
+      display: flex; align-items: center; gap: 6px;
+      color: #00aaff; opacity: 0.7;
+    }
+    .btb-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: #00aaff;
+      animation: btbPulse 1.2s ease-in-out infinite;
+    }
+    @keyframes btbPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.2; } }
+
+    #briefing-title-area {
+      padding: 20px 28px 16px;
+      background: rgba(3,8,18,0.97);
+      border-bottom: 1px solid #0a1422;
+    }
+    #briefing-mission-label {
+      font-size: 9px; letter-spacing: 4px; color: #1e3a5a;
+      text-transform: uppercase; margin-bottom: 6px;
+    }
+    #briefing-title {
+      font-size: 22px; color: var(--cyan); letter-spacing: 5px;
+      text-shadow: 0 0 20px rgba(0,170,255,0.4);
+    }
+    #briefing-concept {
+      font-size: 9px; color: #334466; letter-spacing: 2px; margin-top: 5px;
+    }
+
+    /* ── Transmisiones ── */
+    #briefing-transmissions {
+      background: rgba(2,5,12,0.98);
+      padding: 20px 28px;
+      min-height: 160px;
+      display: flex; flex-direction: column; gap: 18px;
+      border-bottom: 1px solid #0a1422;
+    }
+
+    .brf-msg {
+      display: flex; gap: 14px; align-items: flex-start;
+      opacity: 0; transform: translateY(6px);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+    .brf-msg.visible { opacity: 1; transform: translateY(0); }
+
+    .brf-avatar {
+      flex-shrink: 0; width: 38px; height: 38px;
+      border: 1px solid;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; position: relative;
+    }
+    .brf-avatar.kira  { border-color: #004488; color: #0077cc;
+                        box-shadow: 0 0 12px rgba(0,100,200,0.2); }
+    .brf-avatar.nexus { border-color: #440011; color: #cc1133;
+                        box-shadow: 0 0 12px rgba(200,0,50,0.2); }
+    .brf-avatar.sys   { border-color: #1a2200; color: #445500;
+                        box-shadow: none; }
+
+    /* Pulsito en la esquina del avatar */
+    .brf-avatar::after {
+      content: ''; position: absolute; bottom: -3px; right: -3px;
+      width: 5px; height: 5px; border-radius: 50%;
+    }
+    .brf-avatar.kira::after  { background: #0077cc; }
+    .brf-avatar.nexus::after { background: #cc1133; }
+    .brf-avatar.sys::after   { display: none; }
+
+    .brf-body { flex: 1; min-width: 0; }
+    .brf-name {
+      font-size: 8px; letter-spacing: 3px; text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+    .brf-name.kira  { color: #005599; }
+    .brf-name.nexus { color: #881122; }
+    .brf-name.sys   { color: #334400; }
+
+    .brf-text {
+      font-size: 11px; line-height: 1.75; color: #4a6a8a;
+      letter-spacing: 0.3px;
+    }
+    .brf-msg.kira  .brf-text { color: #5588aa; }
+    .brf-msg.nexus .brf-text { color: #885566; }
+    .brf-msg.sys   .brf-text { color: #445522; }
+
+    /* Cursor parpadeante del typewriter */
+    .brf-cursor {
+      display: inline-block; width: 7px; height: 12px;
+      background: currentColor; margin-left: 2px; vertical-align: middle;
+      animation: blink 0.6s step-end infinite;
+    }
+    @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+
+    /* ── Objetivos ── */
+    #briefing-objectives {
+      background: rgba(3,8,18,0.97);
+      padding: 14px 28px;
+      border-bottom: 1px solid #0a1422;
+    }
+    #briefing-obj-label {
+      font-size: 8px; letter-spacing: 4px; color: #0d2040;
+      text-transform: uppercase; margin-bottom: 10px;
+    }
+    .brf-obj {
+      display: flex; align-items: baseline; gap: 8px;
+      font-size: 10px; color: #2a4a6a; letter-spacing: 0.5px;
+      margin-bottom: 6px; opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .brf-obj.visible { opacity: 1; }
+    .brf-obj-bullet { color: var(--cyan-d); flex-shrink: 0; }
+
+    /* ── Footer ── */
+    #briefing-footer {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 14px 28px;
+      background: rgba(3,8,18,0.97);
+    }
+    #briefing-footer .brf-hint {
+      font-size: 9px; color: #0d2040; letter-spacing: 1px;
+    }
+    .brf-footer-btns { display: flex; gap: 10px; }
+    #btn-briefing-skip {
+      background: transparent; border: 1px solid #0c1628;
+      color: #1e3a5a; font-family: inherit; font-size: 10px;
+      padding: 6px 16px; cursor: pointer; letter-spacing: 1px;
+      transition: all 0.15s;
+    }
+    #btn-briefing-skip:hover { border-color: #1e3a5a; color: var(--text); }
+    #btn-briefing-start {
+      background: transparent; border: 1px solid var(--cyan-d);
+      color: var(--cyan-d); font-family: inherit; font-size: 11px;
+      padding: 8px 22px; cursor: pointer; letter-spacing: 2px;
+      transition: all 0.15s; opacity: 0;
+      pointer-events: none;
+    }
+    #btn-briefing-start.ready {
+      opacity: 1; pointer-events: auto;
+      animation: startPulse 1.5s ease-in-out infinite;
+    }
+    @keyframes startPulse {
+      0%,100% { box-shadow: 0 0 8px rgba(0,170,255,0.15); }
+      50%     { box-shadow: 0 0 18px rgba(0,170,255,0.35); }
+    }
+    #btn-briefing-start:hover { background: rgba(0,170,255,0.07); color: var(--cyan); }
 
     /* ── VICTORIA ── */
     #victory-banner {
@@ -645,58 +962,6 @@
       box-shadow: 0 0 20px rgba(255,60,40,0.4);
     }
 
-    /* ── PREVIEW LATERAL DEL MENÚ ── */
-    #menu-preview {
-      position: fixed; right: 0; top: 0; bottom: 0;
-      width: 300px; z-index: 102;
-      background: rgba(3, 6, 14, 0.97);
-      border-left: 1px solid #0c1830;
-      padding: 52px 26px 30px;
-      display: flex; flex-direction: column; gap: 16px;
-      opacity: 0; transform: translateX(20px);
-      transition: opacity 0.25s ease, transform 0.25s ease;
-      pointer-events: none;
-    }
-    #menu-preview.visible { opacity: 1; transform: translateX(0); }
-
-    #mp-accent { width: 28px; height: 2px; transition: background 0.3s; }
-
-    #mp-title {
-      font-size: 20px; letter-spacing: 5px; color: #fff;
-    }
-    #mp-sub {
-      font-size: 9px; letter-spacing: 2px; opacity: 0.55;
-      text-transform: uppercase; margin-top: -8px;
-    }
-    #mp-divider {
-      height: 1px;
-      background: linear-gradient(90deg, #102040, transparent);
-    }
-    #mp-features {
-      list-style: none; display: flex; flex-direction: column; gap: 10px; flex: 1;
-    }
-    #mp-features li {
-      font-size: 11px; color: #7799cc; letter-spacing: 0.3px;
-      padding-left: 14px; position: relative; line-height: 1.5;
-    }
-    #mp-features li::before { content: '›'; position: absolute; left: 0; color: #0077bb; }
-
-    #mp-code-block {
-      background: #020508; border: 1px solid #0a1828; padding: 12px 13px;
-    }
-    #mp-code-label {
-      font-size: 8px; color: #1e3a5a; letter-spacing: 3px;
-      text-transform: uppercase; margin-bottom: 8px;
-    }
-    #mp-code {
-      font-family: 'Share Tech Mono', monospace; font-size: 10px;
-      color: #3d7daa; line-height: 1.65; white-space: pre; overflow: hidden;
-      margin: 0;
-    }
-    #mp-cta {
-      font-size: 9px; color: #1e3a5a; letter-spacing: 2px;
-      text-align: center; padding-top: 8px; border-top: 1px solid #0c1830;
-    }
   </style>
 </head>
 <body>
@@ -707,70 +972,56 @@
     <div id="menu-content">
       <div id="menu-logo">CODESTRIKE</div>
       <div id="menu-subtitle">Real-Time Strategy · Code Your Army</div>
-      <div id="menu-divider"></div>
 
-      <div id="menu-cards">
-
-        <div class="menu-card" id="card-campaign" tabindex="0">
-          <span class="card-keybind">[1]</span>
-          <div class="card-icon">◈</div>
-          <div class="card-title">CAMPAÑA</div>
-          <div class="card-desc">
-            Aprende JavaScript desde cero.<br/>
-            5 misiones guiadas · Sin experiencia previa necesaria.
-          </div>
-          <div class="card-badge">Recomendado</div>
+      <div id="menu-box">
+        <div id="menu-box-header">
+          <span>SELECCIONAR MODO</span>
+          <span class="mbh-version">v2.0 — La Red de Neones</span>
         </div>
 
-        <div class="menu-card" id="card-vs-ai" tabindex="0">
-          <span class="card-keybind">[2]</span>
-          <div class="card-icon">⬡</div>
-          <div class="card-title">VS IA</div>
-          <div class="card-desc">
-            Modo libre. Escribe tu propia<br/>
-            estrategia y compite directamente contra la IA.
+        <div class="menu-item" id="mitem-1" tabindex="0">
+          <div class="mi-num">[01]</div>
+          <div class="mi-icon">◈</div>
+          <div class="mi-info">
+            <div class="mi-title">CAMPAÑA</div>
+            <div class="mi-desc">Aprende JavaScript desde cero · 17 misiones · 3 temporadas</div>
           </div>
-          <div class="card-badge">Libre</div>
+          <div class="mi-badge">Recomendado</div>
         </div>
 
-        <div class="menu-card" id="card-sandbox" tabindex="0">
-          <span class="card-keybind">[3]</span>
-          <div class="card-icon">◇</div>
-          <div class="card-title">SANDBOX</div>
-          <div class="card-desc">
-            Sin IA, sin victoria.<br/>
-            Experimenta con tu código sin presión.
+        <div class="menu-item" id="mitem-2" tabindex="0">
+          <div class="mi-num">[02]</div>
+          <div class="mi-icon">⬡</div>
+          <div class="mi-info">
+            <div class="mi-title">VS IA</div>
+            <div class="mi-desc">Tu código contra la inteligencia artificial en tiempo real</div>
           </div>
-          <div class="card-badge">Libre</div>
+          <div class="mi-badge">Libre</div>
         </div>
 
-        <div class="menu-card locked-card" id="card-challenges" tabindex="0">
-          <span class="card-keybind">[4]</span>
-          <div class="card-icon">⬟</div>
-          <div class="card-title">DESAFÍOS</div>
-          <div class="card-desc">
-            Retos cronometrados.<br/>
-            ¿Puedes llenar la base en 100 ticks?
+        <div class="menu-item" id="mitem-3" tabindex="0">
+          <div class="mi-num">[03]</div>
+          <div class="mi-icon">◇</div>
+          <div class="mi-info">
+            <div class="mi-title">SANDBOX</div>
+            <div class="mi-desc">Sin IA, sin victoria · Experimenta con tu código sin presión</div>
           </div>
-          <div class="card-badge">Próximamente</div>
+          <div class="mi-badge">Libre</div>
         </div>
 
+        <div class="menu-item mi-locked" id="mitem-4" tabindex="0">
+          <div class="mi-num">[04]</div>
+          <div class="mi-icon">⬟</div>
+          <div class="mi-info">
+            <div class="mi-title">DESAFÍOS</div>
+            <div class="mi-desc">Retos cronometrados · Rankings · En desarrollo</div>
+          </div>
+          <div class="mi-badge">Próximamente</div>
+        </div>
+
+        <div id="menu-box-footer">[ 1 ] [ 2 ] [ 3 ] seleccionar &nbsp;·&nbsp; Enter confirmar</div>
       </div>
-      <div id="menu-hint">[ 1 ][ 2 ][ 3 ] seleccionar &nbsp;·&nbsp; Enter confirmar</div>
     </div>
-  </div>
-  <!-- Panel lateral hover del menú -->
-  <div id="menu-preview">
-    <div id="mp-accent"></div>
-    <div id="mp-title"></div>
-    <div id="mp-sub"></div>
-    <div id="mp-divider"></div>
-    <ul id="mp-features"></ul>
-    <div id="mp-code-block">
-      <div id="mp-code-label">Ejemplo de código</div>
-      <pre id="mp-code"></pre>
-    </div>
-    <div id="mp-cta">Click para entrar →</div>
   </div>
   <!-- ═══════════════════════════════════════════════════════════════════== -->
 
@@ -862,7 +1113,10 @@
   <!-- ═══════════════════════════════════════════════════════════════════== -->
 
   <div id="header">
-    <h1>⬡ CODESTRIKE <span>v2.0 — La Red de Neones</span></h1>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button id="btn-to-menu" style="font-size:11px;padding:4px 10px;letter-spacing:1px;" title="Salir de la partida [Esc]">← Menú</button>
+      <h1>⬡ CODESTRIKE <span>v2.0 — La Red de Neones</span></h1>
+    </div>
     <div id="tick-info">TICK <span id="tick">—</span></div>
     <div id="controls">
       <button id="btn-pause">⏸ Pausar</button>
@@ -876,45 +1130,47 @@
     </div>
 
     <div id="panel">
+
+      <!-- ── PANEL MISIÓN (campaña) ── -->
+      <div id="mission-panel">
+        <div id="mp-badge">MISIÓN 01</div>
+        <div id="mp-title">—</div>
+        <div id="mp-concept"></div>
+        <div id="mp-objectives"></div>
+      </div>
+
       <div id="panel-top">
 
-        <!-- ── JUGADOR ── -->
-        <div class="panel-section player">
-          <h3>◈ Jugador</h3>
-          <div class="stat-row">
-            <span class="stat-label">Energía</span>
-            <span class="stat-value player-val" id="base-energy">—</span>
+        <!-- ── JUGADOR + IA — layout 2 columnas compacto ── -->
+        <div class="panel-section" style="padding:7px 8px">
+          <!-- Jugador -->
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px">
+            <span class="stat-label" style="color:var(--cyan-d);font-size:9px;letter-spacing:2px">◈ TÚ</span>
+            <span class="stat-value player-val" id="base-energy" style="font-size:10px">—</span>
           </div>
-          <div class="energy-bar-bg">
+          <div class="energy-bar-bg" style="margin-top:0;margin-bottom:2px">
             <div class="energy-bar-fill player" id="base-energy-bar" style="width:0%"></div>
           </div>
-          <canvas id="sparkline-player" class="sparkline"></canvas>
-          <div class="stat-row" style="margin-top:4px">
-            <span class="stat-label">Workers</span>
-            <span class="stat-value" id="worker-count">—</span>
-            <span class="stat-label" style="margin-left:8px">Ext</span>
-            <span class="stat-value" id="ext-count">—</span>
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+            <span class="stat-label" style="font-size:9px">Workers <span class="stat-value" id="worker-count">—</span></span>
+            <span class="stat-label" style="font-size:9px">Ext <span class="stat-value" id="ext-count">—</span></span>
           </div>
-        </div>
-
-        <!-- ── IA ── -->
-        <div class="panel-section enemy">
-          <h3>◈ IA Enemiga</h3>
-          <div class="stat-row">
-            <span class="stat-label">Energía</span>
-            <span class="stat-value enemy-val" id="ai-energy">—</span>
+          <!-- IA -->
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px">
+            <span class="stat-label" style="color:#aa3333;font-size:9px;letter-spacing:2px">⬟ IA</span>
+            <span class="stat-value enemy-val" id="ai-energy" style="font-size:10px">—</span>
           </div>
-          <div class="energy-bar-bg">
+          <div class="energy-bar-bg" style="margin-top:0;margin-bottom:2px">
             <div class="energy-bar-fill enemy" id="ai-energy-bar" style="width:0%"></div>
           </div>
-          <canvas id="sparkline-ai" class="sparkline"></canvas>
-          <div class="stat-row" style="margin-top:4px">
-            <span class="stat-label">Workers</span>
-            <span class="stat-value" id="ai-worker-count">—</span>
-            <span class="stat-label" style="margin-left:8px">Ext</span>
-            <span class="stat-value" id="ai-ext-count">—</span>
+          <div style="display:flex;justify-content:space-between">
+            <span class="stat-label" style="font-size:9px">Workers <span class="stat-value" id="ai-worker-count">—</span></span>
+            <span class="stat-label" style="font-size:9px">Ext <span class="stat-value" id="ai-ext-count">—</span></span>
           </div>
         </div>
+        <!-- sparklines ocultos — se mantienen para la lógica JS -->
+        <canvas id="sparkline-player" style="display:none"></canvas>
+        <canvas id="sparkline-ai"     style="display:none"></canvas>
 
         <!-- ── DOMINANCIA ── -->
         <div class="panel-section">
@@ -931,15 +1187,12 @@
           </div>
         </div>
 
-        <!-- ── WORKERS GRID ── -->
-        <div class="panel-section">
-          <h3>Fuerza de trabajo</h3>
-          <div id="worker-dots"></div>
-        </div>
-
-        <!-- ── LOG DE EVENTOS ── -->
-        <div class="panel-section">
-          <h3>Eventos</h3>
+        <!-- ── WORKERS + EVENTOS en sección unificada ── -->
+        <div class="panel-section" style="padding:6px 8px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+            <span style="font-size:8px;letter-spacing:2px;color:var(--text-d)">WORKERS</span>
+            <div id="worker-dots" style="display:flex;flex-wrap:wrap;gap:3px;justify-content:flex-end;max-width:170px"></div>
+          </div>
           <div id="event-log"></div>
         </div>
 
@@ -969,6 +1222,78 @@ for (const id in Game.workers) {
   </div>
 
   <div id="status-bar">Conectando...</div>
+
+  <!-- ═══════════════════════ BRIEFING DE MISIÓN ══════════════════════════ -->
+  <div id="briefing-screen" style="display:none">
+    <div id="briefing-bg"></div>
+    <div id="briefing-content">
+
+      <div id="briefing-topbar">
+        <div class="btb-signal">
+          <div class="btb-dot"></div>
+          <span>TRANSMISIÓN ENTRANTE — RED LIBRE</span>
+        </div>
+        <span id="briefing-sector">SECTOR 7-GAMMA</span>
+      </div>
+
+      <div id="briefing-title-area">
+        <div id="briefing-mission-label">MISIÓN 01</div>
+        <div id="briefing-title">Tu primer ejército</div>
+        <div id="briefing-concept">if · else · for...in · variables</div>
+      </div>
+
+      <div id="briefing-transmissions">
+        <!-- mensajes inyectados dinámicamente -->
+      </div>
+
+      <div id="briefing-objectives">
+        <div id="briefing-obj-label">Objetivos</div>
+        <div id="briefing-obj-list">
+          <!-- objetivos inyectados dinámicamente -->
+        </div>
+      </div>
+
+      <div id="briefing-footer">
+        <span class="brf-hint">// presiona Enter para comenzar</span>
+        <div class="brf-footer-btns">
+          <button id="btn-briefing-skip">Saltar</button>
+          <button id="btn-briefing-start">▶ INICIAR MISIÓN</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════ MODAL ABANDONAR PARTIDA ════════════════════ -->
+  <div id="modal-abandon">
+    <div class="modal-box">
+      <div class="abandon-icon">◌</div>
+      <div class="abandon-title">ABANDONAR</div>
+      <div class="abandon-sub">
+        ¿Salir de la partida en curso?<br>
+        El progreso de esta sesión se perderá.
+      </div>
+      <div class="abandon-hint">// el progreso de misiones completadas se conserva</div>
+      <div class="abandon-btns">
+        <button id="btn-abandon-restart">↺ Reiniciar</button>
+        <button id="btn-abandon-confirm">← Menú</button>
+        <button id="btn-abandon-cancel">Seguir jugando</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════ MODAL PRÓXIMAMENTE ══════════════════════════ -->
+  <div id="modal-soon">
+    <div class="modal-box">
+      <div class="modal-soon-icon">⬟</div>
+      <div class="modal-soon-title">DESAFÍOS</div>
+      <div class="modal-soon-sub">
+        Retos cronometrados, puzzles de código<br>y rankings competitivos.
+      </div>
+      <div class="modal-soon-hint">// próximamente en CODESTRIKE v3.0</div>
+      <button class="modal-soon-close" id="btn-close-modal">Volver al menú</button>
+    </div>
+  </div>
 
   <script src="game.js"></script>
 </body>

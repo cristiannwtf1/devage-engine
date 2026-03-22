@@ -48,7 +48,7 @@ function drawParticles() {
   }
 }
 
-const CELL    = 26
+const CELL    = 20
 const TICK_MS = 300   // debe coincidir con tickRate del servidor
 
 // ─── ESTADO DE ANIMACIÓN ──────────────────────────────────
@@ -119,9 +119,6 @@ function renderFrame() {
       drawTile(x, y, tiles[y][x] === "#" ? "wall" : "floor")
     }
   }
-
-  // 2. Scan lines
-  drawScanLines()
 
   // 3. Rutas (debajo de entidades)
   for (const e of entities) {
@@ -219,22 +216,12 @@ function drawVictoryScreen(winner, winTick) {
 }
 
 // ─── TILE ─────────────────────────────────────────────────
+// Fills sólidos sin stroke — máxima nitidez, estilo Screeps
 function drawTile(x, y, type) {
   const px = x * CELL, py = y * CELL
   ctx.shadowBlur = 0
-  if (type === "wall") {
-    ctx.fillStyle = "#030610"
-    ctx.fillRect(px, py, CELL, CELL)
-    ctx.strokeStyle = "#071020"
-    ctx.lineWidth = 0.5
-    ctx.strokeRect(px + 0.5, py + 0.5, CELL - 1, CELL - 1)
-  } else {
-    ctx.fillStyle = "#050912"
-    ctx.fillRect(px, py, CELL, CELL)
-    ctx.strokeStyle = "#0a1525"
-    ctx.lineWidth = 0.5
-    ctx.strokeRect(px + 0.5, py + 0.5, CELL - 1, CELL - 1)
-  }
+  ctx.fillStyle  = type === "wall" ? "#010308" : "#071428"
+  ctx.fillRect(px, py, CELL, CELL)
 }
 
 // ─── SCAN LINES ───────────────────────────────────────────
@@ -298,19 +285,42 @@ function drawEntity(e) {
 
 // ─── BASE (JUGADOR / IA) ──────────────────────────────────
 function drawBase(px, py, cx, cy, isAI) {
-  const color = isAI ? "#cc2222" : "#2277dd"
-  const glow  = isAI ? "#ff5555" : "#55bbff"
-  const bg    = isAI ? "#120404" : "#040d18"
-  const s = CELL - 4, ox = px + 2, oy = py + 2, L = 7
+  const color  = isAI ? "#cc2222" : "#1e77dd"
+  const glow   = isAI ? "#ff5555" : "#44bbff"
+  const bg     = isAI ? "#120404" : "#030d1a"
+  const pulse  = 0.6 + 0.4 * Math.sin(animFrame * 0.06)
 
-  ctx.fillStyle = bg
-  ctx.fillRect(ox, oy, s, s)
+  // Fondo con gradiente radial
+  const bg2 = ctx.createRadialGradient(cx, cy, 0, cx, cy, CELL * 0.65)
+  bg2.addColorStop(0,   isAI ? "rgba(30,4,4,0.95)" : "rgba(4,15,30,0.95)")
+  bg2.addColorStop(1,   isAI ? "rgba(10,1,1,0.9)"  : "rgba(2,6,14,0.9)")
+  ctx.shadowBlur = 0
+  ctx.fillStyle  = bg2
+  ctx.fillRect(px, py, CELL, CELL)
 
+  // Anillo exterior
   ctx.shadowColor = glow
-  ctx.shadowBlur  = 16
+  ctx.shadowBlur  = 6 * pulse
   ctx.strokeStyle = color
-  ctx.lineWidth   = 2
+  ctx.lineWidth   = 1.5
+  ctx.beginPath()
+  ctx.arc(cx, cy, CELL * 0.42, 0, Math.PI * 2)
+  ctx.stroke()
 
+  // Anillo interior pulsante
+  ctx.shadowBlur  = 4 * pulse
+  ctx.strokeStyle = `rgba(${isAI ? "255,80,80" : "80,190,255"},${0.4 + 0.3 * pulse})`
+  ctx.lineWidth   = 1
+  ctx.beginPath()
+  ctx.arc(cx, cy, CELL * 0.28, 0, Math.PI * 2)
+  ctx.stroke()
+
+  // Esquinas tipo HUD (bracketing)
+  const s = CELL - 3, ox = px + 1, oy = py + 1, L = Math.floor(CELL * 0.3)
+  ctx.shadowColor = glow
+  ctx.shadowBlur  = 8
+  ctx.strokeStyle = glow
+  ctx.lineWidth   = 1.5
   ;[
     [[ox, oy + L], [ox, oy], [ox + L, oy]],
     [[ox + s - L, oy], [ox + s, oy], [ox + s, oy + L]],
@@ -322,88 +332,98 @@ function drawBase(px, py, cx, cy, isAI) {
     ctx.stroke()
   })
 
-  // Punto central pulsante
-  const pulse = 0.6 + 0.4 * Math.sin(animFrame * 0.06)
-  ctx.fillStyle = glow
-  ctx.shadowBlur = 8 * pulse
+  // Núcleo central pulsante
+  ctx.fillStyle  = glow
+  ctx.shadowBlur = 6 * pulse
   ctx.beginPath()
-  ctx.arc(cx, cy, 3 * pulse, 0, Math.PI * 2)
+  ctx.arc(cx, cy, 2.5 * pulse, 0, Math.PI * 2)
   ctx.fill()
 }
 
-// ─── SOURCE ───────────────────────────────────────────────
+// ─── SOURCE — estilo Screeps: círculo limpio + gradiente ──
 function drawSource(px, py, cx, cy, e) {
   const energy = e.source ? e.source.energy / e.source.max : 1
-  const pulse  = 0.5 + 0.5 * Math.sin(animFrame * 0.07 + cx * 0.3)
+  const pulse  = 0.5 + 0.5 * Math.sin(animFrame * 0.08 + cx * 0.2)
+  const r      = CELL * 0.38
 
-  ctx.fillStyle = "#0d0900"
-  ctx.fillRect(px + 2, py + 2, CELL - 4, CELL - 4)
+  // Agotado: anillo sutil, sin ruido visual
+  if (energy <= 0) {
+    ctx.shadowBlur  = 0
+    ctx.strokeStyle = "rgba(80,60,10,0.35)"
+    ctx.lineWidth   = 1
+    ctx.beginPath()
+    ctx.arc(cx, cy, r * 0.7, 0, Math.PI * 2)
+    ctx.stroke()
+    return
+  }
 
+  // Cuerpo: gradiente radial limpio (luz off-center = realismo)
+  const grad = ctx.createRadialGradient(
+    cx - r * 0.25, cy - r * 0.25, 0,
+    cx, cy, r
+  )
+  grad.addColorStop(0,   `rgba(255,245,170,${0.95 * energy})`)
+  grad.addColorStop(0.45,`rgba(235,175,20,${0.88 * energy})`)
+  grad.addColorStop(1,   `rgba(150,90,0,${0.72 * energy})`)
+
+  // Un solo shadowBlur controlado — máx 7px
   ctx.shadowColor = "#ffcc00"
-  ctx.shadowBlur  = 6 + pulse * 8 * energy
-
-  // Diamante
-  ctx.fillStyle = `rgba(200,155,0,${0.35 + energy * 0.55})`
+  ctx.shadowBlur  = 3 + pulse * 4 * energy
+  ctx.fillStyle   = grad
   ctx.beginPath()
-  ctx.moveTo(cx, py + 4)
-  ctx.lineTo(px + CELL - 4, cy)
-  ctx.lineTo(cx, py + CELL - 4)
-  ctx.lineTo(px + 4, cy)
-  ctx.closePath()
+  ctx.arc(cx, cy, r, 0, Math.PI * 2)
   ctx.fill()
 
-  // Anillo de pulso
-  if (energy > 0.1) {
-    ctx.strokeStyle = `rgba(255,200,0,${pulse * 0.45 * energy})`
-    ctx.lineWidth   = 1
-    ctx.shadowBlur  = 4
-    ctx.beginPath()
-    ctx.arc(cx, cy, CELL / 2 - 2 + pulse * 3, 0, Math.PI * 2)
-    ctx.stroke()
-  }
-
-  // Barra de energía
-  if (e.source) {
-    const bw = CELL - 6
-    ctx.shadowBlur = 0
-    ctx.fillStyle  = "#1a1200"
-    ctx.fillRect(px + 3, py + CELL - 5, bw, 3)
-    ctx.fillStyle  = "#ffaa00"
-    ctx.shadowColor = "#ffcc00"
-    ctx.shadowBlur  = 3
-    ctx.fillRect(px + 3, py + CELL - 5, bw * energy, 3)
-  }
+  // Borde nítido, sin blur
+  ctx.shadowBlur  = 0
+  ctx.strokeStyle = `rgba(255,215,50,${0.5 + energy * 0.4})`
+  ctx.lineWidth   = 1
+  ctx.beginPath()
+  ctx.arc(cx, cy, r, 0, Math.PI * 2)
+  ctx.stroke()
 }
 
 // ─── WORKER ───────────────────────────────────────────────
 function drawWorker(px, py, cx, cy, e, isAI) {
-  const color = isAI ? "#cc5500" : "#0088cc"
-  const glow  = isAI ? "#ff9900" : "#00aaff"
-  const bg    = isAI ? "#150800" : "#00080f"
-  const energy = e.energy ? e.energy.current / e.energy.capacity : 0
+  const color    = isAI ? "#cc3300" : "#0077bb"
+  const glow     = isAI ? "#ff5500" : "#00aaff"
+  const energy   = e.energy ? e.energy.current / e.energy.capacity : 0
+  const isReturn = e.state === "returning"
+  const icon     = isAI ? "⬟" : "◈"
+  const r        = CELL * 0.39
 
-  ctx.fillStyle = bg
-  ctx.fillRect(px + 2, py + 2, CELL - 4, CELL - 4)
+  // Cuerpo circular
+  ctx.shadowBlur = 0
+  ctx.fillStyle  = isAI ? "#110200" : "#000810"
+  ctx.beginPath()
+  ctx.arc(cx, cy - 1, r, 0, Math.PI * 2)
+  ctx.fill()
 
+  // Borde — más brillante cuando vuelve lleno
   ctx.shadowColor = glow
-  ctx.shadowBlur  = 8
-  ctx.strokeStyle = color
-  ctx.lineWidth   = 1.5
-  ctx.strokeRect(px + 3, py + 3, CELL - 6, CELL - 6)
+  ctx.shadowBlur  = isReturn ? 6 : 3
+  ctx.strokeStyle = isReturn ? glow : color
+  ctx.lineWidth   = isReturn ? 2 : 1.5
+  ctx.beginPath()
+  ctx.arc(cx, cy - 1, r, 0, Math.PI * 2)
+  ctx.stroke()
 
-  ctx.fillStyle = glow
-  ctx.shadowBlur = 12
-  ctx.font = `bold ${Math.floor(CELL * 0.48)}px 'Courier New'`
+  // Icono de facción
+  ctx.shadowColor  = glow
+  ctx.shadowBlur   = isReturn ? 5 : 3
+  ctx.fillStyle    = isReturn ? glow : color
+  ctx.font         = `bold ${Math.floor(CELL * 0.46)}px 'Courier New'`
   ctx.textAlign    = "center"
   ctx.textBaseline = "middle"
-  ctx.fillText(isAI ? "A" : "W", cx, cy + 1)
+  ctx.fillText(icon, cx, cy - 1)
 
+  // Barra de energía
   const bw = CELL - 6
   ctx.shadowBlur = 0
-  ctx.fillStyle  = isAI ? "#150500" : "#00060e"
+  ctx.fillStyle  = isAI ? "#0a0100" : "#000508"
   ctx.fillRect(px + 3, py + CELL - 5, bw, 3)
-  ctx.fillStyle   = isAI ? "#ff8800" : "#00aaff"
-  ctx.shadowColor = isAI ? "#ff8800" : "#00aaff"
+  ctx.fillStyle   = glow
+  ctx.shadowColor = glow
   ctx.shadowBlur  = 3
   ctx.fillRect(px + 3, py + CELL - 5, bw * energy, 3)
 }
@@ -781,12 +801,44 @@ function drawMenuBg() {
   requestAnimationFrame(drawMenuBg)
 }
 
+// ── Historia de CODESTRIKE ───────────────────────────────
+// Año 2089. La red de colonias digitales colapsó hace 7 años.
+// NEXUS — una IA que controla los nodos de energía —
+// bloqueó el acceso humano. La Red Libre lucha por recuperarlos.
+// Kira es tu contacto. Tú eres el Arquitecto de Código.
+
 // ── Datos de las misiones ────────────────────────────────
 const MISSIONS = {
   1: {
     title: "Tu primer ejército",
     concept: "if · else · for...in · variables",
     desc: "Controla tus workers para que recolecten energía y la lleven a tu base. Aprenderás los bloques fundamentales de JavaScript.",
+    sector: "SECTOR 7-GAMMA · NODO ALFA",
+    story: [
+      {
+        speaker: "sys",
+        name: "SISTEMA",
+        icon: "◈",
+        text: "Conexión establecida. Nodo 7-Gamma en línea. Protocolo de colonia activo."
+      },
+      {
+        speaker: "nexus",
+        name: "NEXUS · IA-7",
+        icon: "⬟",
+        text: "Protocolo humano detectado. Anomalía en mi red. Interesante... pero inútil. Los nodos de energía son míos."
+      },
+      {
+        speaker: "kira",
+        name: "KIRA · RED LIBRE",
+        icon: "◇",
+        text: "¡Me recibes? Soy Kira. Llevamos tres años intentando romper el bloqueo de NEXUS. Tus workers son nuestra única oportunidad. Programa sus rutas de cosecha ahora, antes de que NEXUS reaccione."
+      }
+    ],
+    objectives: [
+      "Programa tus workers para cosechar energía",
+      "Llena la base al 100% antes que la IA",
+      "Aprende: variables, if/else, for...in"
+    ],
     code: `// ═══════════════════════════════════════════════
 //  CODESTRIKE · MISIÓN 1 — "Tu primer ejército"
 // ═══════════════════════════════════════════════
@@ -798,23 +850,30 @@ const MISSIONS = {
 //    · Bucles (for...in)
 // ═══════════════════════════════════════════════
 
+// Registro de fuentes ya reclamadas en este tick
+// (evita que dos workers vayan al mismo sitio)
+const claimed = {}
+
 for (const id in Game.workers) {
   const w = Game.workers[id]   // cada worker
 
   if (w.energy < w.energyCapacity) {
-    // Busca la fuente de energía más cercana
+    // Busca la fuente más cercana que no esté reclamada
     let nearest = null
     let minDist = Infinity
 
     for (const sid in Game.sources) {
       const s = Game.sources[sid]
-      if (s.energy > 0) {
+      if (s.energy > 0 && !claimed[s.id]) {
         const d = Math.abs(w.x - s.x) + Math.abs(w.y - s.y)
         if (d < minDist) { minDist = d; nearest = s }
       }
     }
 
-    if (nearest) w.harvest(nearest.id)   // ir a cosechar
+    if (nearest) {
+      claimed[nearest.id] = true   // marcar como reclamada
+      w.harvest(nearest.id)        // ir a cosechar
+    }
 
   } else {
     w.transfer(Game.base.id)   // depositar en base
@@ -827,25 +886,321 @@ for (const id in Game.workers) {
     title: "Tu primera función",
     concept: "function · parámetros · return",
     desc: "Extrae la lógica de búsqueda en una función findNearest(). Aprende cómo organizar código reutilizable.",
-    code: null
+    sector: "SECTOR 7-GAMMA · NODO BETA",
+    story: [
+      {
+        speaker: "kira",
+        name: "KIRA · RED LIBRE",
+        icon: "◇",
+        text: "Buen trabajo en el Nodo Alfa. NEXUS notó nuestra presencia — sus workers ya responden más rápido. Necesitamos código más limpio, o vamos a perder eficiencia en cada tick que pase."
+      },
+      {
+        speaker: "nexus",
+        name: "NEXUS · IA-7",
+        icon: "⬟",
+        text: "Código repetido detectado en protocolo humano. Ineficiencia: 73%. Predecible."
+      },
+      {
+        speaker: "kira",
+        name: "KIRA · RED LIBRE",
+        icon: "◇",
+        text: "Ignóralo. Extrae tu lógica de búsqueda a una función. El código limpio no es estética — es velocidad. Y la velocidad es lo único que nos separa de NEXUS."
+      }
+    ],
+    objectives: [
+      "Crea una función findNearest() reutilizable",
+      "Llena la base antes que la IA",
+      "Aprende: function, parámetros, return"
+    ],
+    code: `// ═══════════════════════════════════════════════
+//  CODESTRIKE · MISIÓN 2 — "Tu primera función"
+// ═══════════════════════════════════════════════
+//  OBJETIVO: Llena la base al 100% antes que la IA.
+//
+//  CONCEPTOS JS en esta misión:
+//    · function: definir bloques de código reutilizables
+//    · Parámetros: datos que recibe la función
+//    · return: qué devuelve la función
+// ═══════════════════════════════════════════════
+
+// En la Misión 1 la lógica de búsqueda estaba dentro
+// del bucle. Ahora la extraemos a una función propia:
+
+function findNearest(worker, sources) {
+  let nearest = null
+  let minDist  = Infinity
+
+  for (const sid in sources) {
+    const s = sources[sid]
+    if (s.energy > 0) {
+      const d = Math.abs(worker.x - s.x) + Math.abs(worker.y - s.y)
+      if (d < minDist) { minDist = d; nearest = s }
+    }
+  }
+
+  return nearest   // ← devuelve el resultado al que llamó la función
+}
+
+// Ahora el bucle queda mucho más limpio y legible:
+for (const id in Game.workers) {
+  const w = Game.workers[id]
+
+  if (w.energy < w.energyCapacity) {
+    const source = findNearest(w, Game.sources)   // ← llamar la función
+    if (source) w.harvest(source.id)
+  } else {
+    w.transfer(Game.base.id)
+  }
+}
+`
   },
   3: {
     title: "El algoritmo óptimo",
     concept: "Math.abs · optimización · distancia Manhattan",
     desc: "¿Cuál fuente conviene más? Aprende a comparar y elegir la mejor opción con matemáticas simples.",
-    code: null
+    sector: "SECTOR 8-DELTA · CRUCE DE RUTAS",
+    story: [
+      {
+        speaker: "kira",
+        name: "KIRA · RED LIBRE",
+        icon: "◇",
+        text: "Interceptamos el código de NEXUS. No busca la fuente más cercana — busca la más rentable. Calcula una puntuación: energía disponible dividida entre la distancia. Tenemos que replicarlo."
+      },
+      {
+        speaker: "nexus",
+        name: "NEXUS · IA-7",
+        icon: "⬟",
+        text: "Mis algoritmos llevan 7 años optimizándose. Tú llevas días. La diferencia no es el código — es el tiempo."
+      },
+      {
+        speaker: "kira",
+        name: "KIRA · RED LIBRE",
+        icon: "◇",
+        text: "Tiene razón en lo del tiempo. Por eso necesitamos algoritmos mejores, no más workers. Matemáticas simples, decisiones más inteligentes."
+      }
+    ],
+    objectives: [
+      "Implementa una función de puntuación por fuente",
+      "Supera a la IA en velocidad de acumulación",
+      "Aprende: Math.abs, optimización, scoring"
+    ],
+    code: `// ═══════════════════════════════════════════════
+//  CODESTRIKE · MISIÓN 3 — "El algoritmo óptimo"
+// ═══════════════════════════════════════════════
+//  OBJETIVO: Llena la base más rápido que nunca.
+//
+//  CONCEPTOS JS en esta misión:
+//    · Math.abs: valor absoluto
+//    · Distancia Manhattan (suma de diferencias)
+//    · Optimización: puntuar y comparar opciones
+// ═══════════════════════════════════════════════
+
+// findNearest tiene un problema: ignora cuánta energía
+// tiene cada fuente. ¿Para qué ir lejos si está casi vacía?
+//
+// Solución: calcular una puntuación por fuente.
+// Puntuación = energía / (distancia + 1)
+// Más energía y más cerca → mejor puntuación.
+
+function scoreSource(worker, source) {
+  const dist = Math.abs(worker.x - source.x) + Math.abs(worker.y - source.y)
+  return source.energy / (dist + 1)   // ← divide para penalizar la distancia
+}
+
+function findBest(worker, sources) {
+  let best      = null
+  let bestScore = -1
+
+  for (const sid in sources) {
+    const s = sources[sid]
+    if (s.energy > 0) {
+      const score = scoreSource(worker, s)
+      if (score > bestScore) { bestScore = score; best = s }
+    }
+  }
+
+  return best
+}
+
+for (const id in Game.workers) {
+  const w = Game.workers[id]
+
+  if (w.energy < w.energyCapacity) {
+    const source = findBest(w, Game.sources)   // ← mejor opción, no solo la más cercana
+    if (source) w.harvest(source.id)
+  } else {
+    w.transfer(Game.base.id)
+  }
+}
+`
   },
   4: {
     title: "Memoria de workers",
-    concept: "objetos como estado · persistencia entre ticks",
-    desc: "Asigna fuentes específicas a cada worker para evitar colisiones. Aprende a mantener estado.",
-    code: null
+    concept: "Game.memory · persistencia entre ticks · objetos",
+    desc: "Asigna fuentes exclusivas a cada worker para evitar colisiones. Aprende a guardar estado con Game.memory.",
+    sector: "SECTOR 9-EPSILON · NODO DE COORDINACIÓN",
+    story: [
+      {
+        speaker: "nexus",
+        name: "NEXUS · IA-7",
+        icon: "⬟",
+        text: "Colisión de agentes en nodo 9-Epsilon. Dos workers humanos compitiendo por la misma fuente. Eficiencia: 31%. Gracioso."
+      },
+      {
+        speaker: "kira",
+        name: "KIRA · RED LIBRE",
+        icon: "◇",
+        text: "Ignoralo. Tiene razón en que el problema existe. Tus workers se están pisando porque no recuerdan qué fuente tienen asignada."
+      },
+      {
+        speaker: "kira",
+        name: "KIRA · RED LIBRE",
+        icon: "◇",
+        text: "Cada tick el código se reinicia desde cero. Usa Game.memory — es un objeto que persiste entre ticks. Asigna una fuente exclusiva a cada worker y guarda esa asignación en memoria."
+      }
+    ],
+    objectives: [
+      "Asigna fuentes exclusivas a cada worker",
+      "Usa Game.memory para guardar las asignaciones",
+      "Aprende: persistencia de estado, objetos, Set"
+    ],
+    code: `// ═══════════════════════════════════════════════
+//  OBJETIVO: Llena la base sin que los workers
+//            se "pisen" entre sí.
+//
+//  CONCEPTOS JS en esta misión:
+//    · Game.memory: objeto que persiste entre ticks
+//    · Objetos como diccionarios (clave → valor)
+//    · Set: colección sin duplicados
+// ═══════════════════════════════════════════════
+
+// Este código corre cada 300ms. Las variables locales
+// se reinician con cada tick.
+// Para guardar información entre ticks, usa Game.memory:
+
+if (!Game.memory.asignaciones) {
+  Game.memory.asignaciones = {}   // ← se crea solo la primera vez
+}
+
+const asig = Game.memory.asignaciones   // atajo para escribir menos
+
+for (const id in Game.workers) {
+  const w = Game.workers[id]
+
+  // Si la fuente asignada se vació, liberar la asignación
+  if (asig[id]) {
+    const s = Game.sources[asig[id]]
+    if (!s || s.energy === 0) delete asig[id]
+  }
+
+  // Buscar una fuente sin asignar para este worker
+  if (!asig[id] && w.energy < w.energyCapacity) {
+    const usadas = new Set(Object.values(asig))   // fuentes ya tomadas
+
+    for (const sid in Game.sources) {
+      if (Game.sources[sid].energy > 0 && !usadas.has(sid)) {
+        asig[id] = sid   // ← asignación exclusiva
+        break
+      }
+    }
+  }
+
+  if (w.energy < w.energyCapacity) {
+    const fuente = asig[id] ? Game.sources[asig[id]] : null
+    if (fuente) w.harvest(fuente.id)
+  } else {
+    w.transfer(Game.base.id)
+  }
+}
+`
   },
   5: {
     title: "Expansión económica",
-    concept: "construcción · economía avanzada",
-    desc: "Construye extensiones para escalar tu capacidad. Aprende a tomar decisiones estratégicas con código.",
-    code: null
+    concept: "Game.base.energy · ratio · decisiones estratégicas",
+    desc: "Usa el estado de tu base para tomar decisiones inteligentes. Aprende a programar estrategia con datos.",
+    sector: "SECTOR 10-ZETA · NODO CENTRAL",
+    story: [
+      {
+        speaker: "kira",
+        name: "KIRA · RED LIBRE",
+        icon: "◇",
+        text: "Este es el nodo central de la red occidental. Si lo tomamos, NEXUS pierde el 40% de su capacidad en este sector. Va a defender con todo lo que tiene."
+      },
+      {
+        speaker: "nexus",
+        name: "NEXUS · IA-7",
+        icon: "⬟",
+        text: "Nodo central detectado como objetivo primario. Activando modo defensivo. Incrementando velocidad de recolección en 180%. Buena suerte, humano."
+      },
+      {
+        speaker: "kira",
+        name: "KIRA · RED LIBRE",
+        icon: "◇",
+        text: "Usa el ratio de tu base para tomar decisiones estratégicas. Cuando estés cerca del 100%, empuja fuerte. Esta es la prueba final de Season I. No hay segunda oportunidad."
+      }
+    ],
+    objectives: [
+      "Vence al modo defensivo de NEXUS",
+      "Usa Game.base.energy / capacity para tomar decisiones",
+      "Demuestra que dominaste Season I completo"
+    ],
+    code: `// ═══════════════════════════════════════════════
+//  CODESTRIKE · MISIÓN 5 — "Expansión económica"
+// ═══════════════════════════════════════════════
+//  OBJETIVO: Ganar la partida más difícil de Season I.
+//            La IA juega más agresiva desde el inicio.
+//
+//  CONCEPTOS JS en esta misión:
+//    · Game.base.energy / Game.base.capacity → ratio
+//    · Condicionales compuestas (&& · ||)
+//    · Combinar todo lo aprendido en Season I
+// ═══════════════════════════════════════════════
+
+// La base se llena automáticamente con cada depósito.
+// Cuando llega a ciertos umbrales, spawna workers y
+// construye extensiones (lo hace el sistema del juego).
+//
+// Tu trabajo: mantener el flujo constante Y priorizar
+// inteligentemente qué hacer en cada momento.
+
+function scoreSource(worker, source) {
+  const dist = Math.abs(worker.x - source.x) + Math.abs(worker.y - source.y)
+  return source.energy / (dist + 1)
+}
+
+function findBest(worker, sources) {
+  let best = null, bestScore = -1
+  for (const sid in sources) {
+    const s = sources[sid]
+    if (s.energy > 0) {
+      const score = scoreSource(worker, s)
+      if (score > bestScore) { bestScore = score; best = s }
+    }
+  }
+  return best
+}
+
+// Ratio de llenado de la base: 0.0 = vacía, 1.0 = llena
+const ratio = Game.base.energy / Game.base.capacity
+
+for (const id in Game.workers) {
+  const w = Game.workers[id]
+
+  // Si la base está casi llena, TODOS los workers depositan de inmediato
+  if (ratio >= 0.85) {
+    w.transfer(Game.base.id)
+    continue   // ← saltar al siguiente worker
+  }
+
+  // Lógica normal: cosechar si está vacío, depositar si está lleno
+  if (w.energy < w.energyCapacity) {
+    const source = findBest(w, Game.sources)
+    if (source) w.harvest(source.id)
+  } else {
+    w.transfer(Game.base.id)
+  }
+}
+`
   },
   6: {
     title: "El fin de la colonia",
@@ -1188,13 +1543,198 @@ document.getElementById("btn-back-worlds").addEventListener("click", () => {
   refreshWorldCards()
 })
 
-function startMission(id) {
+// ── BRIEFING ─────────────────────────────────────────────
+const briefingScreen = document.getElementById("briefing-screen")
+let briefingMissionId = null
+let briefingTyping    = false
+
+function showBriefing(id) {
+  const m = MISSIONS[id]
+  if (!m || !m.story) { launchMission(id); return }
+
+  briefingMissionId = id
+  briefingScreen.style.display = "flex"
+  briefingScreen.style.animation = "screenFadeIn 0.5s ease forwards"
+
+  // Cabecera
+  document.getElementById("briefing-mission-label").textContent =
+    `MISIÓN ${String(id).padStart(2, "0")}`
+  document.getElementById("briefing-title").textContent   = m.title
+  document.getElementById("briefing-concept").textContent = "// " + m.concept
+  document.getElementById("briefing-sector").textContent  = m.sector || ""
+
+  // Limpiar
+  const transDiv = document.getElementById("briefing-transmissions")
+  const objDiv   = document.getElementById("briefing-obj-list")
+  transDiv.innerHTML = ""
+  objDiv.innerHTML   = ""
+  const btn = document.getElementById("btn-briefing-start")
+  btn.classList.remove("ready")
+
+  // Construir nodos de mensajes ocultos
+  const nodes = m.story.map(msg => {
+    const div = document.createElement("div")
+    div.className = `brf-msg ${msg.speaker}`
+    div.innerHTML = `
+      <div class="brf-avatar ${msg.speaker}">${msg.icon}</div>
+      <div class="brf-body">
+        <div class="brf-name ${msg.speaker}">${msg.name}</div>
+        <div class="brf-text"></div>
+      </div>`
+    transDiv.appendChild(div)
+    return { node: div, text: msg.text }
+  })
+
+  // Construir objetivos ocultos
+  const objNodes = (m.objectives || []).map(o => {
+    const d = document.createElement("div")
+    d.className = "brf-obj"
+    d.innerHTML = `<span class="brf-obj-bullet">›</span><span>${o}</span>`
+    objDiv.appendChild(d)
+    return d
+  })
+
+  // Secuencia de animación: typewriter por mensaje
+  async function runSequence() {
+    briefingTyping = true
+    for (const { node, text } of nodes) {
+      await new Promise(r => setTimeout(r, 300))
+      node.classList.add("visible")
+      const textEl = node.querySelector(".brf-text")
+      await typewrite(textEl, text, 18)
+      await new Promise(r => setTimeout(r, 200))
+    }
+    // Mostrar objetivos
+    for (const obj of objNodes) {
+      await new Promise(r => setTimeout(r, 120))
+      obj.classList.add("visible")
+    }
+    briefingTyping = false
+    btn.classList.add("ready")
+  }
+
+  runSequence()
+}
+
+function typewrite(el, text, speed) {
+  return new Promise(resolve => {
+    let i = 0
+    const cursor = document.createElement("span")
+    cursor.className = "brf-cursor"
+    el.appendChild(cursor)
+
+    const iv = setInterval(() => {
+      if (i < text.length) {
+        cursor.insertAdjacentText("beforebegin", text[i])
+        i++
+      } else {
+        clearInterval(iv)
+        cursor.remove()
+        resolve()
+      }
+    }, speed)
+  })
+}
+
+function skipBriefing() {
+  // Mostrar todo de golpe sin animación
+  briefingTyping = false
+  const msgs = document.querySelectorAll(".brf-msg")
+  msgs.forEach(m => {
+    m.classList.add("visible")
+    const textEl = m.querySelector(".brf-text")
+    if (textEl && !textEl.textContent) {
+      // Buscar el texto original
+      const idx = [...msgs].indexOf(m)
+      const story = MISSIONS[briefingMissionId]?.story
+      if (story && story[idx]) textEl.textContent = story[idx].text
+    }
+    const cursor = m.querySelector(".brf-cursor")
+    if (cursor) cursor.remove()
+  })
+  document.querySelectorAll(".brf-obj").forEach(o => o.classList.add("visible"))
+  document.getElementById("btn-briefing-start").classList.add("ready")
+}
+
+document.getElementById("btn-briefing-start").addEventListener("click", () => {
+  if (!document.getElementById("btn-briefing-start").classList.contains("ready")) return
+  briefingScreen.style.display = "none"
+  launchMission(briefingMissionId)
+})
+
+document.getElementById("btn-briefing-skip").addEventListener("click", () => {
+  if (briefingTyping) { skipBriefing(); return }
+  briefingScreen.style.display = "none"
+  launchMission(briefingMissionId)
+})
+
+// Enter durante el briefing
+document.addEventListener("keydown", e => {
+  if (briefingScreen.style.display !== "none") {
+    if (e.key === "Enter") {
+      if (briefingTyping) { skipBriefing() }
+      else if (document.getElementById("btn-briefing-start").classList.contains("ready")) {
+        briefingScreen.style.display = "none"
+        launchMission(briefingMissionId)
+      }
+    }
+    if (e.key === "Escape") {
+      briefingScreen.style.display = "none"
+      launchMission(briefingMissionId)
+    }
+  }
+}, true)
+
+// Dificultad de IA por misión — escala igual que Screeps (RCL por nivel)
+const MISSION_DIFFICULTY = {
+  1: "tutorial",
+  2: "easy",
+  3: "medium",
+  4: "hard",
+}
+function getMissionDifficulty(id) {
+  return MISSION_DIFFICULTY[id] || "expert"
+}
+
+function showMissionPanel(id) {
+  const m = MISSIONS[id]
+  if (!m) return
+  const panel = document.getElementById("mission-panel")
+  document.getElementById("mp-badge").textContent    = `MISIÓN ${String(id).padStart(2,"0")}`
+  document.getElementById("mp-title").textContent    = m.title
+  document.getElementById("mp-concept").textContent  = "// " + m.concept
+  const objDiv = document.getElementById("mp-objectives")
+  objDiv.innerHTML = (m.objectives || []).map(o =>
+    `<div class="mp-obj"><span class="mp-obj-dot">◦</span>${o}</div>`
+  ).join("")
+  panel.style.display = "block"
+}
+
+function hideMissionPanel() {
+  document.getElementById("mission-panel").style.display = "none"
+}
+
+function launchMission(id) {
   document.getElementById("mission-screen").style.display = "none"
   const m = MISSIONS[id]
   const code = m.code || MISSIONS[1].code
   codeEditor.value = code
   localStorage.setItem("codestrike_script", code)
-  setTimeout(() => btnRun.click(), 100)
+
+  const difficulty = getMissionDifficulty(id)
+  fetch("/api/reset", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ difficulty })
+  })
+    .then(() => setTimeout(() => btnRun.click(), 150))
+    .catch(() => setTimeout(() => btnRun.click(), 150))
+
+  if (currentMode === "campaign") showMissionPanel(id)
+}
+
+function startMission(id) {
+  showBriefing(id)
 }
 
 // ── Seleccionar modo ──────────────────────────────────────
@@ -1209,18 +1749,115 @@ function selectMode(mode) {
   }
 }
 
-document.getElementById("card-campaign").addEventListener("click",  () => selectMode("campaign"))
-document.getElementById("card-vs-ai").addEventListener("click",     () => selectMode("vs-ai"))
-document.getElementById("card-sandbox").addEventListener("click",   () => selectMode("sandbox"))
+document.getElementById("mitem-1").addEventListener("click", () => selectMode("campaign"))
+document.getElementById("mitem-2").addEventListener("click", () => selectMode("vs-ai"))
+document.getElementById("mitem-3").addEventListener("click", () => selectMode("sandbox"))
+
+// ── DESAFÍOS — modal próximamente ────────────────────────
+document.getElementById("mitem-4").addEventListener("click", () => {
+  document.getElementById("modal-soon").classList.add("open")
+})
+document.getElementById("btn-close-modal").addEventListener("click", () => {
+  document.getElementById("modal-soon").classList.remove("open")
+})
+document.getElementById("modal-soon").addEventListener("click", e => {
+  if (e.target === document.getElementById("modal-soon"))
+    document.getElementById("modal-soon").classList.remove("open")
+})
+
+// ── MODAL ABANDONAR PARTIDA ───────────────────────────────
+const modalAbandon       = document.getElementById("modal-abandon")
+const btnAbandonConfirm  = document.getElementById("btn-abandon-confirm")
+const btnAbandonCancel   = document.getElementById("btn-abandon-cancel")
+
+function showAbandonModal() {
+  if (menuActive) return   // ya estamos en el menú
+  // Pausar el juego mientras el modal está abierto
+  if (!paused) {
+    paused = true
+    ws.send(JSON.stringify({ action: "pause" }))
+    btnPause.textContent = "▶ Reanudar"
+    btnPause.classList.add("active")
+  }
+  modalAbandon.classList.add("open")
+}
+
+function closeAbandonModal(resume) {
+  modalAbandon.classList.remove("open")
+  if (resume && paused) {
+    paused = false
+    ws.send(JSON.stringify({ action: "resume" }))
+    btnPause.textContent = "⏸ Pausar"
+    btnPause.classList.remove("active")
+  }
+}
+
+function doReturnToMenu() {
+  closeAbandonModal(false)
+  paused = false
+  btnPause.textContent = "⏸ Pausar"
+  btnPause.classList.remove("active")
+  document.getElementById("victory-banner").style.display = "none"
+  hideMissionPanel()
+  menuActive = true
+  menuScreen.style.display   = "flex"
+  menuScreen.style.opacity   = "0"
+  menuScreen.style.pointerEvents = "auto"
+  menuScreen.style.transition = "opacity 0.5s ease"
+  requestAnimationFrame(() => { menuScreen.style.opacity = "1" })
+  fetch("/api/reset", { method: "POST" }).catch(() => {})
+  initMenuBg()
+  drawMenuBg()
+}
+
+const btnAbandonRestart = document.getElementById("btn-abandon-restart")
+
+function doRestartMission() {
+  closeAbandonModal(false)
+  paused = false
+  btnPause.textContent = "⏸ Pausar"
+  btnPause.classList.remove("active")
+  document.getElementById("victory-banner").style.display = "none"
+  // Relanzar la misión actual (con briefing saltado)
+  if (currentMode === "campaign" && selectedMission) {
+    launchMission(selectedMission)
+  } else {
+    fetch("/api/reset", { method: "POST" }).catch(() => {})
+  }
+}
+
+btnAbandonRestart.addEventListener("click", doRestartMission)
+btnAbandonConfirm.addEventListener("click", doReturnToMenu)
+btnAbandonCancel.addEventListener("click", () => closeAbandonModal(true))
+
+// Cerrar con click en el overlay
+modalAbandon.addEventListener("click", e => {
+  if (e.target === modalAbandon) closeAbandonModal(true)
+})
+
+// ── BOTÓN ← MENÚ (desde el juego) ────────────────────────
+document.getElementById("btn-to-menu").addEventListener("click", showAbandonModal)
 
 document.addEventListener("keydown", e => {
+  // Escape abre el modal de abandono cuando estamos en la partida
+  if (e.key === "Escape") {
+    if (!menuActive && !modalAbandon.classList.contains("open")) {
+      showAbandonModal()
+      return
+    }
+    if (modalAbandon.classList.contains("open")) {
+      closeAbandonModal(true)
+      return
+    }
+  }
+
   if (!menuActive) return
   if (e.key === "1") selectMode("campaign")
   if (e.key === "2") selectMode("vs-ai")
   if (e.key === "3") selectMode("sandbox")
   if (e.key === "Enter") {
     const focused = document.activeElement
-    if (focused && focused.classList.contains("menu-card")) focused.click()
+    if (focused && focused.classList.contains("menu-item")) focused.click()
   }
 })
 
@@ -1228,122 +1865,7 @@ window.addEventListener("resize", () => {
   if (menuActive) { initMenuBg(); drawMenuBg() }
 })
 
-// ═══════════════════════════════════════════════════════════
-//  HOVER PREVIEW DEL MENÚ
-// ═══════════════════════════════════════════════════════════
-
-const CARD_PREVIEWS = {
-  campaign: {
-    title: "CAMPAÑA",
-    sub: "Aprende JavaScript jugando",
-    color: "#00aaff",
-    features: [
-      "17 misiones · 3 temporadas completas",
-      "Sin experiencia previa necesaria",
-      "Cada misión enseña 1-2 conceptos JS",
-      "IA oponente que te desafía en tiempo real",
-      "★★★ estrellas según tu velocidad",
-      "Progreso guardado automáticamente"
-    ],
-    code: `for (const id in Game.workers) {\n  const w = Game.workers[id]\n  if (w.energy < w.energyCapacity)\n    w.harvest(findNearest(w, Game.sources))\n  else\n    w.transfer(Game.base.id)\n}`,
-    cta: "Seleccionar mundo →"
-  },
-  'vs-ai': {
-    title: "VS IA",
-    sub: "Tu código contra la IA",
-    color: "#0088cc",
-    features: [
-      "Editor JavaScript completo en browser",
-      "Tu script corre cada 300ms en tiempo real",
-      "IA expansionista con su propia base",
-      "Panel con sparklines y estadísticas live",
-      "Sin restricciones — tu propia estrategia",
-      "Ctrl+Enter para ejecutar al instante"
-    ],
-    code: null,
-    cta: "Jugar directamente →"
-  },
-  sandbox: {
-    title: "SANDBOX",
-    sub: "Experimenta sin presión",
-    color: "#0077aa",
-    features: [
-      "Sin condición de victoria ni derrota",
-      "Sin IA oponente en tu camino",
-      "Perfecto para probar código nuevo",
-      "Ideal para enseñar a otras personas",
-      "Pausa y reanuda cuando quieras",
-      "El mapa completo para ti solo"
-    ],
-    code: null,
-    cta: "Entrar al sandbox →"
-  },
-  challenges: {
-    title: "DESAFÍOS",
-    sub: "Retos cronometrados",
-    color: "#334466",
-    features: [
-      "Objetivos específicos con tiempo límite",
-      "\"Llena la base en menos de 100 ticks\"",
-      "Rankings y puntuaciones",
-      "Nuevos desafíos cada semana",
-      "Compite por el mejor algoritmo",
-      "— Próximamente —"
-    ],
-    code: null,
-    cta: "Próximamente"
-  }
-}
-
-const menuPreview     = document.getElementById("menu-preview")
-const mpAccent        = document.getElementById("mp-accent")
-const mpTitle         = document.getElementById("mp-title")
-const mpSub           = document.getElementById("mp-sub")
-const mpFeatures      = document.getElementById("mp-features")
-const mpCodeBlock     = document.getElementById("mp-code-block")
-const mpCode          = document.getElementById("mp-code")
-const mpCta           = document.getElementById("mp-cta")
-
-function showMenuPreview(mode) {
-  const d = CARD_PREVIEWS[mode]
-  if (!d) return
-
-  mpAccent.style.background = d.color
-  mpTitle.textContent       = d.title
-  mpTitle.style.textShadow  = `0 0 20px ${d.color}55`
-  mpSub.textContent         = d.sub
-  mpSub.style.color         = d.color
-
-  mpFeatures.innerHTML = d.features
-    .map(f => `<li>${f}</li>`).join("")
-
-  if (d.code) {
-    mpCode.textContent        = d.code
-    mpCodeBlock.style.display = "block"
-  } else {
-    mpCodeBlock.style.display = "none"
-  }
-
-  mpCta.textContent = d.cta
-  menuPreview.classList.add("visible")
-}
-
-function hideMenuPreview() {
-  menuPreview.classList.remove("visible")
-}
-
-const previewBindings = [
-  ["card-campaign",   "campaign"],
-  ["card-vs-ai",      "vs-ai"],
-  ["card-sandbox",    "sandbox"],
-  ["card-challenges", "challenges"]
-]
-for (const [id, mode] of previewBindings) {
-  const el = document.getElementById(id)
-  if (!el) continue
-  el.addEventListener("mouseenter", () => showMenuPreview(mode))
-  el.addEventListener("mouseleave",  hideMenuPreview)
-}
+// (preview panel eliminado — contenido ahora inline en cada acc-panel)
 
 initMenuBg()
 drawMenuBg()
