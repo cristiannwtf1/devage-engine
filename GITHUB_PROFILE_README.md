@@ -2,7 +2,7 @@
 
 <img src="https://capsule-render.vercel.app/api?type=waving&color=0:040408,40:003322,100:00ffbb&height=180&section=header&text=Cristian&fontSize=52&fontColor=00ffbb&fontAlignY=38&desc=Builder%20%7C%20TypeScript%20%7C%20Juegos%20%7C%20IA&descAlignY=58&descColor=8899bb&animation=fadeIn" />
 
-[![Typing SVG](https://readme-typing-svg.demolab.com?font=Share+Tech+Mono&size=18&pause=1000&color=00BB88&center=true&vCenter=true&width=500&lines=Construyo+cosas+con+código;Actualmente%3A+un+RTS+donde+programas+tu+ejército;TypeScript+%2B+Node.js+%2B+Canvas+60fps;Siempre+aprendiendo)](https://git.io/typing-svg)
+[![Typing SVG](https://readme-typing-svg.demolab.com?font=Share+Tech+Mono&size=18&pause=1000&color=00BB88&center=true&vCenter=true&width=500&lines=Construyo+cosas+con+código;Actualmente%3A+CODESTRIKE+—+un+RTS+donde+programas+tu+ejército;TypeScript+%2B+Node.js+%2B+Canvas+60fps;Siempre+aprendiendo)](https://git.io/typing-svg)
 
 </div>
 
@@ -12,11 +12,11 @@
 
 <div align="center">
 
-[![DEVAGE ENGINE](https://github-readme-stats.vercel.app/api/pin/?username=cristiannwtf1&repo=devage-engine&theme=chartreuse-dark&hide_border=true&bg_color=040408&title_color=00ffbb&icon_color=00bb88&text_color=8899bb)](https://github.com/cristiannwtf1/devage-engine)
+[![CODESTRIKE](https://github-readme-stats.vercel.app/api/pin/?username=cristiannwtf1&repo=devage-engine&theme=chartreuse-dark&hide_border=true&bg_color=040408&title_color=00ffbb&icon_color=00bb88&text_color=8899bb)](https://github.com/cristiannwtf1/devage-engine)
 
 </div>
 
-> **DEVAGE ENGINE** — RTS single-player donde escribes JavaScript para controlar tus unidades y competir contra una IA adaptable. Inspirado en Screeps pero gratis y open source.
+> **CODESTRIKE** — RTS single-player donde escribes JavaScript para controlar tus unidades y competir contra una IA adaptable. Código real, estrategia real, victoria real.
 
 ```javascript
 // Tu estrategia, tu código, tu victoria

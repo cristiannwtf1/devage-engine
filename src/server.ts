@@ -253,7 +253,7 @@ wss.on("connection", (ws) => {
 })
 
 server.listen(3000, () => {
-  console.log("🚀 DEVAGE ENGINE corriendo en http://localhost:3000")
+  console.log("🚀 CODESTRIKE corriendo en http://localhost:3000")
   // Guardar PID para poder matar el servidor con `npm run stop`
   require("fs").writeFileSync(".server.pid", String(process.pid))
   engine.start()

@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:040408,50:001a0f,100:00ffbb&height=200&section=header&text=DEVAGE%20ENGINE&fontSize=52&fontColor=00ffbb&fontAlignY=40&desc=Real-Time%20Strategy%20%7C%20Code%20Your%20Army&descAlignY=60&descColor=4488aa&animation=fadeIn" />
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:040408,50:001a0f,100:00ffbb&height=200&section=header&text=CODESTRIKE&fontSize=52&fontColor=00ffbb&fontAlignY=40&desc=Real-Time%20Strategy%20%7C%20Code%20Your%20Army&descAlignY=60&descColor=4488aa&animation=fadeIn" />
 
 <br/>
 
@@ -185,8 +185,8 @@ El renderer corre a **60fps** usando `requestAnimationFrame` con **interpolació
 | ✅ | Player JavaScript API con editor en browser |
 | ✅ | IA oponente con personalidad expansionista |
 | ✅ | Panel con sparklines, dominancia y log de eventos |
-| 🔜 | Condición de victoria / derrota |
-| 🔜 | Partículas de energía al cosechar |
+| ✅ | Condición de victoria / derrota |
+| ✅ | Partículas de energía al cosechar |
 | 🔜 | `Game.creeps['nombre']` — unidades con identidad |
 | 🔜 | `creep.memory` — memoria persistente entre ticks |
 | 🔜 | Personalidades IA: defensiva y agresiva + combate |

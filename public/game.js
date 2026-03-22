@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════
-//  DEVAGE ENGINE — Visual v2 "La Red de Neones"
+//  CODESTRIKE — Visual v2 "La Red de Neones"
 //  60fps con interpolación entre ticks, glow, rutas animadas
 // ═══════════════════════════════════════════════════════════
 
