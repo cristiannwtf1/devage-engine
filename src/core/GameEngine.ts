@@ -11,7 +11,7 @@ import { SpawnSystem } from "../systems/SpawnSystem"
 import { PathfindingSystem } from "../systems/PathfindingSystem"
 import { ConstructionSystem } from "../systems/ConstructionSystem"
 import { PlayerScriptSystem } from "../systems/PlayerScriptSystem"
-import { AISystem } from "../systems/AISystem"
+import { AISystem, AiDifficulty } from "../systems/AISystem"
 import { VictorySystem } from "../systems/VictorySystem"
 
 export class GameEngine {
@@ -33,13 +33,19 @@ export class GameEngine {
     private pathfindingSystem  = new PathfindingSystem()
     private constructionSystem  = new ConstructionSystem()
     private playerScriptSystem  = new PlayerScriptSystem()
-    private aiSystem            = new AISystem("expansionista")
+    private aiSystem:           AISystem
     private victorySystem       = new VictorySystem()
 
-    constructor(gameState: GameState, tickRate: number = 200, onTick: (() => void) | null = null) {
+    constructor(
+        gameState: GameState,
+        tickRate: number = 200,
+        onTick: (() => void) | null = null,
+        difficulty: AiDifficulty = "expert"
+    ) {
         this.gameState = gameState
         this.tickRate  = tickRate
         this.onTick    = onTick
+        this.aiSystem  = new AISystem(difficulty)
     }
 
     public step(): void {

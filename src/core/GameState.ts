@@ -53,6 +53,10 @@ export class GameState {
   public playerScript: string | null = null
   public scriptError:  string | null = null
 
+  // Memoria persistente entre ticks — accesible como Game.memory en el script del jugador
+  // Se reinicia solo cuando se llama a resetGame(), no entre ticks
+  public playerMemory: Record<string, unknown> = {}
+
   // Condición de victoria: null = en curso, "player" = ganó jugador, "ai" = ganó IA
   public winner: "player" | "ai" | null = null
   public winTick: number = 0

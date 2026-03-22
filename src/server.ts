@@ -4,67 +4,139 @@ import * as http from "http"
 import * as path from "path"
 import { GameState } from "./core/GameState"
 import { GameEngine } from "./core/GameEngine"
+import { AiDifficulty } from "./systems/AISystem"
 import { EntityId } from "./ecs/Entity"
 import { TileType } from "./world/Tile"
 
-// ─── MUNDO ───────────────────────────────────────────────
-const gameState = new GameState(30, 20)
+// ─── INICIALIZACIÓN DEL MUNDO ─────────────────────────────
+// Mapa 50x28 — layout tipo StarCraft/Screeps
+// Jugador: esquina izquierda | IA: esquina derecha
+// Mineral lines flanqueando cada base + depósitos neutrales en centro
+function buildWorld(gs: GameState): void {
 
-// Migrar energy tiles a sources ECS
-for (let y = 0; y < gameState.worldMap.height; y++) {
-  for (let x = 0; x < gameState.worldMap.width; x++) {
-    if (gameState.worldMap.getTile(x, y) === TileType.Energy) {
-      const sourceId: EntityId = gameState.createEntity()
-      gameState.entities.add(sourceId)
-      gameState.positions.set(sourceId, { x, y })
-      gameState.sources.set(sourceId, {
-        energy: 10,
-        maxEnergy: 10,
-        regenRate: 1,
-        regenCooldown: 5,
-        currentCooldown: 0
-      })
-gameState.worldMap.setTile(x, y, TileType.Floor)
-    }
+  // ── Mineral lines — 5 player + 4 player + 5 AI + 4 AI + 7 neutrales ──
+  const sourcePositions = [
+    // Jugador — flancos superior e inferior de su base (x:4, y:14)
+    { x: 8, y:10 }, { x: 9, y:10 }, { x:10, y:10 }, { x:11, y:10 }, { x:12, y:10 },
+    { x: 8, y:18 }, { x: 9, y:18 }, { x:10, y:18 }, { x:11, y:18 },
+
+    // IA — espejo exacto (base en x:45, y:14)
+    { x:37, y:10 }, { x:38, y:10 }, { x:39, y:10 }, { x:40, y:10 }, { x:41, y:10 },
+    { x:38, y:18 }, { x:39, y:18 }, { x:40, y:18 }, { x:41, y:18 },
+
+    // Neutrales — expansiones en el centro del mapa (zona de disputa)
+    { x:23, y: 8 }, { x:24, y: 8 }, { x:25, y: 8 },
+    { x:23, y:20 }, { x:24, y:20 }, { x:25, y:20 },
+    { x:25, y:14 },
+  ]
+
+  // ── Limpiar muros en posiciones críticas ─────────────────
+  const clearZones: { x: number; y: number }[] = [
+    ...sourcePositions,
+
+    // Entorno base jugador (x:4, y:14)
+    { x:3,y:13 }, { x:4,y:13 }, { x:5,y:13 },
+    { x:3,y:14 },               { x:5,y:14 },
+    { x:3,y:15 }, { x:4,y:15 }, { x:5,y:15 },
+
+    // Acceso jugador → mineral superior (corredor y=12-13 + conexión y=11)
+    { x:6,y:12 }, { x:7,y:12 }, { x:8,y:12 }, { x:9,y:12 }, { x:10,y:12 }, { x:11,y:12 }, { x:12,y:12 },
+    { x:6,y:13 }, { x:7,y:13 },
+    { x:8,y:11 }, { x:9,y:11 }, { x:10,y:11 }, { x:11,y:11 }, { x:12,y:11 }, // gap y=11 crítico
+    // Acceso jugador → mineral inferior (corredor y=15-16 + conexión y=17)
+    { x:6,y:15 }, { x:7,y:15 },
+    { x:6,y:16 }, { x:7,y:16 }, { x:8,y:16 }, { x:9,y:16 }, { x:10,y:16 }, { x:11,y:16 },
+    { x:8,y:17 }, { x:9,y:17 }, { x:10,y:17 }, { x:11,y:17 }, // gap y=17 crítico
+
+    // Entorno base IA (x:45, y:14)
+    { x:44,y:13 }, { x:45,y:13 }, { x:46,y:13 },
+    { x:44,y:14 },                { x:46,y:14 },
+    { x:44,y:15 }, { x:45,y:15 }, { x:46,y:15 },
+
+    // Acceso IA → mineral superior (corredor y=12-13 + conexión y=11)
+    { x:37,y:12 }, { x:38,y:12 }, { x:39,y:12 }, { x:40,y:12 }, { x:41,y:12 }, { x:42,y:12 }, { x:43,y:12 },
+    { x:43,y:13 }, { x:42,y:13 },
+    { x:37,y:11 }, { x:38,y:11 }, { x:39,y:11 }, { x:40,y:11 }, { x:41,y:11 }, // gap y=11 crítico
+    // Acceso IA → mineral inferior (corredor y=15-16 + conexión y=17)
+    { x:43,y:15 }, { x:42,y:15 },
+    { x:38,y:16 }, { x:39,y:16 }, { x:40,y:16 }, { x:41,y:16 }, { x:42,y:16 }, { x:43,y:16 },
+    { x:38,y:17 }, { x:39,y:17 }, { x:40,y:17 }, { x:41,y:17 }, // gap y=17 crítico
+
+    // Entorno neutrales superiores
+    { x:22,y: 8 }, { x:26,y: 8 },
+    { x:22,y: 9 }, { x:23,y: 9 }, { x:24,y: 9 }, { x:25,y: 9 }, { x:26,y: 9 },
+    // Entorno neutrales inferiores
+    { x:22,y:20 }, { x:26,y:20 },
+    { x:22,y:19 }, { x:23,y:19 }, { x:24,y:19 }, { x:25,y:19 }, { x:26,y:19 },
+    // Entorno neutral centro
+    { x:24,y:13 }, { x:25,y:13 }, { x:26,y:13 },
+    { x:24,y:14 },                { x:26,y:14 },
+    { x:24,y:15 }, { x:25,y:15 }, { x:26,y:15 },
+
+    // Corredor central — garantiza conectividad
+    { x:13,y:14 }, { x:14,y:14 }, { x:15,y:14 }, { x:16,y:14 }, { x:17,y:14 }, { x:18,y:14 },
+    { x:19,y:14 }, { x:20,y:14 }, { x:21,y:14 }, { x:22,y:14 },
+    { x:27,y:14 }, { x:28,y:14 }, { x:29,y:14 }, { x:30,y:14 }, { x:31,y:14 },
+    { x:32,y:14 }, { x:33,y:14 }, { x:34,y:14 }, { x:35,y:14 }, { x:36,y:14 }, { x:37,y:14 },
+  ]
+
+  for (const pos of clearZones) {
+    gs.worldMap.setTile(pos.x, pos.y, TileType.Floor)
+  }
+
+  // ── Crear fuentes ─────────────────────────────────────────
+  for (const pos of sourcePositions) {
+    const id: EntityId = gs.createEntity()
+    gs.entities.add(id)
+    gs.positions.set(id, pos)
+    gs.sources.set(id, {
+      energy: 10, maxEnergy: 10,
+      regenRate: 1, regenCooldown: 5, currentCooldown: 0
+    })
+  }
+
+  // ── Base del jugador ──────────────────────────────────────
+  const baseId: EntityId = gs.createEntity()
+  gs.entities.add(baseId)
+  gs.positions.set(baseId, { x: 4, y: 14 })
+  gs.energyStorages.set(baseId, { current: 0, capacity: 1000 })
+  gs.baseId = baseId
+
+  // ── Workers iniciales del jugador ─────────────────────────
+  for (let i = 0; i < 2; i++) {
+    const w: EntityId = gs.createEntity()
+    gs.entities.add(w)
+    gs.positions.set(w, { x: 5 + i, y: 14 })
+    gs.healths.set(w, { current: 100, max: 100 })
+    gs.workers.set(w, { isWorker: true })
+    gs.energyStorages.set(w, { current: 0, capacity: 10 })
+    gs.behaviors.set(w, { state: "harvesting" })
+  }
+
+  // ── Base de la IA ─────────────────────────────────────────
+  const aiBaseId: EntityId = gs.createEntity()
+  gs.entities.add(aiBaseId)
+  gs.positions.set(aiBaseId, { x: 45, y: 14 })
+  gs.energyStorages.set(aiBaseId, { current: 0, capacity: 1000 })
+  gs.aiBaseId = aiBaseId
+
+  // ── Workers iniciales de la IA ────────────────────────────
+  for (let i = 0; i < 2; i++) {
+    const w: EntityId = gs.createEntity()
+    gs.entities.add(w)
+    gs.positions.set(w, { x: 44 - i, y: 14 })
+    gs.healths.set(w, { current: 20, max: 20 })
+    gs.energyStorages.set(w, { current: 0, capacity: 10 })
+    gs.behaviors.set(w, { state: "harvesting" })
+    gs.aiWorkers.add(w)
   }
 }
 
-// Base del jugador
-const baseId: EntityId = gameState.createEntity()
-gameState.entities.add(baseId)
-gameState.positions.set(baseId, { x: 5, y: 10 })
-gameState.energyStorages.set(baseId, { current: 0, capacity: 1000 })
-gameState.baseId = baseId
+// ─── MUNDO ───────────────────────────────────────────────
+let gameState = new GameState(50, 28)
+buildWorld(gameState)
 
-// Workers iniciales del jugador
-for (let i = 0; i < 2; i++) {
-  const w: EntityId = gameState.createEntity()
-  gameState.entities.add(w)
-  gameState.positions.set(w, { x: 5 + i, y: 10 })
-  gameState.healths.set(w, { current: 100, max: 100 })
-  gameState.workers.set(w, { isWorker: true })
-  gameState.energyStorages.set(w, { current: 0, capacity: 10 })
-  gameState.behaviors.set(w, { state: "harvesting" })
-}
-
-// ─── BASE DE LA IA ─────────────────────────────────────────
-// Lado opuesto del mapa (x=24, y=10)
-const aiBaseId: EntityId = gameState.createEntity()
-gameState.entities.add(aiBaseId)
-gameState.positions.set(aiBaseId, { x: 24, y: 10 })
-gameState.energyStorages.set(aiBaseId, { current: 0, capacity: 1000 })
-gameState.aiBaseId = aiBaseId
-
-// Workers iniciales de la IA (igual que el jugador)
-for (let i = 0; i < 2; i++) {
-  const w: EntityId = gameState.createEntity()
-  gameState.entities.add(w)
-  gameState.positions.set(w, { x: 24 - i, y: 10 })
-  gameState.healths.set(w, { current: 20, max: 20 })
-  gameState.energyStorages.set(w, { current: 0, capacity: 10 })
-  gameState.behaviors.set(w, { state: "harvesting" })
-  gameState.aiWorkers.add(w)
-}
+let engine: GameEngine
 
 // ─── SERVIDOR ────────────────────────────────────────────
 const app = express()
@@ -236,8 +308,31 @@ function broadcast(data: unknown) {
   }
 }
 
+// ─── RESET DEL JUEGO ──────────────────────────────────────
+const VALID_DIFFICULTIES: AiDifficulty[] = ["tutorial", "easy", "medium", "hard", "expert"]
+
+function resetGame(playerScript?: string | null, difficulty: AiDifficulty = "expert"): void {
+  if (engine) engine.stop()
+  gameState = new GameState(50, 28)
+  buildWorld(gameState)
+  if (playerScript) gameState.playerScript = playerScript
+  engine = new GameEngine(gameState, 300, () => broadcast(buildSnapshot(gameState)), difficulty)
+  engine.start()
+  broadcast(buildSnapshot(gameState))
+  console.log(`🔄 Juego reiniciado — dificultad IA: ${difficulty}`)
+}
+
+app.post("/api/reset", (req, res) => {
+  const { difficulty } = req.body as { difficulty?: string }
+  const d: AiDifficulty = VALID_DIFFICULTIES.includes(difficulty as AiDifficulty)
+    ? (difficulty as AiDifficulty)
+    : "expert"
+  resetGame(gameState.playerScript, d)
+  res.json({ ok: true })
+})
+
 // ─── ENGINE CON BROADCAST EN CADA TICK ───────────────────
-const engine = new GameEngine(gameState, 300, () => {
+engine = new GameEngine(gameState, 300, () => {
   broadcast(buildSnapshot(gameState))
 })
 

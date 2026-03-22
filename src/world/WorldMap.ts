@@ -17,42 +17,49 @@ export class WorldMap {
 
   // Generación procedural básica
   private generate(): void {
+    // ── Paso 1: ruido inicial (38% muros internos) ────────
     this.tiles = []
-
     for (let y = 0; y < this.height; y++) {
-
       const row: TileType[] = []
-
       for (let x = 0; x < this.width; x++) {
-
-        // Bordes siempre pared
-        if (
-          x === 0 ||
-          y === 0 ||
-          x === this.width - 1 ||
-          y === this.height - 1
-        ) {
+        if (x === 0 || y === 0 || x === this.width - 1 || y === this.height - 1) {
           row.push(TileType.Wall)
         } else {
-
-          const random = Math.random()
-
-          // 10% muro interno
-          if (random < 0.10) {
-            row.push(TileType.Wall)
-
-          // 5% energía
-          } else if (random < 0.15) {
-            row.push(TileType.Energy)
-
-          } else {
-            row.push(TileType.Floor)
-          }
+          row.push(Math.random() < 0.38 ? TileType.Wall : TileType.Floor)
         }
       }
-
       this.tiles.push(row)
     }
+
+    // ── Paso 2: autómata celular — 3 iteraciones ─────────
+    // Regla: si ≥5 vecinos son muro → muro, si no → suelo
+    // Resultado: muros orgánicos tipo cueva (estilo Screeps)
+    for (let step = 0; step < 5; step++) {
+      const next: TileType[][] = this.tiles.map(row => [...row])
+      for (let y = 1; y < this.height - 1; y++) {
+        for (let x = 1; x < this.width - 1; x++) {
+          const walls = this.countWallNeighbors(x, y)
+          next[y]![x] = walls >= 5 ? TileType.Wall : TileType.Floor
+        }
+      }
+      this.tiles = next
+    }
+  }
+
+  private countWallNeighbors(x: number, y: number): number {
+    let count = 0
+    for (let dy = -1; dy <= 1; dy++) {
+      for (let dx = -1; dx <= 1; dx++) {
+        if (dx === 0 && dy === 0) continue
+        const nx = x + dx, ny = y + dy
+        if (nx < 0 || ny < 0 || nx >= this.width || ny >= this.height) {
+          count++
+        } else if (this.tiles[ny]?.[nx] === TileType.Wall) {
+          count++
+        }
+      }
+    }
+    return count
   }
 
   // Devuelve el tile en una posición

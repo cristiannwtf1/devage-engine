@@ -13,6 +13,8 @@ export class WorkerProxy {
 
   // Move worker toward position (x, y) — PathfindingSystem will compute the path
   moveTo(x: number, y: number): void {
+    const current = this.gs.targets.get(this.id)
+    if (current && current.targetX === x && current.targetY === y) return
     this.gs.targets.set(this.id, { targetX: x, targetY: y })
     this.gs.paths.delete(this.id)
   }
@@ -71,5 +73,6 @@ export function buildGameAPI(gs: GameState) {
     workers,
     sources,
     base,
+    memory:  gs.playerMemory,
   }
 }

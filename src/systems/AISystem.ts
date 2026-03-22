@@ -1,44 +1,38 @@
 import { GameState } from "../core/GameState"
 import { EntityId } from "../ecs/Entity"
 
-// ─── Personalidades disponibles ───────────────────────────
-export type AiPersonality = "expansionista" | "defensiva" | "agresiva"
+// ─── Dificultad de la IA — escalada por misión ─────────────
+// tutorial → misión 1 | easy → M2 | medium → M3 | hard → M4 | expert → M5+
+// Referencia Screeps: los "Invaders" también escalan por nivel de room (RCL)
+export type AiDifficulty = "tutorial" | "easy" | "medium" | "hard" | "expert"
 
-const AI_PERSONALITIES = {
-  expansionista: {
-    maxWorkers:     12,   // más workers que el jugador
-    spawnCost:      20,
-    spawnDelay:     3,    // spawn más rápido
-    buildThreshold: 0.4,  // construye con 40% de capacidad llena
-  },
-  defensiva: {
-    maxWorkers:     6,
-    spawnCost:      20,
-    spawnDelay:     8,
-    buildThreshold: 0.8,
-  },
-  agresiva: {
-    maxWorkers:     10,
-    spawnCost:      20,
-    spawnDelay:     4,
-    buildThreshold: 0.5,
-  },
+const DIFFICULTY_CONFIGS: Record<AiDifficulty, {
+  maxWorkers: number
+  spawnCost: number
+  spawnDelay: number     // ticks entre spawns — más alto = más lento
+  buildThreshold: number // % de base llena antes de construir extensión
+}> = {
+  tutorial: { maxWorkers: 4,  spawnCost: 20, spawnDelay: 12, buildThreshold: 0.90 },
+  easy:     { maxWorkers: 6,  spawnCost: 20, spawnDelay:  8, buildThreshold: 0.75 },
+  medium:   { maxWorkers: 8,  spawnCost: 20, spawnDelay:  5, buildThreshold: 0.60 },
+  hard:     { maxWorkers: 10, spawnCost: 20, spawnDelay:  4, buildThreshold: 0.50 },
+  expert:   { maxWorkers: 12, spawnCost: 20, spawnDelay:  3, buildThreshold: 0.40 },
 }
 
 export class AISystem {
 
-  private personality:      AiPersonality
-  private cfg:              typeof AI_PERSONALITIES["expansionista"]
+  private difficulty:       AiDifficulty
+  private cfg:              typeof DIFFICULTY_CONFIGS["expert"]
   private spawnCooldown:    number = 0
   private nextWorkerId:     number = 5000   // IDs de workers IA (evita colisiones con jugador)
   private maxExtensions:    number = 5
   private baseCost:         number = 50
   private costPerLevel:     number = 50
 
-  constructor(personality: AiPersonality = "expansionista") {
-    this.personality = personality
-    this.cfg         = AI_PERSONALITIES[personality]
-    console.log(`🤖 IA iniciada — personalidad: ${personality}`)
+  constructor(difficulty: AiDifficulty = "expert") {
+    this.difficulty = difficulty
+    this.cfg        = DIFFICULTY_CONFIGS[difficulty]
+    console.log(`🤖 IA iniciada — dificultad: ${difficulty} (maxWorkers:${this.cfg.maxWorkers} spawnDelay:${this.cfg.spawnDelay})`)
   }
 
   public update(gs: GameState): void {
