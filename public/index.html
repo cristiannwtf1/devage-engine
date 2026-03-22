@@ -362,7 +362,7 @@
       display: flex; flex-direction: column; justify-content: flex-end;
       transition: flex 0.5s cubic-bezier(0.4,0,0.2,1);
       border-right: 1px solid #0a1020;
-      opacity: 0; animation: worldIn 0.6s ease backwards;
+      opacity: 0; animation: worldIn 0.6s ease both;
     }
     #wcard-1 { animation-delay: 0.1s; }
     #wcard-2 { animation-delay: 0.25s; }
@@ -462,7 +462,7 @@
       padding: 16px 14px; cursor: pointer;
       display: flex; flex-direction: column; gap: 6px;
       transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
-      animation: nodeIn 0.35s ease backwards;
+      animation: nodeIn 0.35s ease both;
     }
     @keyframes nodeIn {
       from { opacity: 0; transform: translateY(10px); }
@@ -644,6 +644,59 @@
       background: rgba(20,0,0,0.9);
       box-shadow: 0 0 20px rgba(255,60,40,0.4);
     }
+
+    /* ── PREVIEW LATERAL DEL MENÚ ── */
+    #menu-preview {
+      position: fixed; right: 0; top: 0; bottom: 0;
+      width: 300px; z-index: 102;
+      background: rgba(3, 6, 14, 0.97);
+      border-left: 1px solid #0c1830;
+      padding: 52px 26px 30px;
+      display: flex; flex-direction: column; gap: 16px;
+      opacity: 0; transform: translateX(20px);
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      pointer-events: none;
+    }
+    #menu-preview.visible { opacity: 1; transform: translateX(0); }
+
+    #mp-accent { width: 28px; height: 2px; transition: background 0.3s; }
+
+    #mp-title {
+      font-size: 20px; letter-spacing: 5px; color: #fff;
+    }
+    #mp-sub {
+      font-size: 9px; letter-spacing: 2px; opacity: 0.55;
+      text-transform: uppercase; margin-top: -8px;
+    }
+    #mp-divider {
+      height: 1px;
+      background: linear-gradient(90deg, #102040, transparent);
+    }
+    #mp-features {
+      list-style: none; display: flex; flex-direction: column; gap: 10px; flex: 1;
+    }
+    #mp-features li {
+      font-size: 11px; color: #7799cc; letter-spacing: 0.3px;
+      padding-left: 14px; position: relative; line-height: 1.5;
+    }
+    #mp-features li::before { content: '›'; position: absolute; left: 0; color: #0077bb; }
+
+    #mp-code-block {
+      background: #020508; border: 1px solid #0a1828; padding: 12px 13px;
+    }
+    #mp-code-label {
+      font-size: 8px; color: #1e3a5a; letter-spacing: 3px;
+      text-transform: uppercase; margin-bottom: 8px;
+    }
+    #mp-code {
+      font-family: 'Share Tech Mono', monospace; font-size: 10px;
+      color: #3d7daa; line-height: 1.65; white-space: pre; overflow: hidden;
+      margin: 0;
+    }
+    #mp-cta {
+      font-size: 9px; color: #1e3a5a; letter-spacing: 2px;
+      text-align: center; padding-top: 8px; border-top: 1px solid #0c1830;
+    }
   </style>
 </head>
 <body>
@@ -705,6 +758,19 @@
       </div>
       <div id="menu-hint">[ 1 ][ 2 ][ 3 ] seleccionar &nbsp;·&nbsp; Enter confirmar</div>
     </div>
+  </div>
+  <!-- Panel lateral hover del menú -->
+  <div id="menu-preview">
+    <div id="mp-accent"></div>
+    <div id="mp-title"></div>
+    <div id="mp-sub"></div>
+    <div id="mp-divider"></div>
+    <ul id="mp-features"></ul>
+    <div id="mp-code-block">
+      <div id="mp-code-label">Ejemplo de código</div>
+      <pre id="mp-code"></pre>
+    </div>
+    <div id="mp-cta">Click para entrar →</div>
   </div>
   <!-- ═══════════════════════════════════════════════════════════════════== -->
 

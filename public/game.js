@@ -1228,5 +1228,122 @@ window.addEventListener("resize", () => {
   if (menuActive) { initMenuBg(); drawMenuBg() }
 })
 
+// ═══════════════════════════════════════════════════════════
+//  HOVER PREVIEW DEL MENÚ
+// ═══════════════════════════════════════════════════════════
+
+const CARD_PREVIEWS = {
+  campaign: {
+    title: "CAMPAÑA",
+    sub: "Aprende JavaScript jugando",
+    color: "#00aaff",
+    features: [
+      "17 misiones · 3 temporadas completas",
+      "Sin experiencia previa necesaria",
+      "Cada misión enseña 1-2 conceptos JS",
+      "IA oponente que te desafía en tiempo real",
+      "★★★ estrellas según tu velocidad",
+      "Progreso guardado automáticamente"
+    ],
+    code: `for (const id in Game.workers) {\n  const w = Game.workers[id]\n  if (w.energy < w.energyCapacity)\n    w.harvest(findNearest(w, Game.sources))\n  else\n    w.transfer(Game.base.id)\n}`,
+    cta: "Seleccionar mundo →"
+  },
+  'vs-ai': {
+    title: "VS IA",
+    sub: "Tu código contra la IA",
+    color: "#0088cc",
+    features: [
+      "Editor JavaScript completo en browser",
+      "Tu script corre cada 300ms en tiempo real",
+      "IA expansionista con su propia base",
+      "Panel con sparklines y estadísticas live",
+      "Sin restricciones — tu propia estrategia",
+      "Ctrl+Enter para ejecutar al instante"
+    ],
+    code: null,
+    cta: "Jugar directamente →"
+  },
+  sandbox: {
+    title: "SANDBOX",
+    sub: "Experimenta sin presión",
+    color: "#0077aa",
+    features: [
+      "Sin condición de victoria ni derrota",
+      "Sin IA oponente en tu camino",
+      "Perfecto para probar código nuevo",
+      "Ideal para enseñar a otras personas",
+      "Pausa y reanuda cuando quieras",
+      "El mapa completo para ti solo"
+    ],
+    code: null,
+    cta: "Entrar al sandbox →"
+  },
+  challenges: {
+    title: "DESAFÍOS",
+    sub: "Retos cronometrados",
+    color: "#334466",
+    features: [
+      "Objetivos específicos con tiempo límite",
+      "\"Llena la base en menos de 100 ticks\"",
+      "Rankings y puntuaciones",
+      "Nuevos desafíos cada semana",
+      "Compite por el mejor algoritmo",
+      "— Próximamente —"
+    ],
+    code: null,
+    cta: "Próximamente"
+  }
+}
+
+const menuPreview     = document.getElementById("menu-preview")
+const mpAccent        = document.getElementById("mp-accent")
+const mpTitle         = document.getElementById("mp-title")
+const mpSub           = document.getElementById("mp-sub")
+const mpFeatures      = document.getElementById("mp-features")
+const mpCodeBlock     = document.getElementById("mp-code-block")
+const mpCode          = document.getElementById("mp-code")
+const mpCta           = document.getElementById("mp-cta")
+
+function showMenuPreview(mode) {
+  const d = CARD_PREVIEWS[mode]
+  if (!d) return
+
+  mpAccent.style.background = d.color
+  mpTitle.textContent       = d.title
+  mpTitle.style.textShadow  = `0 0 20px ${d.color}55`
+  mpSub.textContent         = d.sub
+  mpSub.style.color         = d.color
+
+  mpFeatures.innerHTML = d.features
+    .map(f => `<li>${f}</li>`).join("")
+
+  if (d.code) {
+    mpCode.textContent        = d.code
+    mpCodeBlock.style.display = "block"
+  } else {
+    mpCodeBlock.style.display = "none"
+  }
+
+  mpCta.textContent = d.cta
+  menuPreview.classList.add("visible")
+}
+
+function hideMenuPreview() {
+  menuPreview.classList.remove("visible")
+}
+
+const previewBindings = [
+  ["card-campaign",   "campaign"],
+  ["card-vs-ai",      "vs-ai"],
+  ["card-sandbox",    "sandbox"],
+  ["card-challenges", "challenges"]
+]
+for (const [id, mode] of previewBindings) {
+  const el = document.getElementById(id)
+  if (!el) continue
+  el.addEventListener("mouseenter", () => showMenuPreview(mode))
+  el.addEventListener("mouseleave",  hideMenuPreview)
+}
+
 initMenuBg()
 drawMenuBg()
