@@ -9,20 +9,20 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     :root {
-      --cyan:    #00ffbb;
-      --cyan-d:  #00bb88;
-      --red:     #ff5544;
+      --cyan:    #00aaff;
+      --cyan-d:  #0088cc;
+      --red:     #ff4433;
       --red-d:   #cc2222;
       --gold:    #ffcc00;
-      --blue:    #4477ff;
-      --blue-d:  #1a2a5a;
-      --bg:      #040408;
-      --bg-2:    #07070e;
-      --bg-3:    #0a0a14;
-      --border:  #111128;
-      --border2: #1a1a33;
-      --text:    #8899bb;
-      --text-d:  #334466;
+      --blue:    #2299ff;
+      --blue-d:  #0d2050;
+      --bg:      #040810;
+      --bg-2:    #050c16;
+      --bg-3:    #070f1c;
+      --border:  #0c1628;
+      --border2: #102040;
+      --text:    #7799cc;
+      --text-d:  #1e3a5a;
     }
 
     body {
@@ -61,13 +61,13 @@
       font-size: 17px;
       color: var(--cyan);
       letter-spacing: 4px;
-      text-shadow: 0 0 14px rgba(0,255,187,0.5);
+      text-shadow: 0 0 14px rgba(0,170,255,0.5);
     }
 
     #header h1 span { color: var(--text-d); font-size: 12px; letter-spacing: 1px; margin-left: 8px; }
 
     #tick-info { font-size: 12px; color: var(--text-d); letter-spacing: 1px; }
-    #tick-info span { color: var(--cyan); text-shadow: 0 0 8px rgba(0,255,187,0.4); }
+    #tick-info span { color: var(--cyan); text-shadow: 0 0 8px rgba(0,170,255,0.4); }
 
     #controls { display: flex; gap: 8px; }
 
@@ -82,8 +82,8 @@
       letter-spacing: 1px;
       transition: all 0.15s;
     }
-    button:hover { border-color: var(--cyan-d); color: var(--cyan); box-shadow: 0 0 8px rgba(0,255,187,0.15); }
-    button.active { border-color: var(--cyan); color: var(--cyan); box-shadow: 0 0 10px rgba(0,255,187,0.25); }
+    button:hover { border-color: var(--cyan-d); color: var(--cyan); box-shadow: 0 0 8px rgba(0,170,255,0.15); }
+    button.active { border-color: var(--cyan); color: var(--cyan); box-shadow: 0 0 10px rgba(0,170,255,0.25); }
 
     /* ── MAIN ── */
     #main { display: flex; flex: 1; overflow: hidden; }
@@ -157,7 +157,7 @@
       margin-bottom: 8px;
     }
 
-    .panel-section.player h3 { color: var(--cyan-d); text-shadow: 0 0 6px rgba(0,255,187,0.3); }
+    .panel-section.player h3 { color: var(--cyan-d); text-shadow: 0 0 6px rgba(0,170,255,0.3); }
     .panel-section.enemy  h3 { color: #aa3333; text-shadow: 0 0 6px rgba(255,50,50,0.3); }
 
     .stat-row {
@@ -169,7 +169,7 @@
     }
     .stat-label { color: var(--text-d); }
     .stat-value { color: var(--text); }
-    .stat-value.player-val { color: var(--cyan); text-shadow: 0 0 6px rgba(0,255,187,0.3); }
+    .stat-value.player-val { color: var(--cyan); text-shadow: 0 0 6px rgba(0,170,255,0.3); }
     .stat-value.enemy-val  { color: #cc5533; text-shadow: 0 0 6px rgba(255,80,0,0.3); }
 
     .energy-bar-bg {
@@ -183,7 +183,7 @@
       height: 100%;
       transition: width 0.3s;
     }
-    .energy-bar-fill.player { background: linear-gradient(90deg, #006644, #00ffbb); box-shadow: 0 0 6px rgba(0,255,187,0.5); }
+    .energy-bar-fill.player { background: linear-gradient(90deg, #003d80, #00aaff); box-shadow: 0 0 6px rgba(0,170,255,0.5); }
     .energy-bar-fill.enemy  { background: linear-gradient(90deg, #660000, #ff5500); box-shadow: 0 0 6px rgba(255,80,0,0.5); }
 
     /* Sparkline canvas */
@@ -200,7 +200,7 @@
     }
     #dominance-player {
       position: absolute; left: 0; top: 0; bottom: 0;
-      background: linear-gradient(90deg, #003322, #00ffbb);
+      background: linear-gradient(90deg, #002255, #00aaff);
       transition: width 0.4s;
     }
     #dominance-ai {
@@ -273,7 +273,7 @@
       font-size: 9px; letter-spacing: 1px;
       padding: 1px 6px; border: 1px solid var(--border);
     }
-    .script-status.active { color: var(--cyan-d); border-color: var(--cyan-d); box-shadow: 0 0 6px rgba(0,255,187,0.2); }
+    .script-status.active { color: var(--cyan-d); border-color: var(--cyan-d); box-shadow: 0 0 6px rgba(0,170,255,0.2); }
     .script-status.idle   { color: var(--text-d); }
 
     #code-editor {
@@ -293,7 +293,7 @@
     #editor-footer { display: flex; gap: 6px; margin-top: 6px; }
 
     #btn-run   { border-color: var(--cyan-d); color: var(--cyan-d); }
-    #btn-run:hover { border-color: var(--cyan); color: var(--cyan); box-shadow: 0 0 8px rgba(0,255,187,0.2); }
+    #btn-run:hover { border-color: var(--cyan); color: var(--cyan); box-shadow: 0 0 8px rgba(0,170,255,0.2); }
 
     #btn-clear { border-color: var(--border2); color: var(--text-d); }
     #btn-clear:hover { border-color: #aa3333; color: #cc4444; }
@@ -338,8 +338,8 @@
     }
     #victory-banner.player {
       color: var(--cyan); border-color: var(--cyan);
-      background: rgba(0,20,10,0.9);
-      box-shadow: 0 0 20px rgba(0,255,187,0.4);
+      background: rgba(0,10,25,0.9);
+      box-shadow: 0 0 20px rgba(0,170,255,0.4);
     }
     #victory-banner.ai {
       color: var(--red); border-color: var(--red);

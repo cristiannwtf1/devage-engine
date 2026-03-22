@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:040408,50:001a0f,100:00ffbb&height=200&section=header&text=CODESTRIKE&fontSize=52&fontColor=00ffbb&fontAlignY=40&desc=Real-Time%20Strategy%20%7C%20Code%20Your%20Army&descAlignY=60&descColor=4488aa&animation=fadeIn" />
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:040810,50:001a3a,100:00aaff&height=200&section=header&text=CODESTRIKE&fontSize=52&fontColor=00aaff&fontAlignY=40&desc=Real-Time%20Strategy%20%7C%20Code%20Your%20Army&descAlignY=60&descColor=2266aa&animation=fadeIn" />
 
 <br/>
 
@@ -11,7 +11,7 @@
 
 <br/>
 
-[![Typing SVG](https://readme-typing-svg.demolab.com?font=Share+Tech+Mono&size=16&pause=1200&color=00BB88&center=true&vCenter=true&width=600&lines=Un+RTS+donde+tu+arma+es+el+código;Escribe+JavaScript.+Controla+tu+ejército.;Compite+contra+una+IA+que+también+piensa;Construido+con+TypeScript+%2B+Node.js+%2B+Canvas)](https://git.io/typing-svg)
+[![Typing SVG](https://readme-typing-svg.demolab.com?font=Share+Tech+Mono&size=16&pause=1200&color=0099DD&center=true&vCenter=true&width=600&lines=Un+RTS+donde+tu+arma+es+el+código;Escribe+JavaScript.+Controla+tu+ejército.;Compite+contra+una+IA+que+también+piensa;Construido+con+TypeScript+%2B+Node.js+%2B+Canvas)](https://git.io/typing-svg)
 
 </div>
 
@@ -19,7 +19,7 @@
 
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=rect&color=0:040408,100:001a0f&height=3&section=header" />
+<img src="https://capsule-render.vercel.app/api?type=rect&color=0:040810,100:001a3a&height=3&section=header" />
 
 </div>
 
@@ -49,7 +49,7 @@ En lugar de hacer clic, **escribes código** para controlar tus unidades. Cada 3
 ---
 
 <div align="center">
-<img src="https://capsule-render.vercel.app/api?type=soft&color=0:001a0f,100:003322&height=60&section=header&text=Inicio+rápido&fontSize=22&fontColor=00ffbb&fontAlignY=65" />
+<img src="https://capsule-render.vercel.app/api?type=soft&color=0:001a3a,100:002255&height=60&section=header&text=Inicio+rápido&fontSize=22&fontColor=00aaff&fontAlignY=65" />
 </div>
 
 ```bash
@@ -83,7 +83,7 @@ for (const id in Game.workers) {
 ---
 
 <div align="center">
-<img src="https://capsule-render.vercel.app/api?type=soft&color=0:001a0f,100:003322&height=60&section=header&text=API+del+jugador&fontSize=22&fontColor=00ffbb&fontAlignY=65" />
+<img src="https://capsule-render.vercel.app/api?type=soft&color=0:001a3a,100:002255&height=60&section=header&text=API+del+jugador&fontSize=22&fontColor=00aaff&fontAlignY=65" />
 </div>
 
 <div align="center">
@@ -106,7 +106,7 @@ for (const id in Game.workers) {
 ---
 
 <div align="center">
-<img src="https://capsule-render.vercel.app/api?type=soft&color=0:001a0f,100:003322&height=60&section=header&text=Arquitectura+ECS&fontSize=22&fontColor=00ffbb&fontAlignY=65" />
+<img src="https://capsule-render.vercel.app/api?type=soft&color=0:001a3a,100:002255&height=60&section=header&text=Arquitectura+ECS&fontSize=22&fontColor=00aaff&fontAlignY=65" />
 </div>
 
 El engine usa **Entity Component System (ECS)** — un patrón de arquitectura de juegos donde los datos viven separados de la lógica, permitiendo que todos los sistemas operen en paralelo sobre las mismas entidades.
@@ -150,7 +150,7 @@ La IA tiene **su propia base**, sus **propios workers** y su **propia economía*
 ---
 
 <div align="center">
-<img src="https://capsule-render.vercel.app/api?type=soft&color=0:001a0f,100:003322&height=60&section=header&text=Visual&fontSize=22&fontColor=00ffbb&fontAlignY=65" />
+<img src="https://capsule-render.vercel.app/api?type=soft&color=0:001a3a,100:002255&height=60&section=header&text=Visual&fontSize=22&fontColor=00aaff&fontAlignY=65" />
 </div>
 
 El renderer corre a **60fps** usando `requestAnimationFrame` con **interpolación de posiciones** entre ticks — las unidades se mueven suavemente aunque el servidor actualice cada 300ms.
@@ -172,7 +172,7 @@ El renderer corre a **60fps** usando `requestAnimationFrame` con **interpolació
 ---
 
 <div align="center">
-<img src="https://capsule-render.vercel.app/api?type=soft&color=0:001a0f,100:003322&height=60&section=header&text=Roadmap&fontSize=22&fontColor=00ffbb&fontAlignY=65" />
+<img src="https://capsule-render.vercel.app/api?type=soft&color=0:001a3a,100:002255&height=60&section=header&text=Roadmap&fontSize=22&fontColor=00aaff&fontAlignY=65" />
 </div>
 
 <div align="center">
@@ -199,7 +199,7 @@ El renderer corre a **60fps** usando `requestAnimationFrame` con **interpolació
 
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:00ffbb,50:003322,100:040408&height=100&section=footer" />
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:00aaff,50:002255,100:040810&height=100&section=footer" />
 
 **© 2026 Cristian. Todos los derechos reservados.**<br/>
 *Este repositorio es de uso público para lectura y aprendizaje.<br/>No se permite el uso comercial, redistribución ni modificación sin autorización expresa del autor.*

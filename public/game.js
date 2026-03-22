@@ -16,8 +16,8 @@ function spawnParticles(x, y, isAI) {
       vx: Math.cos(angle) * speed,
       vy: Math.sin(angle) * speed - 0.8,
       life: 1,
-      color: isAI ? "#ff9900" : "#ffdd00",
-      glow:  isAI ? "#ff6600" : "#ffcc00",
+      color: isAI ? "#ff9900" : "#44bbff",
+      glow:  isAI ? "#ff6600" : "#00aaff",
       size:  1.5 + Math.random() * 2
     })
   }
@@ -177,11 +177,11 @@ function drawVictoryScreen(winner, winTick) {
   const pulse = 0.75 + 0.25 * Math.sin(animFrame * 0.05)
 
   // Overlay oscuro
-  ctx.fillStyle = isPlayer ? "rgba(0,20,10,0.82)" : "rgba(20,0,0,0.82)"
+  ctx.fillStyle = isPlayer ? "rgba(0,8,20,0.82)" : "rgba(20,0,0,0.82)"
   ctx.fillRect(0, 0, w, h)
 
   // Línea horizontal superior e inferior
-  const lineColor = isPlayer ? "#00ffbb" : "#ff4422"
+  const lineColor = isPlayer ? "#00aaff" : "#ff4422"
   ctx.shadowColor = lineColor
   ctx.shadowBlur  = 20 * pulse
   ctx.strokeStyle = lineColor
@@ -200,7 +200,7 @@ function drawVictoryScreen(winner, winTick) {
 
   // Subtítulo
   ctx.font      = `${Math.floor(w * 0.032)}px 'Share Tech Mono', monospace`
-  ctx.fillStyle = isPlayer ? "#8899bb" : "#886655"
+  ctx.fillStyle = isPlayer ? "#7799cc" : "#886655"
   ctx.shadowBlur = 0
   ctx.fillText(
     isPlayer ? "Tu código dominó el mapa" : "La IA tomó el control",
@@ -223,15 +223,15 @@ function drawTile(x, y, type) {
   const px = x * CELL, py = y * CELL
   ctx.shadowBlur = 0
   if (type === "wall") {
-    ctx.fillStyle = "#040406"
+    ctx.fillStyle = "#030610"
     ctx.fillRect(px, py, CELL, CELL)
-    ctx.strokeStyle = "#080810"
+    ctx.strokeStyle = "#071020"
     ctx.lineWidth = 0.5
     ctx.strokeRect(px + 0.5, py + 0.5, CELL - 1, CELL - 1)
   } else {
-    ctx.fillStyle = "#09090f"
+    ctx.fillStyle = "#050912"
     ctx.fillRect(px, py, CELL, CELL)
-    ctx.strokeStyle = "#0f0f1e"
+    ctx.strokeStyle = "#0a1525"
     ctx.lineWidth = 0.5
     ctx.strokeRect(px + 0.5, py + 0.5, CELL - 1, CELL - 1)
   }
@@ -267,7 +267,7 @@ function drawPath(ix, iy, tx, ty, isAI) {
 
   ctx.save()
   ctx.shadowBlur = 0
-  ctx.strokeStyle = isAI ? "rgba(255,100,0,0.22)" : "rgba(0,255,160,0.22)"
+  ctx.strokeStyle = isAI ? "rgba(255,100,0,0.22)" : "rgba(0,170,255,0.22)"
   ctx.lineWidth   = 1
   ctx.setLineDash([2, 6])
   ctx.beginPath()
@@ -377,9 +377,9 @@ function drawSource(px, py, cx, cy, e) {
 
 // ─── WORKER ───────────────────────────────────────────────
 function drawWorker(px, py, cx, cy, e, isAI) {
-  const color = isAI ? "#cc5500" : "#00bb88"
-  const glow  = isAI ? "#ff9900" : "#00ffbb"
-  const bg    = isAI ? "#150800" : "#00120a"
+  const color = isAI ? "#cc5500" : "#0088cc"
+  const glow  = isAI ? "#ff9900" : "#00aaff"
+  const bg    = isAI ? "#150800" : "#00080f"
   const energy = e.energy ? e.energy.current / e.energy.capacity : 0
 
   ctx.fillStyle = bg
@@ -400,10 +400,10 @@ function drawWorker(px, py, cx, cy, e, isAI) {
 
   const bw = CELL - 6
   ctx.shadowBlur = 0
-  ctx.fillStyle  = isAI ? "#150500" : "#001508"
+  ctx.fillStyle  = isAI ? "#150500" : "#00060e"
   ctx.fillRect(px + 3, py + CELL - 5, bw, 3)
-  ctx.fillStyle   = isAI ? "#ff8800" : "#00ff99"
-  ctx.shadowColor = isAI ? "#ff8800" : "#00ff99"
+  ctx.fillStyle   = isAI ? "#ff8800" : "#00aaff"
+  ctx.shadowColor = isAI ? "#ff8800" : "#00aaff"
   ctx.shadowBlur  = 3
   ctx.fillRect(px + 3, py + CELL - 5, bw * energy, 3)
 }
@@ -539,9 +539,9 @@ function renderWorkerDots(snap) {
       d.style.borderColor    = state === "harvesting" ? "#ffaa44" : "#554400"
       d.style.boxShadow      = state === "harvesting" ? "0 0 5px #ff8800" : "none"
     } else {
-      d.style.background     = state === "harvesting" ? "#00cc88" : "#004433"
-      d.style.borderColor    = state === "harvesting" ? "#00ffbb" : "#003322"
-      d.style.boxShadow      = state === "harvesting" ? "0 0 5px #00ffbb" : "none"
+      d.style.background     = state === "harvesting" ? "#0077bb" : "#001833"
+      d.style.borderColor    = state === "harvesting" ? "#00aaff" : "#002255"
+      d.style.boxShadow      = state === "harvesting" ? "0 0 5px #00aaff" : "none"
     }
     d.title = `${isAI ? "IA" : "W"} — ${state}`
     return d
@@ -598,7 +598,7 @@ function updatePanel(snap) {
     if (playerHistory.length > HISTORY_LEN) playerHistory.shift()
     drawSparkline(
       document.getElementById("sparkline-player"),
-      playerHistory, "#00cc88", "#00ffbb"
+      playerHistory, "#0077bb", "#00aaff"
     )
   }
   document.getElementById("worker-count").textContent = snap.workerCount
