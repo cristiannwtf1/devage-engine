@@ -1,64 +1,72 @@
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:040408,50:003322,100:00ffbb&height=160&section=header&text=DEVAGE%20ENGINE&fontSize=42&fontColor=00ffbb&fontAlignY=38&desc=Programa%20tu%20ejército.%20Vence%20a%20la%20IA.&descAlignY=58&descColor=8899bb" />
-
-[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
-[![WebSocket](https://img.shields.io/badge/WebSocket-010101?style=for-the-badge&logo=socket.io&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket)
-[![Canvas](https://img.shields.io/badge/HTML_Canvas-E34F26?style=for-the-badge&logo=html5&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API)
-[![License](https://img.shields.io/badge/License-MIT-00ffbb?style=for-the-badge)](LICENSE)
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:040408,50:001a0f,100:00ffbb&height=200&section=header&text=DEVAGE%20ENGINE&fontSize=52&fontColor=00ffbb&fontAlignY=40&desc=Real-Time%20Strategy%20%7C%20Code%20Your%20Army&descAlignY=60&descColor=4488aa&animation=fadeIn" />
 
 <br/>
 
-*Un RTS de un jugador donde tu arma es el código. Gratuito. Open source. Con IA adaptable.*
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
+[![WebSocket](https://img.shields.io/badge/WebSocket-black?style=for-the-badge&logo=socket.io&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket)
+[![Canvas API](https://img.shields.io/badge/Canvas_60fps-E34F26?style=for-the-badge&logo=html5&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API)
+
+<br/>
+
+[![Typing SVG](https://readme-typing-svg.demolab.com?font=Share+Tech+Mono&size=16&pause=1200&color=00BB88&center=true&vCenter=true&width=600&lines=Un+RTS+donde+tu+arma+es+el+código;Escribe+JavaScript.+Controla+tu+ejército.;Compite+contra+una+IA+que+también+piensa;Construido+con+TypeScript+%2B+Node.js+%2B+Canvas)](https://git.io/typing-svg)
 
 </div>
 
 ---
 
-## ¿Qué es DEVAGE ENGINE?
+<div align="center">
 
-DEVAGE ENGINE es un juego de estrategia en tiempo real inspirado en **Screeps**, **StarCraft** y **Age of Empires** — pero con un giro: en lugar de hacer clic, escribes **JavaScript** para controlar tus unidades.
+<img src="https://capsule-render.vercel.app/api?type=rect&color=0:040408,100:001a0f&height=3&section=header" />
 
-Tu código se ejecuta **cada 300ms** (un "tick") mientras compites contra una **IA con personalidad propia** que tiene su base, sus workers y su estrategia de expansión.
+</div>
+
+## ⬡ El concepto
+
+En lugar de hacer clic, **escribes código** para controlar tus unidades. Cada 300ms tu script se ejecuta en el servidor y tus workers obedecen tus instrucciones — mientras una **IA enemiga** con su propia base y su propia estrategia hace exactamente lo mismo en el otro lado del mapa.
 
 <div align="center">
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│  ◈ JUGADOR           TICK 0847          ◈ IA ENEMIGA        │
-│  1840 / 2000   ████████████████░░░░  1620 / 2000            │
-│                                                             │
-│  W · · · · · ·  ⚡ · · · ⚡ · · · ·  A · A · · · ·        │
-│  · W · · · · ·  · · · · · · · · · ·  · · · A · · ·        │
-│  · · · · ⚡ · ·  · · · · · · · ⚡ · ·  · · · · A · ·      │
-│  🏠 · · · · · ·  · · · · · · · · · ·  · · · · · 🔴        │
-└─────────────────────────────────────────────────────────────┘
+╔══════════════════════════════════════════════════════════════╗
+║  ◈ TÚ                TICK  0847             ◈ IA ENEMIGA    ║
+║  ─────────────────                    ───────────────────   ║
+║  1840 / 2000         ████████████░░                         ║
+║                              vs                             ║
+║                                         ░░████████████      ║
+║                                              1620 / 2000    ║
+║                                                             ║
+║   W ···⚡···  ⚡ · · · · ⚡ · · · · ⚡ ···A···A            ║
+║   ·W · · · ·  · · · · · · · · · · · · · · · A · ·          ║
+║   🏠· · · · ·  · · · · · · · · · · · · · · · 🔴            ║
+╚══════════════════════════════════════════════════════════════╝
 ```
 
 </div>
 
 ---
 
-## Inicio rápido
+<div align="center">
+<img src="https://capsule-render.vercel.app/api?type=soft&color=0:001a0f,100:003322&height=60&section=header&text=Inicio+rápido&fontSize=22&fontColor=00ffbb&fontAlignY=65" />
+</div>
 
 ```bash
 git clone https://github.com/cristiannwtf1/devage-engine
 cd devage-engine
 npm install
 npm run dev
-# → http://localhost:3000
 ```
 
-Pega este script en el editor del browser y presiona **Ctrl+Enter**:
+Abre **http://localhost:3000**, escribe en el editor y presiona `Ctrl+Enter`:
 
 ```javascript
-// Este código corre cada tick mientras el juego avanza
+// Tu estrategia corre cada tick mientras el mundo avanza en tiempo real
 for (const id in Game.workers) {
   const w = Game.workers[id]
 
   if (w.energy < w.energyCapacity) {
-    // Buscar la source de energía más cercana
     let nearest = null, minDist = Infinity
     for (const sid in Game.sources) {
       const s = Game.sources[sid]
@@ -66,118 +74,124 @@ for (const id in Game.workers) {
       if (s.energy > 0 && d < minDist) { minDist = d; nearest = s }
     }
     if (nearest) w.harvest(nearest.id)
-  } else if (Game.base) {
-    w.transfer(Game.base.id)  // Depositar en base
+  } else {
+    w.transfer(Game.base.id)
   }
 }
 ```
 
 ---
 
-## API del jugador
+<div align="center">
+<img src="https://capsule-render.vercel.app/api?type=soft&color=0:001a0f,100:003322&height=60&section=header&text=API+del+jugador&fontSize=22&fontColor=00ffbb&fontAlignY=65" />
+</div>
 
 <div align="center">
 
-| Objeto | Descripción |
-|---|---|
-| `Game.workers` | Todos tus workers `{ id, x, y, energy, energyCapacity, state }` |
-| `Game.sources` | Fuentes de energía `{ id, x, y, energy, maxEnergy }` |
-| `Game.base` | Tu base `{ id, x, y, energy, capacity }` |
-| `Game.tick` | Tick actual |
+| Objeto | Tipo | Descripción |
+|:---|:---:|:---|
+| `Game.workers` | `Record<id, Worker>` | Todos tus workers activos |
+| `Game.sources` | `Record<id, Source>` | Fuentes de energía del mapa |
+| `Game.base` | `Base` | Tu base principal |
+| `Game.tick` | `number` | Tick actual del mundo |
 
-| Comando | Acción |
-|---|---|
-| `worker.moveTo(x, y)` | Mover worker a posición |
-| `worker.harvest(sourceId)` | Ir a cosechar una source |
+| Método | Descripción |
+|:---|:---|
+| `worker.moveTo(x, y)` | Moverse a una coordenada |
+| `worker.harvest(sourceId)` | Ir a cosechar energía |
 | `worker.transfer(targetId)` | Depositar energía en la base |
 
 </div>
 
 ---
 
-## Arquitectura
+<div align="center">
+<img src="https://capsule-render.vercel.app/api?type=soft&color=0:001a0f,100:003322&height=60&section=header&text=Arquitectura+ECS&fontSize=22&fontColor=00ffbb&fontAlignY=65" />
+</div>
+
+El engine usa **Entity Component System (ECS)** — un patrón de arquitectura de juegos donde los datos viven separados de la lógica, permitiendo que todos los sistemas operen en paralelo sobre las mismas entidades.
 
 ```
-devage-engine/
-├── src/
-│   ├── core/
-│   │   ├── GameState.ts        ← ECS data store (todo el estado del mundo)
-│   │   └── GameEngine.ts       ← Tick loop + orden de 13 sistemas
-│   ├── systems/
-│   │   ├── BehaviorSystem.ts   ← Máquina de estados harvesting/returning
-│   │   ├── TargetSystem.ts     ← Asignación inteligente de objetivos
-│   │   ├── PathfindingSystem.ts← BFS con esquiva de unidades
-│   │   ├── MovementSystem.ts   ← Movimiento paso a paso con cooldown
-│   │   ├── HarvestSystem.ts    ← Recolección de energía
-│   │   ├── DepositSystem.ts    ← Depósito en base correcta (jugador/IA)
-│   │   ├── SpawnSystem.ts      ← Spawn automático de workers
-│   │   ├── ConstructionSystem.ts← Construcción de extensiones
-│   │   ├── PlayerScriptSystem.ts← Sandbox de ejecución del JS del jugador
-│   │   ├── AISystem.ts         ← IA con personalidades (expansionista/...)
-│   │   ├── HealthSystem.ts     ← Sistema de daño
-│   │   ├── DeathSystem.ts      ← Cleanup de entidades muertas
-│   │   └── SourceRegenSystem.ts← Regeneración de energía en sources
-│   ├── api/
-│   │   └── GameAPI.ts          ← WorkerProxy + buildGameAPI()
-│   └── server.ts               ← Express + WebSocket + /debug endpoint
-└── public/
-    ├── index.html              ← UI "La Red de Neones" — HUD tech
-    └── game.js                 ← Renderer 60fps, interpolación, sparklines
+GameState (datos)          GameEngine (lógica — 13 sistemas por tick)
+───────────────            ──────────────────────────────────────────
+entities: Set              1. BehaviorSystem     — estado de cada worker
+positions: Map             2. PlayerScriptSystem — tu código JS
+healths: Map               3. TargetSystem       — asignación de objetivos
+behaviors: Map             4. PathfindingSystem  — BFS con esquiva
+targets: Map               5. MovementSystem     — movimiento real
+paths: Map                 6. HarvestSystem      — cosecha de energía
+sources: Map               7. DepositSystem      — depósito en base
+workers: Set               8. HealthSystem       — procesamiento de daño
+aiWorkers: Set             9. DeathSystem        — limpieza de entidades
+structures: Map           10. SpawnSystem        — nuevos workers
+aiBaseId: EntityId        11. ConstructionSystem — extensiones
+playerScript: string      12. AISystem           — IA enemiga
+                          13. SourceRegenSystem  — regeneración
 ```
 
 ---
 
-## IA Oponente
+<div align="center">
+<img src="https://capsule-render.vercel.app/api?type=soft&color=0:1a0005,100:330010&height=60&section=header&text=IA+Oponente&fontSize=22&fontColor=ff5544&fontAlignY=65" />
+</div>
 
-La IA tiene **base propia**, workers independientes y economía paralela. Compite por las mismas fuentes de energía que el jugador. Sistema de personalidades:
+La IA tiene **su propia base**, sus **propios workers** y su **propia economía**. Compite por las mismas fuentes de energía en tiempo real, toma decisiones de spawn y construcción de forma autónoma.
 
 <div align="center">
 
-| Personalidad | Workers máx | Spawn delay | Estrategia |
-|---|---|---|---|
-| **Expansionista** ✅ | 12 | 3 ticks | Crece rápido, construye antes |
-| **Defensiva** 🔜 | 6 | 8 ticks | Acumula, protege territorio |
-| **Agresiva** 🔜 | 10 | 4 ticks | Ataca workers enemigos |
+| Personalidad | Workers | Estrategia | Estado |
+|:---:|:---:|:---|:---:|
+| **Expansionista** | 12 | Crece rápido, construye antes que el jugador | ✅ Activa |
+| **Defensiva** | 6 | Acumula, fortifica su territorio | 🔜 |
+| **Agresiva** | 10 | Ataca workers enemigos directamente | 🔜 |
 
 </div>
 
 ---
 
-## Roadmap
+<div align="center">
+<img src="https://capsule-render.vercel.app/api?type=soft&color=0:001a0f,100:003322&height=60&section=header&text=Visual&fontSize=22&fontColor=00ffbb&fontAlignY=65" />
+</div>
+
+El renderer corre a **60fps** usando `requestAnimationFrame` con **interpolación de posiciones** entre ticks — las unidades se mueven suavemente aunque el servidor actualice cada 300ms.
 
 <div align="center">
 
-| Estado | Feature |
-|---|---|
+| Feature visual | Descripción |
+|:---|:---|
+| **Glow neón** | `canvas.shadowColor/shadowBlur` en todas las entidades |
+| **Rutas animadas** | Líneas punteadas desde worker hasta su destino |
+| **Sources pulsantes** | Anillo de pulso basado en nivel de energía |
+| **Interpolación** | Movimiento suave entre ticks del servidor |
+| **Scan lines** | Efecto CRT sutil sobre el canvas |
+| **Sparklines** | Gráfico de energía en tiempo real para ambas facciones |
+| **Barra de dominancia** | Comparación jugador vs IA en tiempo real |
+
+</div>
+
+---
+
+<div align="center">
+<img src="https://capsule-render.vercel.app/api?type=soft&color=0:001a0f,100:003322&height=60&section=header&text=Roadmap&fontSize=22&fontColor=00ffbb&fontAlignY=65" />
+</div>
+
+<div align="center">
+
+| | Feature |
+|:---:|:---|
 | ✅ | ECS Engine con 13 sistemas |
 | ✅ | Pathfinding BFS con esquiva de unidades |
-| ✅ | Renderer 60fps — canvas con efectos neón y glow |
-| ✅ | Player JavaScript API (editor en browser, Ctrl+Enter) |
-| ✅ | IA oponente expansionista con economía propia |
-| ✅ | Panel v2 — sparklines, dominancia, worker dots, log de eventos |
-| 🔜 | `Game.creeps['nombre']` — creeps con identidad |
-| 🔜 | `creep.memory` — estado persistente entre ticks |
-| 🔜 | Console del jugador en el panel |
-| 🔜 | Personalidades IA: defensiva y agresiva + combate |
+| ✅ | Renderer 60fps con interpolación y efectos neón |
+| ✅ | Player JavaScript API con editor en browser |
+| ✅ | IA oponente con personalidad expansionista |
+| ✅ | Panel con sparklines, dominancia y log de eventos |
 | 🔜 | Condición de victoria / derrota |
+| 🔜 | Partículas de energía al cosechar |
+| 🔜 | `Game.creeps['nombre']` — unidades con identidad |
+| 🔜 | `creep.memory` — memoria persistente entre ticks |
+| 🔜 | Personalidades IA: defensiva y agresiva + combate |
 | 🔜 | Fog of war |
-| 🔜 | Tutorial CODEX interactivo |
-
-</div>
-
----
-
-## vs Screeps
-
-<div align="center">
-
-| | Screeps | DEVAGE ENGINE |
-|---|---|---|
-| Precio | 💰 De pago | ✅ Gratis |
-| IA single player | ❌ Solo PvP | ✅ IA con personalidades |
-| Open source | ❌ | ✅ MIT |
-| Visual | Básico | ✅ Neón 60fps |
-| JS API | Completa | En desarrollo |
+| 🔜 | Tutorial interactivo integrado |
 
 </div>
 
@@ -185,8 +199,9 @@ La IA tiene **base propia**, workers independientes y economía paralela. Compit
 
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:00ffbb,50:003322,100:040408&height=80&section=footer" />
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:00ffbb,50:003322,100:040408&height=100&section=footer" />
 
-*Hecho con TypeScript, Node.js y demasiadas noches de bugs.*
+**© 2026 Cristian. Todos los derechos reservados.**<br/>
+*Este repositorio es de uso público para lectura y aprendizaje.<br/>No se permite el uso comercial, redistribución ni modificación sin autorización expresa del autor.*
 
 </div>
