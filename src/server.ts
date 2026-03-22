@@ -160,7 +160,9 @@ function buildSnapshot(gs: GameState) {
     aiWorkerCount: gs.aiWorkers.size,
     extensions:    [...gs.structures.values()].filter(s => s.type === "extension").length,
     aiExtensions:  [...gs.structures.values()].filter(s => s.type === "ai-extension").length,
-    scriptError:   gs.scriptError ?? null
+    scriptError:   gs.scriptError ?? null,
+    winner:        gs.winner,
+    winTick:       gs.winTick
   }
 }
 

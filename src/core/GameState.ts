@@ -53,6 +53,10 @@ export class GameState {
   public playerScript: string | null = null
   public scriptError:  string | null = null
 
+  // Condición de victoria: null = en curso, "player" = ganó jugador, "ai" = ganó IA
+  public winner: "player" | "ai" | null = null
+  public winTick: number = 0
+
   // Mapa del mundo
   public worldMap: WorldMap
 

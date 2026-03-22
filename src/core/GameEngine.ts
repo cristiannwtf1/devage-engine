@@ -12,6 +12,7 @@ import { PathfindingSystem } from "../systems/PathfindingSystem"
 import { ConstructionSystem } from "../systems/ConstructionSystem"
 import { PlayerScriptSystem } from "../systems/PlayerScriptSystem"
 import { AISystem } from "../systems/AISystem"
+import { VictorySystem } from "../systems/VictorySystem"
 
 export class GameEngine {
     private gameState: GameState
@@ -33,6 +34,7 @@ export class GameEngine {
     private constructionSystem  = new ConstructionSystem()
     private playerScriptSystem  = new PlayerScriptSystem()
     private aiSystem            = new AISystem("expansionista")
+    private victorySystem       = new VictorySystem()
 
     constructor(gameState: GameState, tickRate: number = 200, onTick: (() => void) | null = null) {
         this.gameState = gameState
@@ -77,6 +79,9 @@ export class GameEngine {
 
         // 8️⃣ Regeneración
         this.sourceRegenSystem.update(this.gameState)
+
+        // 9️⃣ Victoria
+        this.victorySystem.update(this.gameState)
 
         // 9️⃣ Log de estado cada 20 ticks
         if (this.gameState.tick % 20 === 0) {

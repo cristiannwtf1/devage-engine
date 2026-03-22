@@ -3,6 +3,51 @@
 //  60fps con interpolación entre ticks, glow, rutas animadas
 // ═══════════════════════════════════════════════════════════
 
+// ─── PARTÍCULAS ───────────────────────────────────────────
+const particles = []
+
+function spawnParticles(x, y, isAI) {
+  for (let i = 0; i < 5; i++) {
+    const angle = Math.random() * Math.PI * 2
+    const speed = 0.3 + Math.random() * 0.6
+    particles.push({
+      x: (x + 0.5) * CELL,
+      y: (y + 0.5) * CELL,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - 0.8,
+      life: 1,
+      color: isAI ? "#ff9900" : "#ffdd00",
+      glow:  isAI ? "#ff6600" : "#ffcc00",
+      size:  1.5 + Math.random() * 2
+    })
+  }
+}
+
+function updateParticles() {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i]
+    p.x    += p.vx
+    p.y    += p.vy
+    p.vy   += 0.04   // gravedad suave
+    p.life -= 0.035
+    if (p.life <= 0) particles.splice(i, 1)
+  }
+}
+
+function drawParticles() {
+  for (const p of particles) {
+    ctx.save()
+    ctx.globalAlpha = p.life
+    ctx.shadowColor = p.glow
+    ctx.shadowBlur  = 6
+    ctx.fillStyle   = p.color
+    ctx.beginPath()
+    ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.restore()
+  }
+}
+
 const CELL    = 26
 const TICK_MS = 300   // debe coincidir con tickRate del servidor
 
@@ -88,6 +133,21 @@ function renderFrame() {
     }
   }
 
+  // 3.5 Partículas de cosecha
+  updateParticles()
+  const sourcePositions = {}
+  for (const e of entities) {
+    if (e.type === "source") sourcePositions[`${e.x},${e.y}`] = true
+  }
+  for (const e of entities) {
+    if (e.type === "worker" || e.type === "ai-worker") {
+      if (e.state === "harvesting" && sourcePositions[`${e.x},${e.y}`]) {
+        if (animFrame % 4 === 0) spawnParticles(e.x, e.y, e.type === "ai-worker")
+      }
+    }
+  }
+  drawParticles()
+
   // 4. Entidades con interpolación
   const drawOrder = ["source", "extension", "ai-extension", "ai-base", "base", "ai-worker", "worker"]
   for (const type of drawOrder) {
@@ -103,8 +163,59 @@ function renderFrame() {
   // 5. Viñeta sutil
   drawVignette()
 
+  // 6. Pantalla de victoria
+  if (snap.winner) drawVictoryScreen(snap.winner, snap.winTick)
+
   document.getElementById("tick").textContent = snap.tick
   animFrame++
+}
+
+// ─── PANTALLA DE VICTORIA ─────────────────────────────────
+function drawVictoryScreen(winner, winTick) {
+  const w = canvas.width, h = canvas.height
+  const isPlayer = winner === "player"
+  const pulse = 0.75 + 0.25 * Math.sin(animFrame * 0.05)
+
+  // Overlay oscuro
+  ctx.fillStyle = isPlayer ? "rgba(0,20,10,0.82)" : "rgba(20,0,0,0.82)"
+  ctx.fillRect(0, 0, w, h)
+
+  // Línea horizontal superior e inferior
+  const lineColor = isPlayer ? "#00ffbb" : "#ff4422"
+  ctx.shadowColor = lineColor
+  ctx.shadowBlur  = 20 * pulse
+  ctx.strokeStyle = lineColor
+  ctx.lineWidth   = 1
+  ctx.beginPath(); ctx.moveTo(0, h * 0.28); ctx.lineTo(w, h * 0.28); ctx.stroke()
+  ctx.beginPath(); ctx.moveTo(0, h * 0.72); ctx.lineTo(w, h * 0.72); ctx.stroke()
+
+  ctx.textAlign    = "center"
+  ctx.textBaseline = "middle"
+
+  // Título
+  ctx.font      = `bold ${Math.floor(w * 0.09)}px 'Share Tech Mono', monospace`
+  ctx.fillStyle = lineColor
+  ctx.shadowBlur = 30 * pulse
+  ctx.fillText(isPlayer ? "VICTORIA" : "DERROTA", w / 2, h * 0.42)
+
+  // Subtítulo
+  ctx.font      = `${Math.floor(w * 0.032)}px 'Share Tech Mono', monospace`
+  ctx.fillStyle = isPlayer ? "#8899bb" : "#886655"
+  ctx.shadowBlur = 0
+  ctx.fillText(
+    isPlayer ? "Tu código dominó el mapa" : "La IA tomó el control",
+    w / 2, h * 0.54
+  )
+
+  // Tick
+  ctx.font      = `${Math.floor(w * 0.024)}px 'Share Tech Mono', monospace`
+  ctx.fillStyle = "#334466"
+  ctx.fillText(`Tick final: ${winTick}`, w / 2, h * 0.62)
+
+  // Instrucción de reinicio
+  ctx.font      = `${Math.floor(w * 0.022)}px 'Share Tech Mono', monospace`
+  ctx.fillStyle = "#334466"
+  ctx.fillText("[ Recarga la página para jugar de nuevo ]", w / 2, h * 0.68)
 }
 
 // ─── TILE ─────────────────────────────────────────────────
@@ -530,6 +641,16 @@ function updatePanel(snap) {
   prevExtCount    = snap.extensions
   prevAiWorkers   = snap.aiWorkerCount ?? 0
   prevAiExtCount  = snap.aiExtensions  ?? 0
+
+  // Victoria
+  const banner = document.getElementById("victory-banner")
+  if (snap.winner && banner.style.display === "none") {
+    banner.className    = snap.winner === "player" ? "player" : "ai"
+    banner.textContent  = snap.winner === "player" ? "⬡ VICTORIA" : "◈ DERROTA"
+    banner.style.display = "block"
+    if (snap.winner === "player") addEvent("¡VICTORIA! Base llena", "ev-player", snap.tick)
+    else addEvent("DERROTA — IA llenó su base", "ev-ai", snap.tick)
+  }
 }
 
 // ─── ERRORES DE SCRIPT ────────────────────────────────────

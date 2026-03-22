@@ -12,7 +12,8 @@
       "Bash(git push:*)",
       "Bash(node -e \"const fs=require\\(''fs''\\); const pid=parseInt\\(fs.readFileSync\\(''.server.pid'',''utf8''\\)\\); process.kill\\(pid\\); fs.unlinkSync\\(''.server.pid''\\); console.log\\(''Detenido PID:'', pid\\);\")",
       "Bash(node -e \"const fs=require\\(''fs''\\); const pid=parseInt\\(fs.readFileSync\\(''.server.pid'',''utf8''\\)\\); process.kill\\(pid\\); fs.unlinkSync\\(''.server.pid''\\); console.log\\(''Detenido:'', pid\\);\")",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(ls:*)"
     ]
   }
 }
