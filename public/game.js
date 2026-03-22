@@ -76,6 +76,7 @@ ws.onmessage = (event) => {
   lastTickTime  = performance.now()
   updatePanel(snap)
   updateScriptError(snap.scriptError)
+  scheduleTourIfNeeded()
 }
 
 // ─── PAUSA ────────────────────────────────────────────────
@@ -1781,6 +1782,8 @@ function launchMission(id) {
   const code = m.code || MISSIONS[1].code
   codeEditor.value = code
   localStorage.setItem("codestrike_script", code)
+  // Activar tour solo en Misión 1
+  if (id === 1) tourPendingForMission = true
 
   const difficulty = getMissionDifficulty(id)
   currentMode     = "campaign"
@@ -1999,3 +2002,264 @@ window.addEventListener("resize", () => {
 
 initMenuBg()
 drawMenuBg()
+
+// ═══════════════════════════════════════════════════════════
+//  TOUR DE BIENVENIDA — Misión 1
+//  Spotlight secuencial sobre cada elemento del juego
+// ═══════════════════════════════════════════════════════════
+
+const TOUR_STEPS = [
+  {
+    target: null,                         // sin spotlight — centrado
+    badge:  "◈ BIENVENIDO",
+    title:  "CODESTRIKE — Tutorial",
+    desc:   "Vas a controlar <strong>unidades reales</strong> con código JavaScript.\n\nEste tour te explica cada pieza en 8 pasos.\nPuedes saltarlo en cualquier momento.",
+    code:   null
+  },
+  {
+    target: { kind: "entity", type: "worker" },
+    badge:  "◈ TUS UNIDADES",
+    title:  "ESTOS SON TUS WORKERS",
+    desc:   "Son tus <em>soldados programables</em>. Tu código corre cada 300ms y les dice qué hacer.\n\n<strong>Sin código → se quedan quietos para siempre.</strong>",
+    code:   "// Así lees un worker en tu código:\nconst w = Game.workers[id]"
+  },
+  {
+    target: { kind: "entity", type: "source" },
+    badge:  "◆ RECURSOS",
+    title:  "ESTOS SON LOS CRISTALES",
+    desc:   "Fuente de energía del mapa. Tus workers deben:\n<strong>1.</strong> Ir hasta un cristal\n<strong>2.</strong> Cosechar energía\n<strong>3.</strong> Volver a la base",
+    code:   "w.harvest(source.id)  // ir a cosechar este cristal"
+  },
+  {
+    target: { kind: "entity", type: "base" },
+    badge:  "⬡ TU OBJETIVO",
+    title:  "ESTA ES TU BASE",
+    desc:   "Debes llenarla al <strong>100%</strong>.\n\nTus workers depositan aquí la energía que cosechan. <strong>La primera base en llegar al 100% gana la partida.</strong>",
+    code:   "w.transfer(Game.base.id)  // depositar energía aquí"
+  },
+  {
+    target: { kind: "entity", type: "ai-base" },
+    badge:  "⬟ EL ENEMIGO",
+    title:  "ESTO ES NEXUS — LA IA",
+    desc:   "Tu rival. Tiene sus propios workers que cosechan solos sin que tú los veas.\n\n<strong>Si llena su base antes que tú → DERROTA.</strong>\n\nTienes que ser más inteligente y rápido.",
+    code:   null
+  },
+  {
+    target: { kind: "dom", id: "code-editor" },
+    badge:  "{ } CONCEPTO JS",
+    title:  "EL BUCLE — for...in",
+    desc:   'Recorre <em>cada elemento</em> de una colección, uno por uno.\n\nEs como decir: <strong>"para cada worker, haz lo siguiente..."</strong>',
+    code:   "for (const id in Game.workers) {\n  const w = Game.workers[id]\n  //  ↑ esto corre una vez por cada worker\n}"
+  },
+  {
+    target: { kind: "dom", id: "code-editor" },
+    badge:  "? CONCEPTO JS",
+    title:  "LA DECISIÓN — if / else",
+    desc:   'Elige qué hacer según una condición.\n\nComo un semáforo: <strong>rojo → parar</strong>, <strong>verde → avanzar</strong>.\n\nAquí: vacío → cosechar / lleno → depositar.',
+    code:   "if (w.energy < w.energyCapacity) {\n  // VACÍO  → ir a cosechar\n} else {\n  // LLENO  → depositar en la base\n}"
+  },
+  {
+    target: { kind: "dom", id: "btn-run" },
+    badge:  "▶ ¡A JUGAR!",
+    title:  "EJECUTA TU CÓDIGO",
+    desc:   'El script ya está escrito con comentarios que explican cada línea.\n\nPresiona <strong>EJECUTAR</strong> (o Ctrl+Enter) y mira cómo tus workers cobran vida.\n\n<strong>¡Ya sabes todo lo que necesitas!</strong>',
+    code:   null
+  }
+]
+
+// ─── Estado del tour ──────────────────────────────────────
+let tourActive  = false
+let tourStep    = 0
+let tourPending = false   // se activa al lanzar misión 1
+
+const tourOverlay   = document.getElementById("tour-overlay")
+const tourSpotlight = document.getElementById("tour-spotlight")
+const tourCard      = document.getElementById("tour-card")
+
+// ─── Calcular rect del target ─────────────────────────────
+function getTourRect(target) {
+  if (!target) return null
+
+  if (target.kind === "dom") {
+    const el = document.getElementById(target.id)
+    if (!el) return null
+    const r = el.getBoundingClientRect()
+    return { x: r.left, y: r.top, w: r.width, h: r.height }
+  }
+
+  if (target.kind === "entity") {
+    if (!currSnapshot) return null
+    const ents = currSnapshot.entities.filter(e => e.type === target.type)
+    if (!ents.length) return null
+
+    const cr  = canvas.getBoundingClientRect()
+    const pad = CELL * 1.8
+
+    if (ents.length === 1) {
+      const e = ents[0]
+      return {
+        x: cr.left + e.x * CELL - pad,
+        y: cr.top  + e.y * CELL - pad,
+        w: CELL + pad * 2,
+        h: CELL + pad * 2
+      }
+    }
+
+    // Bounding box del cluster
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+    for (const e of ents) {
+      minX = Math.min(minX, e.x); maxX = Math.max(maxX, e.x)
+      minY = Math.min(minY, e.y); maxY = Math.max(maxY, e.y)
+    }
+    return {
+      x: cr.left + minX * CELL - pad,
+      y: cr.top  + minY * CELL - pad,
+      w: (maxX - minX + 1) * CELL + pad * 2,
+      h: (maxY - minY + 1) * CELL + pad * 2
+    }
+  }
+
+  return null
+}
+
+// ─── Posicionar la tarjeta junto al spotlight ─────────────
+function positionCard(rect) {
+  const cardW = 300
+  const cardH = tourCard.offsetHeight || 300
+  const vw = window.innerWidth
+  const vh = window.innerHeight
+  const gap = 18
+
+  let left, top
+
+  if (!rect) {
+    // Sin spotlight: centrado en pantalla
+    left = (vw - cardW) / 2
+    top  = (vh - cardH) / 2
+  } else {
+    const spotCx = rect.x + rect.w / 2
+    const spotCy = rect.y + rect.h / 2
+
+    // Izquierda o derecha según posición horizontal del spotlight
+    if (spotCx < vw / 2) {
+      left = Math.min(rect.x + rect.w + gap, vw - cardW - 10)
+    } else {
+      left = Math.max(rect.x - cardW - gap, 10)
+    }
+
+    // Alinear verticalmente con el centro del spotlight
+    top = spotCy - cardH / 2
+    top = Math.max(10, Math.min(top, vh - cardH - 10))
+  }
+
+  tourCard.style.left = `${left}px`
+  tourCard.style.top  = `${top}px`
+}
+
+// ─── Mostrar un paso del tour ─────────────────────────────
+function showTourStep(idx) {
+  const step  = TOUR_STEPS[idx]
+  const total = TOUR_STEPS.length
+  const rect  = getTourRect(step.target)
+
+  // Spotlight
+  if (rect) {
+    tourSpotlight.style.display = "block"
+    tourSpotlight.style.left    = `${rect.x}px`
+    tourSpotlight.style.top     = `${rect.y}px`
+    tourSpotlight.style.width   = `${rect.w}px`
+    tourSpotlight.style.height  = `${rect.h}px`
+    tourSpotlight.style.opacity = "1"
+  } else {
+    tourSpotlight.style.opacity = "0"
+    tourSpotlight.style.width   = "0"
+    tourSpotlight.style.height  = "0"
+  }
+
+  // Contenido de la tarjeta
+  document.getElementById("tour-badge").textContent    = step.badge
+  document.getElementById("tour-step-num").textContent = `${idx + 1} / ${total}`
+  document.getElementById("tour-title").textContent    = step.title
+  document.getElementById("tour-desc").innerHTML       = step.desc.replace(/\n/g, "<br>")
+
+  const codeBlock = document.getElementById("tour-code-block")
+  if (step.code) {
+    document.getElementById("tour-code").textContent = step.code
+    codeBlock.style.display = "block"
+  } else {
+    codeBlock.style.display = "none"
+  }
+
+  // Dots de progreso
+  const dots = document.getElementById("tour-dots")
+  dots.innerHTML = ""
+  for (let i = 0; i < total; i++) {
+    const d = document.createElement("div")
+    d.className = "tdot" + (i < idx ? " done" : i === idx ? " active" : "")
+    dots.appendChild(d)
+  }
+
+  // Botón final
+  const btnNext = document.getElementById("btn-tour-next")
+  btnNext.textContent = idx === total - 1 ? "¡Jugar! ▶" : "Siguiente →"
+
+  // Posicionar tarjeta (pequeño delay para que el DOM actualice height)
+  requestAnimationFrame(() => positionCard(rect))
+}
+
+// ─── Iniciar tour ─────────────────────────────────────────
+function startTour() {
+  tourActive = true
+  tourStep   = 0
+  tourOverlay.style.display = "block"
+  tourOverlay.classList.add("active")
+  showTourStep(0)
+}
+
+// ─── Cerrar tour ──────────────────────────────────────────
+function endTour() {
+  tourActive = false
+  tourOverlay.style.display = "none"
+  tourOverlay.classList.remove("active")
+}
+
+// ─── Eventos de los botones ───────────────────────────────
+document.getElementById("btn-tour-next").addEventListener("click", () => {
+  if (tourStep < TOUR_STEPS.length - 1) {
+    tourStep++
+    showTourStep(tourStep)
+  } else {
+    endTour()
+  }
+})
+
+document.getElementById("btn-tour-skip").addEventListener("click", endTour)
+
+// Tecla → avanza el tour; Escape lo cierra
+document.addEventListener("keydown", e => {
+  if (!tourActive) return
+  if (e.key === "ArrowRight" || e.key === "Enter") {
+    // Enter solo si no estamos en el briefing/editor
+    if (e.key === "Enter" && document.activeElement === codeEditor) return
+    e.stopPropagation()
+    if (tourStep < TOUR_STEPS.length - 1) { tourStep++; showTourStep(tourStep) }
+    else endTour()
+  }
+  if (e.key === "Escape") { e.stopPropagation(); endTour() }
+}, true)
+
+// ─── Lanzar tour cuando llega el primer tick de Misión 1 ──
+let tourPendingForMission = false
+
+function scheduleTourIfNeeded() {
+  if (!tourPendingForMission) return
+  if (!currSnapshot || !currSnapshot.entities) return
+  tourPendingForMission = false
+  // Pequeño delay para que el canvas esté renderizado
+  setTimeout(startTour, 400)
+}
+
+// Reajustar posición del tour al cambiar el tamaño de ventana
+window.addEventListener("resize", () => {
+  if (tourActive) showTourStep(tourStep)
+})

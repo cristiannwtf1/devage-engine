@@ -827,6 +827,143 @@
     }
     #btn-abandon-cancel:hover { border-color: var(--cyan-d); color: var(--cyan); box-shadow: 0 0 8px rgba(0,170,255,0.15); }
 
+    /* ══════════════════════════════════════════════
+       TOUR DE BIENVENIDA
+    ══════════════════════════════════════════════ */
+    #tour-overlay {
+      position: fixed; inset: 0; z-index: 600;
+      display: none; pointer-events: none;
+    }
+    #tour-overlay.active { pointer-events: all; }
+
+    /* Spotlight: agujero de luz sobre el elemento destacado */
+    #tour-spotlight {
+      position: fixed;
+      border-radius: 4px;
+      box-shadow: 0 0 0 9999px rgba(2,4,14,0.90);
+      border: 1px solid rgba(0,170,255,0.30);
+      box-sizing: border-box;
+      transition: left 0.45s cubic-bezier(0.4,0,0.2,1),
+                  top  0.45s cubic-bezier(0.4,0,0.2,1),
+                  width 0.45s cubic-bezier(0.4,0,0.2,1),
+                  height 0.45s cubic-bezier(0.4,0,0.2,1),
+                  opacity 0.3s ease;
+      pointer-events: none;
+    }
+    /* Pulso neón alrededor del spotlight */
+    #tour-spotlight::after {
+      content: '';
+      position: absolute; inset: -4px;
+      border-radius: 6px;
+      border: 1px solid rgba(0,170,255,0.12);
+      animation: tourPulse 2s ease-in-out infinite;
+    }
+    @keyframes tourPulse {
+      0%,100% { box-shadow: 0 0 0 0 rgba(0,170,255,0.15); }
+      50%      { box-shadow: 0 0 12px 3px rgba(0,170,255,0.12); }
+    }
+
+    /* Tarjeta de explicación */
+    #tour-card {
+      position: fixed;
+      width: 300px;
+      background: rgba(4,10,22,0.97);
+      border: 1px solid #0c1830;
+      padding: 0;
+      pointer-events: all;
+      transition: left 0.45s cubic-bezier(0.4,0,0.2,1),
+                  top  0.45s cubic-bezier(0.4,0,0.2,1),
+                  opacity 0.3s ease;
+      overflow: hidden;
+    }
+    /* Línea neón superior */
+    #tour-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, #00aaff 40%, transparent);
+      opacity: 0.6;
+    }
+
+    #tour-card-header {
+      padding: 10px 14px 8px;
+      border-bottom: 1px solid #07101c;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    #tour-badge {
+      font-size: 8px; letter-spacing: 3px; color: var(--cyan-d);
+      text-transform: uppercase;
+    }
+    #tour-step-num {
+      font-size: 8px; letter-spacing: 1px; color: var(--text-d);
+    }
+
+    #tour-card-body { padding: 14px; }
+
+    #tour-title {
+      font-size: 13px; letter-spacing: 3px; color: var(--cyan);
+      text-shadow: 0 0 12px rgba(0,170,255,0.3);
+      margin-bottom: 10px; line-height: 1.3;
+    }
+    #tour-desc {
+      font-size: 10px; color: var(--text); line-height: 1.75;
+      letter-spacing: 0.3px; margin-bottom: 12px;
+    }
+    #tour-desc strong { color: var(--cyan); }
+    #tour-desc em     { color: #44cc88; font-style: normal; }
+
+    /* Bloque de código en la tarjeta */
+    #tour-code-block {
+      background: #020408;
+      border: 1px solid #0c1628;
+      border-left: 2px solid var(--cyan-d);
+      padding: 8px 10px;
+      margin-bottom: 12px;
+      overflow-x: auto;
+    }
+    #tour-code {
+      margin: 0;
+      font-family: 'Share Tech Mono', 'Courier New', monospace;
+      font-size: 10px; line-height: 1.6;
+      color: #6699cc; white-space: pre;
+    }
+
+    /* Footer con dots + botones */
+    #tour-card-footer {
+      padding: 10px 14px;
+      border-top: 1px solid #07101c;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 8px;
+    }
+    #btn-tour-skip {
+      background: none; border: none;
+      color: var(--text-d); font-family: inherit;
+      font-size: 9px; letter-spacing: 1px; cursor: pointer;
+      padding: 4px 0; flex-shrink: 0;
+      transition: color 0.15s;
+    }
+    #btn-tour-skip:hover { color: var(--text); }
+
+    #tour-dots {
+      display: flex; gap: 4px; flex: 1; justify-content: center;
+    }
+    .tdot {
+      width: 5px; height: 5px; border-radius: 50%;
+      background: var(--border2); transition: background 0.2s;
+    }
+    .tdot.active { background: var(--cyan); box-shadow: 0 0 4px var(--cyan); }
+    .tdot.done   { background: var(--cyan-d); }
+
+    #btn-tour-next {
+      background: transparent; border: 1px solid var(--cyan-d);
+      color: var(--cyan-d); font-family: inherit; font-size: 10px;
+      letter-spacing: 2px; padding: 5px 12px; cursor: pointer;
+      flex-shrink: 0; transition: all 0.15s;
+    }
+    #btn-tour-next:hover {
+      border-color: var(--cyan); color: var(--cyan);
+      box-shadow: 0 0 10px rgba(0,170,255,0.2);
+    }
+
     /* ── BRIEFING DE MISIÓN ── */
     #briefing-screen {
       position: fixed; inset: 0; z-index: 95;
@@ -1191,6 +1328,30 @@
 
   </div>
   <!-- ═══════════════════════════════════════════════════════════════════== -->
+
+  <!-- ═══════════════════ TOUR DE BIENVENIDA ════════════════════ -->
+  <div id="tour-overlay">
+    <div id="tour-spotlight"></div>
+    <div id="tour-card">
+      <div id="tour-card-header">
+        <div id="tour-badge">◈ TUTORIAL</div>
+        <div id="tour-step-num">1 / 8</div>
+      </div>
+      <div id="tour-card-body">
+        <div id="tour-title"></div>
+        <div id="tour-desc"></div>
+        <div id="tour-code-block" style="display:none">
+          <pre id="tour-code"></pre>
+        </div>
+      </div>
+      <div id="tour-card-footer">
+        <button id="btn-tour-skip">Saltar</button>
+        <div id="tour-dots"></div>
+        <button id="btn-tour-next">Siguiente →</button>
+      </div>
+    </div>
+  </div>
+  <!-- ════════════════════════════════════════════════════════════ -->
 
   <div id="header">
     <div style="display:flex;align-items:center;gap:12px;">
