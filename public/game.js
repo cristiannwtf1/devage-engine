@@ -1271,47 +1271,6 @@ function saveMissionProgress(missionId, stars) {
   localStorage.setItem("cs_progress", JSON.stringify(p))
 }
 
-// ── Template de la Misión 1 ───────────────────────────────
-const MISSION_1 = `// ═══════════════════════════════════════════════
-//  CODESTRIKE · MISIÓN 1 — "Tu primer ejército"
-// ═══════════════════════════════════════════════
-//  OBJETIVO: Llena la base al 100% antes que la IA.
-//
-//  CONCEPTOS JS que vas a aprender aquí:
-//    · Variables: const, let
-//    · Condicionales: if / else
-//    · Bucles: for...in
-//    · Objetos: propiedades y métodos
-// ═══════════════════════════════════════════════
-
-// Este código corre automáticamente cada 300ms.
-// Recorre todos tus workers y les da instrucciones:
-
-for (const id in Game.workers) {
-  const w = Game.workers[id]   // ← un worker
-
-  if (w.energy < w.energyCapacity) {
-    // El worker está vacío → busca la fuente más cercana
-    let nearest = null
-    let minDist = Infinity
-
-    for (const sid in Game.sources) {
-      const s = Game.sources[sid]
-      if (s.energy > 0) {
-        const d = Math.abs(w.x - s.x) + Math.abs(w.y - s.y)
-        if (d < minDist) { minDist = d; nearest = s }
-      }
-    }
-
-    if (nearest) w.harvest(nearest.id)   // ← ir a cosechar
-
-  } else {
-    // El worker está lleno → deposita en la base
-    w.transfer(Game.base.id)
-  }
-}
-`
-
 // ── Juego en el fondo del menú ───────────────────────────
 function drawGamePreview() {
   const snap = currSnapshot
@@ -1534,8 +1493,7 @@ function buildMissionGrid(wid) {
 
   world.missions.forEach((mid, idx) => {
     const m       = MISSIONS[mid]
-    const stars   = progress[mid] || 0
-    const isLocked = mid > 1 && !progress[mid - 1] && !progress[world.missions[0]]
+    const stars    = progress[mid] || 0
     const unlocked = mid === world.missions[0] || progress[mid - 1] > 0
 
     const node = document.createElement("div")
@@ -1731,12 +1689,14 @@ document.addEventListener("keydown", e => {
   }
 }, true)
 
-// Dificultad de IA por misión — escala igual que Screeps (RCL por nivel)
+// Dificultad de IA por misión
 const MISSION_DIFFICULTY = {
   1: "tutorial",
   2: "easy",
   3: "medium",
   4: "hard",
+  5: "hard",
+  6: "expert",
 }
 function getMissionDifficulty(id) {
   return MISSION_DIFFICULTY[id] || "expert"
@@ -1775,7 +1735,8 @@ function launchMission(id) {
   localStorage.setItem("codestrike_script", code)
 
   const difficulty = getMissionDifficulty(id)
-  currentGameMode  = "campaign"
+  currentMode     = "campaign"
+  currentGameMode = "campaign"
   setSandboxUI(false)
   fetch("/api/reset", {
     method: "POST",
@@ -1785,7 +1746,7 @@ function launchMission(id) {
     .then(() => setTimeout(() => btnRun.click(), 150))
     .catch(() => setTimeout(() => btnRun.click(), 150))
 
-  if (currentMode === "campaign") showMissionPanel(id)
+  showMissionPanel(id)
 }
 
 function startMission(id) {
