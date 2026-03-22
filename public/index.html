@@ -4,12 +4,31 @@
   <meta charset="UTF-8" />
   <title>DEVAGE ENGINE</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
+    :root {
+      --cyan:    #00ffbb;
+      --cyan-d:  #00bb88;
+      --red:     #ff5544;
+      --red-d:   #cc2222;
+      --gold:    #ffcc00;
+      --blue:    #4477ff;
+      --blue-d:  #1a2a5a;
+      --bg:      #040408;
+      --bg-2:    #07070e;
+      --bg-3:    #0a0a14;
+      --border:  #111128;
+      --border2: #1a1a33;
+      --text:    #8899bb;
+      --text-d:  #334466;
+    }
+
     body {
-      background: #0a0a0f;
-      color: #e0e0e0;
-      font-family: 'Courier New', monospace;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Share Tech Mono', 'Courier New', monospace;
       display: flex;
       flex-direction: column;
       height: 100vh;
@@ -21,47 +40,53 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 8px 16px;
-      background: #111120;
-      border-bottom: 1px solid #2a2a4a;
+      padding: 7px 16px;
+      background: var(--bg-2);
+      border-bottom: 1px solid var(--border2);
       flex-shrink: 0;
+      position: relative;
+    }
+
+    /* Línea de neón en el borde inferior del header */
+    #header::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--blue) 30%, var(--cyan-d) 50%, var(--blue) 70%, transparent);
+      opacity: 0.6;
     }
 
     #header h1 {
-      font-size: 18px;
-      color: #7b8cde;
-      letter-spacing: 3px;
-      text-transform: uppercase;
+      font-size: 17px;
+      color: var(--cyan);
+      letter-spacing: 4px;
+      text-shadow: 0 0 14px rgba(0,255,187,0.5);
     }
 
-    #tick-info {
-      font-size: 13px;
-      color: #555;
-    }
-    #tick-info span { color: #7b8cde; }
+    #header h1 span { color: var(--text-d); font-size: 12px; letter-spacing: 1px; margin-left: 8px; }
+
+    #tick-info { font-size: 12px; color: var(--text-d); letter-spacing: 1px; }
+    #tick-info span { color: var(--cyan); text-shadow: 0 0 8px rgba(0,255,187,0.4); }
 
     #controls { display: flex; gap: 8px; }
 
     button {
-      background: #1a1a2e;
-      border: 1px solid #3a3a6a;
-      color: #aab;
+      background: var(--bg-3);
+      border: 1px solid var(--border2);
+      color: var(--text);
       padding: 4px 14px;
       font-family: inherit;
-      font-size: 13px;
+      font-size: 12px;
       cursor: pointer;
-      border-radius: 3px;
-      transition: background 0.15s;
+      letter-spacing: 1px;
+      transition: all 0.15s;
     }
-    button:hover { background: #2a2a4e; color: #fff; }
-    button.active { background: #2a2a6e; color: #7b8cde; border-color: #7b8cde; }
+    button:hover { border-color: var(--cyan-d); color: var(--cyan); box-shadow: 0 0 8px rgba(0,255,187,0.15); }
+    button.active { border-color: var(--cyan); color: var(--cyan); box-shadow: 0 0 10px rgba(0,255,187,0.25); }
 
-    /* ── MAIN LAYOUT ── */
-    #main {
-      display: flex;
-      flex: 1;
-      overflow: hidden;
-    }
+    /* ── MAIN ── */
+    #main { display: flex; flex: 1; overflow: hidden; }
 
     /* ── CANVAS ── */
     #canvas-wrapper {
@@ -69,115 +94,132 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      background: #080810;
+      background: var(--bg);
       padding: 12px;
       overflow: auto;
+      position: relative;
     }
 
-    canvas {
-      image-rendering: pixelated;
-      border: 1px solid #1a1a3a;
-      flex-shrink: 0;
+    /* Esquinas decorativas alrededor del canvas */
+    #canvas-wrapper::before, #canvas-wrapper::after {
+      content: '';
+      position: absolute;
+      width: 24px; height: 24px;
+      border-color: var(--blue-d);
+      border-style: solid;
+      opacity: 0.6;
     }
+    #canvas-wrapper::before { top: 8px; left: 8px; border-width: 2px 0 0 2px; }
+    #canvas-wrapper::after  { bottom: 8px; right: 8px; border-width: 0 2px 2px 0; }
 
-    /* ── PANEL LATERAL ── */
+    canvas { image-rendering: pixelated; flex-shrink: 0; }
+
+    /* ── PANEL ── */
     #panel {
       width: 260px;
-      background: #0e0e1c;
-      border-left: 1px solid #1a1a3a;
+      background: var(--bg-2);
+      border-left: 1px solid var(--border2);
       display: flex;
       flex-direction: column;
       overflow: hidden;
     }
 
     #panel-top {
-      padding: 12px;
+      padding: 10px;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
       overflow-y: auto;
-      max-height: 55%;
+      max-height: 52%;
       flex-shrink: 0;
     }
 
-    .panel-section h3 {
-      font-size: 10px;
-      letter-spacing: 2px;
-      color: #444;
-      text-transform: uppercase;
-      margin-bottom: 6px;
-      border-bottom: 1px solid #1a1a2e;
-      padding-bottom: 4px;
+    /* Scrollbar estilizado */
+    #panel-top::-webkit-scrollbar { width: 3px; }
+    #panel-top::-webkit-scrollbar-track { background: var(--bg); }
+    #panel-top::-webkit-scrollbar-thumb { background: var(--border2); }
+
+    .panel-section { border: 1px solid var(--border); padding: 8px; position: relative; }
+
+    .panel-section::before {
+      content: '';
+      position: absolute;
+      top: -1px; left: 12px; right: 12px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border2), transparent);
     }
+
+    .panel-section h3 {
+      font-size: 9px;
+      letter-spacing: 3px;
+      color: var(--text-d);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .panel-section.player h3 { color: var(--cyan-d); text-shadow: 0 0 6px rgba(0,255,187,0.3); }
+    .panel-section.enemy  h3 { color: #aa3333; text-shadow: 0 0 6px rgba(255,50,50,0.3); }
 
     .stat-row {
       display: flex;
       justify-content: space-between;
-      font-size: 12px;
+      font-size: 11px;
       margin-bottom: 4px;
+      letter-spacing: 0.5px;
     }
+    .stat-label { color: var(--text-d); }
+    .stat-value { color: var(--text); }
+    .stat-value.player-val { color: var(--cyan); text-shadow: 0 0 6px rgba(0,255,187,0.3); }
+    .stat-value.enemy-val  { color: #cc5533; text-shadow: 0 0 6px rgba(255,80,0,0.3); }
 
-    .stat-label { color: #666; }
-    .stat-value { color: #9ab; }
-    .stat-value.highlight { color: #7b8cde; }
-
-    .energy-bar-wrapper { margin-top: 4px; }
     .energy-bar-bg {
-      background: #1a1a2e;
-      border-radius: 2px;
-      height: 6px;
+      background: var(--bg);
+      height: 4px;
+      margin-top: 4px;
+      border: 1px solid var(--border);
       overflow: hidden;
-      margin-top: 2px;
     }
     .energy-bar-fill {
       height: 100%;
-      background: linear-gradient(90deg, #3a3aaa, #7b8cde);
-      border-radius: 2px;
-      transition: width 0.2s;
+      transition: width 0.3s;
     }
+    .energy-bar-fill.player { background: linear-gradient(90deg, #006644, #00ffbb); box-shadow: 0 0 6px rgba(0,255,187,0.5); }
+    .energy-bar-fill.enemy  { background: linear-gradient(90deg, #660000, #ff5500); box-shadow: 0 0 6px rgba(255,80,0,0.5); }
 
     .worker-entry {
-      font-size: 11px;
-      margin-bottom: 5px;
-      padding: 4px 6px;
-      background: #111120;
-      border-radius: 3px;
-      border-left: 2px solid #3a3a6a;
-    }
-    .worker-entry .wid    { color: #555; font-size: 10px; }
-    .worker-entry .wstate { color: #7b8cde; font-size: 10px; }
-    .worker-entry .wenergy { color: #5a8a5a; font-size: 10px; }
-
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 11px;
+      font-size: 10px;
       margin-bottom: 4px;
-      color: #666;
+      padding: 3px 6px;
+      background: var(--bg);
+      border-left: 2px solid var(--cyan-d);
+      letter-spacing: 0.3px;
     }
-    .legend-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 2px;
-      flex-shrink: 0;
-    }
+    .worker-entry .wid     { color: var(--text-d); }
+    .worker-entry .wstate  { color: var(--cyan); font-size: 9px; }
+    .worker-entry .wenergy { color: #558855; font-size: 9px; }
 
-    /* ── EDITOR DE CÓDIGO ── */
+    /* Leyenda */
+    .legend-item {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 10px; margin-bottom: 3px; color: var(--text-d); letter-spacing: 0.5px;
+    }
+    .legend-dot { width: 9px; height: 9px; flex-shrink: 0; }
+
+    /* ── EDITOR ── */
     #editor-panel {
-      border-top: 2px solid #2a2a5a;
+      border-top: 1px solid var(--border2);
       flex: 1;
       display: flex;
       flex-direction: column;
       padding: 10px;
-      background: #08080e;
+      background: #050509;
       min-height: 0;
     }
 
     #editor-panel h3 {
-      font-size: 10px;
-      letter-spacing: 2px;
-      color: #7b8cde;
+      font-size: 9px;
+      letter-spacing: 3px;
+      color: var(--text-d);
       text-transform: uppercase;
       margin-bottom: 8px;
       display: flex;
@@ -185,87 +227,67 @@
       gap: 6px;
     }
 
-    #editor-panel h3 .script-status {
-      font-size: 10px;
-      letter-spacing: 0;
-      padding: 1px 6px;
-      border-radius: 2px;
-      background: #1a1a2e;
+    .script-status {
+      font-size: 9px; letter-spacing: 1px;
+      padding: 1px 6px; border: 1px solid var(--border);
     }
-    #editor-panel h3 .script-status.active { color: #4a9a4a; background: #0a1a0a; }
-    #editor-panel h3 .script-status.idle   { color: #555; }
+    .script-status.active { color: var(--cyan-d); border-color: var(--cyan-d); box-shadow: 0 0 6px rgba(0,255,187,0.2); }
+    .script-status.idle   { color: var(--text-d); }
 
     #code-editor {
-      flex: 1;
-      min-height: 80px;
-      background: #06060c;
-      border: 1px solid #2a2a4a;
-      color: #b0c4ff;
-      font-family: 'Courier New', monospace;
+      flex: 1; min-height: 80px;
+      background: #030306;
+      border: 1px solid var(--border2);
+      color: #7799ee;
+      font-family: 'Share Tech Mono', 'Courier New', monospace;
       font-size: 11px;
-      line-height: 1.5;
+      line-height: 1.55;
       padding: 8px;
-      resize: none;
-      outline: none;
-      border-radius: 2px;
+      resize: none; outline: none;
     }
-    #code-editor:focus { border-color: #4a4a8a; }
+    #code-editor:focus { border-color: var(--blue); }
+    #code-editor::placeholder { color: var(--border2); }
 
-    #editor-footer {
-      display: flex;
-      gap: 6px;
-      margin-top: 6px;
-      align-items: center;
-    }
+    #editor-footer { display: flex; gap: 6px; margin-top: 6px; }
 
-    #btn-run {
-      background: #1a3a1a;
-      border-color: #3a6a3a;
-      color: #4a9a4a;
-      font-weight: bold;
-      flex-shrink: 0;
-    }
-    #btn-run:hover { background: #2a5a2a; color: #6acc6a; }
+    #btn-run   { border-color: var(--cyan-d); color: var(--cyan-d); }
+    #btn-run:hover { border-color: var(--cyan); color: var(--cyan); box-shadow: 0 0 8px rgba(0,255,187,0.2); }
 
-    #btn-clear {
-      background: #1a1a1a;
-      border-color: #3a3a3a;
-      color: #555;
-      flex-shrink: 0;
-    }
-    #btn-clear:hover { background: #2a1a1a; color: #aa5555; }
+    #btn-clear { border-color: var(--border2); color: var(--text-d); }
+    #btn-clear:hover { border-color: #aa3333; color: #cc4444; }
 
     #script-error {
       display: none;
       font-size: 10px;
-      color: #cc4444;
-      background: #1a0606;
-      border: 1px solid #4a1a1a;
-      border-radius: 2px;
+      color: var(--red);
+      background: #0d0305;
+      border: 1px solid #3a0808;
       padding: 5px 7px;
       margin-top: 5px;
       word-break: break-all;
       line-height: 1.4;
+      letter-spacing: 0.3px;
     }
 
     /* ── STATUS BAR ── */
     #status-bar {
-      padding: 4px 12px;
-      font-size: 11px;
-      color: #333;
-      background: #080810;
-      border-top: 1px solid #1a1a2a;
+      padding: 3px 12px;
+      font-size: 10px;
+      color: var(--text-d);
+      background: var(--bg);
+      border-top: 1px solid var(--border);
+      letter-spacing: 1px;
       flex-shrink: 0;
     }
-    #status-bar.connected    { color: #3a6a3a; }
-    #status-bar.disconnected { color: #6a3a3a; }
+    #status-bar.connected    { color: var(--cyan-d); }
+    #status-bar.disconnected { color: var(--red-d); }
   </style>
 </head>
 <body>
 
   <div id="header">
-    <h1>⚔ DEVAGE ENGINE</h1>
-    <div id="tick-info">Tick: <span id="tick">—</span></div>
+    <h1>⬡ DEVAGE ENGINE <span>v2.0 — La Red de Neones</span></h1>
+    <div id="tick-info">TICK <span id="tick">—</span></div>
     <div id="controls">
       <button id="btn-pause">⏸ Pausar</button>
     </div>
@@ -278,16 +300,15 @@
 
     <div id="panel">
       <div id="panel-top">
-        <div class="panel-section">
-          <h3>Base</h3>
+
+        <div class="panel-section player">
+          <h3>Jugador</h3>
           <div class="stat-row">
             <span class="stat-label">Energía</span>
-            <span class="stat-value highlight" id="base-energy">—</span>
+            <span class="stat-value player-val" id="base-energy">—</span>
           </div>
-          <div class="energy-bar-wrapper">
-            <div class="energy-bar-bg">
-              <div class="energy-bar-fill" id="base-energy-bar" style="width:0%"></div>
-            </div>
+          <div class="energy-bar-bg">
+            <div class="energy-bar-fill player" id="base-energy-bar" style="width:0%"></div>
           </div>
           <div class="stat-row" style="margin-top:6px">
             <span class="stat-label">Workers</span>
@@ -299,53 +320,49 @@
           </div>
         </div>
 
+        <div class="panel-section enemy">
+          <h3>IA Enemiga</h3>
+          <div class="stat-row">
+            <span class="stat-label">Energía</span>
+            <span class="stat-value enemy-val" id="ai-energy">—</span>
+          </div>
+          <div class="energy-bar-bg">
+            <div class="energy-bar-fill enemy" id="ai-energy-bar" style="width:0%"></div>
+          </div>
+          <div class="stat-row" style="margin-top:6px">
+            <span class="stat-label">Workers</span>
+            <span class="stat-value" id="ai-worker-count">—</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Extensions</span>
+            <span class="stat-value" id="ai-ext-count">—</span>
+          </div>
+        </div>
+
         <div class="panel-section">
           <h3>Workers</h3>
           <div id="worker-list"></div>
         </div>
 
         <div class="panel-section">
-          <h3 style="color:#cc4444">IA Enemiga</h3>
-          <div class="stat-row">
-            <span class="stat-label">Energía</span>
-            <span class="stat-value" id="ai-energy" style="color:#cc6644">—</span>
-          </div>
-          <div class="energy-bar-wrapper">
-            <div class="energy-bar-bg">
-              <div class="energy-bar-fill" id="ai-energy-bar" style="width:0%; background: linear-gradient(90deg, #6a1010, #cc3322)"></div>
-            </div>
-          </div>
-          <div class="stat-row" style="margin-top:6px">
-            <span class="stat-label">Workers</span>
-            <span class="stat-value" id="ai-worker-count" style="color:#cc6644">—</span>
-          </div>
-          <div class="stat-row">
-            <span class="stat-label">Extensions</span>
-            <span class="stat-value" id="ai-ext-count" style="color:#cc6644">—</span>
-          </div>
+          <h3>Leyenda</h3>
+          <div class="legend-item"><div class="legend-dot" style="border:2px solid #55bbff"></div> Base jugador</div>
+          <div class="legend-item"><div class="legend-dot" style="border:2px solid #00ffbb"></div> Worker (W)</div>
+          <div class="legend-item"><div class="legend-dot" style="border:2px solid #ffcc00"></div> Source ⚡</div>
+          <div class="legend-item"><div class="legend-dot" style="border:2px solid #aa66ff"></div> Extension (E)</div>
+          <div class="legend-item"><div class="legend-dot" style="border:2px solid #ff5555"></div> Base IA</div>
+          <div class="legend-item"><div class="legend-dot" style="border:2px solid #ff9900"></div> Worker IA (A)</div>
         </div>
 
-        <div class="panel-section">
-          <h3>Leyenda</h3>
-          <div class="legend-item"><div class="legend-dot" style="background:#3a5a8a"></div> Base</div>
-          <div class="legend-item"><div class="legend-dot" style="background:#4a7a4a"></div> Worker</div>
-          <div class="legend-item"><div class="legend-dot" style="background:#8a7a2a"></div> Source</div>
-          <div class="legend-item"><div class="legend-dot" style="background:#5a3a8a"></div> Extension</div>
-          <div class="legend-item"><div class="legend-dot" style="background:#cc2222"></div> Base IA</div>
-          <div class="legend-item"><div class="legend-dot" style="background:#cc5500"></div> Worker IA</div>
-          <div class="legend-item"><div class="legend-dot" style="background:#2a2a2a"></div> Piso</div>
-          <div class="legend-item"><div class="legend-dot" style="background:#111"></div> Muro</div>
-        </div>
       </div>
 
-      <!-- ── EDITOR DE CÓDIGO ─────────────────── -->
       <div id="editor-panel">
         <h3>
           Script
           <span id="script-status" class="script-status idle">sin script</span>
         </h3>
-        <textarea id="code-editor" spellcheck="false" placeholder="// Escribe tu JS aquí...
-// El código corre cada tick
+        <textarea id="code-editor" spellcheck="false" placeholder="// Tu código JS corre cada tick
+// Controla tus workers:
 
 for (const id in Game.workers) {
   const w = Game.workers[id]

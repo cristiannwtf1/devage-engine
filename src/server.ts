@@ -128,6 +128,10 @@ function buildSnapshot(gs: GameState) {
     const storage = gs.energyStorages.get(id)
     if (storage) entry.energy = storage
 
+    // Target position para dibujar rutas en el renderer
+    const target = gs.targets.get(id)
+    if (target) { entry.targetX = target.targetX; entry.targetY = target.targetY }
+
     const behavior = gs.behaviors.get(id)
     if (behavior) entry.state = behavior.state
 
