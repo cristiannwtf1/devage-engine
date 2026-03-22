@@ -57,6 +57,9 @@ export class GameState {
   // Se reinicia solo cuando se llama a resetGame(), no entre ticks
   public playerMemory: Record<string, unknown> = {}
 
+  // Modo de juego: afecta si hay IA y condición de victoria
+  public gameMode: "vs-ia" | "sandbox" | "campaign" = "vs-ia"
+
   // Condición de victoria: null = en curso, "player" = ganó jugador, "ai" = ganó IA
   public winner: "player" | "ai" | null = null
   public winTick: number = 0

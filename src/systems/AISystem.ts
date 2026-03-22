@@ -6,15 +6,21 @@ import { EntityId } from "../ecs/Entity"
 // Referencia Screeps: los "Invaders" también escalan por nivel de room (RCL)
 export type AiDifficulty = "tutorial" | "easy" | "medium" | "hard" | "expert"
 
+// Balance respecto al jugador (SpawnSystem: maxWorkers=8, spawnDelay=5, spawnCost=20)
+// tutorial → IA muy lenta, jugador domina sin código
+// easy     → IA ligeramente inferior al jugador
+// medium   → IA casi igual al jugador, partida reñida
+// hard     → IA supera al jugador, requiere código eficiente
+// expert   → IA aplasta sin código, solo misión 5+
 const DIFFICULTY_CONFIGS: Record<AiDifficulty, {
   maxWorkers: number
   spawnCost: number
   spawnDelay: number     // ticks entre spawns — más alto = más lento
   buildThreshold: number // % de base llena antes de construir extensión
 }> = {
-  tutorial: { maxWorkers: 4,  spawnCost: 20, spawnDelay: 12, buildThreshold: 0.90 },
-  easy:     { maxWorkers: 6,  spawnCost: 20, spawnDelay:  8, buildThreshold: 0.75 },
-  medium:   { maxWorkers: 8,  spawnCost: 20, spawnDelay:  5, buildThreshold: 0.60 },
+  tutorial: { maxWorkers: 3,  spawnCost: 20, spawnDelay: 15, buildThreshold: 0.95 },
+  easy:     { maxWorkers: 5,  spawnCost: 20, spawnDelay: 10, buildThreshold: 0.80 },
+  medium:   { maxWorkers: 8,  spawnCost: 20, spawnDelay:  6, buildThreshold: 0.65 },
   hard:     { maxWorkers: 10, spawnCost: 20, spawnDelay:  4, buildThreshold: 0.50 },
   expert:   { maxWorkers: 12, spawnCost: 20, spawnDelay:  3, buildThreshold: 0.40 },
 }

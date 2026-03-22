@@ -40,7 +40,7 @@ export class GameEngine {
         gameState: GameState,
         tickRate: number = 200,
         onTick: (() => void) | null = null,
-        difficulty: AiDifficulty = "expert"
+        difficulty: AiDifficulty = "medium"
     ) {
         this.gameState = gameState
         this.tickRate  = tickRate
@@ -80,14 +80,18 @@ export class GameEngine {
         this.spawnSystem.update(this.gameState)
         this.constructionSystem.update(this.gameState)
 
-        // 7.5 IA — spawn, construcción y decisiones estratégicas
-        this.aiSystem.update(this.gameState)
+        // 7.5 IA — spawn, construcción y decisiones estratégicas (solo en vs-ia/campaign)
+        if (this.gameState.gameMode !== "sandbox") {
+          this.aiSystem.update(this.gameState)
+        }
 
         // 8️⃣ Regeneración
         this.sourceRegenSystem.update(this.gameState)
 
-        // 9️⃣ Victoria
-        this.victorySystem.update(this.gameState)
+        // 9️⃣ Victoria (no aplica en sandbox)
+        if (this.gameState.gameMode !== "sandbox") {
+          this.victorySystem.update(this.gameState)
+        }
 
         // 9️⃣ Log de estado cada 20 ticks
         if (this.gameState.tick % 20 === 0) {
