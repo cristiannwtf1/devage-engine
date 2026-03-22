@@ -132,6 +132,30 @@ function buildWorld(gs: GameState): void {
   }
 }
 
+// ─── SCRIPT POR DEFECTO DEL JUGADOR ──────────────────────
+// Se carga automáticamente en VS IA cuando el jugador no ha escrito nada.
+// Lógica básica: harvest + depositar + spawn de workers hasta 8.
+const DEFAULT_PLAYER_SCRIPT = `
+// Script automático — harvesting y spawn básico
+const workers = Object.values(Game.workers)
+const sources = Object.values(Game.sources)
+
+for (const w of workers) {
+  if (w.energy >= w.energyCapacity) {
+    // Full — llevar a la base
+    w.transfer(Game.base.id)
+  } else if (w.state !== "harvesting") {
+    // Buscar fuente más cercana
+    let best = null, bestDist = Infinity
+    for (const s of sources) {
+      const d = Math.abs(s.x - w.x) + Math.abs(s.y - w.y)
+      if (d < bestDist) { bestDist = d; best = s }
+    }
+    if (best) w.harvest(best.id)
+  }
+}
+`.trim()
+
 // ─── MUNDO ───────────────────────────────────────────────
 let gameState = new GameState(50, 28)
 buildWorld(gameState)
@@ -234,7 +258,8 @@ function buildSnapshot(gs: GameState) {
     aiExtensions:  [...gs.structures.values()].filter(s => s.type === "ai-extension").length,
     scriptError:   gs.scriptError ?? null,
     winner:        gs.winner,
-    winTick:       gs.winTick
+    winTick:       gs.winTick,
+    gameMode:      gs.gameMode
   }
 }
 
@@ -310,31 +335,64 @@ function broadcast(data: unknown) {
 
 // ─── RESET DEL JUEGO ──────────────────────────────────────
 const VALID_DIFFICULTIES: AiDifficulty[] = ["tutorial", "easy", "medium", "hard", "expert"]
+type GameMode = "vs-ia" | "sandbox" | "campaign"
 
-function resetGame(playerScript?: string | null, difficulty: AiDifficulty = "expert"): void {
+function resetGame(
+  playerScript?: string | null,
+  difficulty: AiDifficulty = "medium",
+  mode: GameMode = "vs-ia"
+): void {
   if (engine) engine.stop()
   gameState = new GameState(50, 28)
+  gameState.gameMode = mode
   buildWorld(gameState)
-  if (playerScript) gameState.playerScript = playerScript
+
+  // En sandbox no hay IA: remover base y workers de la IA
+  if (mode === "sandbox") {
+    if (gameState.aiBaseId !== null) {
+      gameState.entities.delete(gameState.aiBaseId)
+      gameState.positions.delete(gameState.aiBaseId)
+      gameState.energyStorages.delete(gameState.aiBaseId)
+      gameState.aiBaseId = null
+    }
+    for (const id of gameState.aiWorkers) {
+      gameState.entities.delete(id)
+      gameState.positions.delete(id)
+      gameState.energyStorages.delete(id)
+      gameState.behaviors.delete(id)
+    }
+    gameState.aiWorkers.clear()
+  }
+
+  // Cargar script: el provisto, o el por defecto en vs-ia/sandbox
+  if (playerScript) {
+    gameState.playerScript = playerScript
+  } else if (mode !== "campaign") {
+    gameState.playerScript = DEFAULT_PLAYER_SCRIPT
+  }
+
   engine = new GameEngine(gameState, 300, () => broadcast(buildSnapshot(gameState)), difficulty)
   engine.start()
   broadcast(buildSnapshot(gameState))
-  console.log(`🔄 Juego reiniciado — dificultad IA: ${difficulty}`)
+  console.log(`🔄 Juego reiniciado — modo: ${mode} | dificultad IA: ${difficulty}`)
 }
 
 app.post("/api/reset", (req, res) => {
-  const { difficulty } = req.body as { difficulty?: string }
+  const { difficulty, mode } = req.body as { difficulty?: string; mode?: string }
   const d: AiDifficulty = VALID_DIFFICULTIES.includes(difficulty as AiDifficulty)
     ? (difficulty as AiDifficulty)
-    : "expert"
-  resetGame(gameState.playerScript, d)
+    : "medium"
+  const m: GameMode = (mode === "sandbox" || mode === "campaign") ? mode : "vs-ia"
+  resetGame(gameState.playerScript, d, m)
   res.json({ ok: true })
 })
 
 // ─── ENGINE CON BROADCAST EN CADA TICK ───────────────────
+// Cargar script por defecto al arrancar (modo vs-ia inicial)
+gameState.playerScript = DEFAULT_PLAYER_SCRIPT
 engine = new GameEngine(gameState, 300, () => {
   broadcast(buildSnapshot(gameState))
-})
+}, "medium")
 
 wss.on("connection", (ws) => {
   console.log("🖥  Cliente conectado")
