@@ -29,6 +29,6 @@ export class DeathSystem {
     gameState.paths.delete(entityId)
     gameState.structures.delete(entityId)
     gameState.sources.delete(entityId)
-
+    gameState.aiWorkers.delete(entityId)
   }
 }

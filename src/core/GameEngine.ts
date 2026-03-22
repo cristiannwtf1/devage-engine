@@ -11,6 +11,7 @@ import { SpawnSystem } from "../systems/SpawnSystem"
 import { PathfindingSystem } from "../systems/PathfindingSystem"
 import { ConstructionSystem } from "../systems/ConstructionSystem"
 import { PlayerScriptSystem } from "../systems/PlayerScriptSystem"
+import { AISystem } from "../systems/AISystem"
 
 export class GameEngine {
     private gameState: GameState
@@ -31,6 +32,7 @@ export class GameEngine {
     private pathfindingSystem  = new PathfindingSystem()
     private constructionSystem  = new ConstructionSystem()
     private playerScriptSystem  = new PlayerScriptSystem()
+    private aiSystem            = new AISystem("expansionista")
 
     constructor(gameState: GameState, tickRate: number = 200, onTick: (() => void) | null = null) {
         this.gameState = gameState
@@ -66,9 +68,12 @@ export class GameEngine {
         this.healthSystem.update(this.gameState)
         this.deathSystem.update(this.gameState)
 
-        // 7️⃣ Spawn y construcción
+        // 7️⃣ Spawn y construcción (jugador)
         this.spawnSystem.update(this.gameState)
         this.constructionSystem.update(this.gameState)
+
+        // 7.5 IA — spawn, construcción y decisiones estratégicas
+        this.aiSystem.update(this.gameState)
 
         // 8️⃣ Regeneración
         this.sourceRegenSystem.update(this.gameState)

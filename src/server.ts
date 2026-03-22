@@ -36,7 +36,7 @@ gameState.positions.set(baseId, { x: 5, y: 10 })
 gameState.energyStorages.set(baseId, { current: 0, capacity: 1000 })
 gameState.baseId = baseId
 
-// Workers iniciales
+// Workers iniciales del jugador
 for (let i = 0; i < 2; i++) {
   const w: EntityId = gameState.createEntity()
   gameState.entities.add(w)
@@ -45,6 +45,25 @@ for (let i = 0; i < 2; i++) {
   gameState.workers.set(w, { isWorker: true })
   gameState.energyStorages.set(w, { current: 0, capacity: 10 })
   gameState.behaviors.set(w, { state: "harvesting" })
+}
+
+// ─── BASE DE LA IA ─────────────────────────────────────────
+// Lado opuesto del mapa (x=24, y=10)
+const aiBaseId: EntityId = gameState.createEntity()
+gameState.entities.add(aiBaseId)
+gameState.positions.set(aiBaseId, { x: 24, y: 10 })
+gameState.energyStorages.set(aiBaseId, { current: 0, capacity: 1000 })
+gameState.aiBaseId = aiBaseId
+
+// Workers iniciales de la IA (igual que el jugador)
+for (let i = 0; i < 2; i++) {
+  const w: EntityId = gameState.createEntity()
+  gameState.entities.add(w)
+  gameState.positions.set(w, { x: 24 - i, y: 10 })
+  gameState.healths.set(w, { current: 20, max: 20 })
+  gameState.energyStorages.set(w, { current: 0, capacity: 10 })
+  gameState.behaviors.set(w, { state: "harvesting" })
+  gameState.aiWorkers.add(w)
 }
 
 // ─── SERVIDOR ────────────────────────────────────────────
@@ -91,10 +110,15 @@ function buildSnapshot(gs: GameState) {
     if (!pos) continue
 
     let type = "unknown"
-    if (id === gs.baseId) type = "base"
+    if (id === gs.baseId)       type = "base"
+    else if (id === gs.aiBaseId) type = "ai-base"
+    else if (gs.aiWorkers.has(id)) type = "ai-worker"
     else if (gs.workers.has(id)) type = "worker"
     else if (gs.sources.has(id)) type = "source"
-    else if (gs.structures.has(id)) type = "extension"
+    else if (gs.structures.has(id)) {
+      const s = gs.structures.get(id)!
+      type = s.type === "ai-extension" ? "ai-extension" : "extension"
+    }
 
     const entry: Record<string, unknown> = { id, x: pos.x, y: pos.y, type }
 
@@ -113,7 +137,8 @@ function buildSnapshot(gs: GameState) {
     entities.push(entry)
   }
 
-  const baseStorage = gs.baseId ? gs.energyStorages.get(gs.baseId) : null
+  const baseStorage   = gs.baseId   ? gs.energyStorages.get(gs.baseId)   : null
+  const aiBaseStorage = gs.aiBaseId ? gs.energyStorages.get(gs.aiBaseId) : null
 
   return {
     tick: gs.tick,
@@ -124,9 +149,14 @@ function buildSnapshot(gs: GameState) {
     base: baseStorage
       ? { energy: baseStorage.current, capacity: baseStorage.capacity }
       : null,
-    workerCount: gs.workers.size,
-    extensions: [...gs.structures.values()].filter(s => s.type === "extension").length,
-    scriptError: gs.scriptError ?? null
+    aiBase: aiBaseStorage
+      ? { energy: aiBaseStorage.current, capacity: aiBaseStorage.capacity }
+      : null,
+    workerCount:   gs.workers.size,
+    aiWorkerCount: gs.aiWorkers.size,
+    extensions:    [...gs.structures.values()].filter(s => s.type === "extension").length,
+    aiExtensions:  [...gs.structures.values()].filter(s => s.type === "ai-extension").length,
+    scriptError:   gs.scriptError ?? null
   }
 }
 
@@ -160,17 +190,33 @@ function buildDiagnostic(gs: GameState) {
     }
   })
 
-  const baseStorage = gs.baseId ? gs.energyStorages.get(gs.baseId) : null
-  const harvesting  = workers.filter(w => w.state === "harvesting").length
-  const returning   = workers.filter(w => w.state === "returning").length
-  const idle        = workers.filter(w => !w.hasTarget).length
+  const baseStorage   = gs.baseId   ? gs.energyStorages.get(gs.baseId)   : null
+  const aiBaseStorage = gs.aiBaseId ? gs.energyStorages.get(gs.aiBaseId) : null
+  const harvesting    = workers.filter(w => w.state === "harvesting").length
+  const returning     = workers.filter(w => w.state === "returning").length
+  const idle          = workers.filter(w => !w.hasTarget).length
+
+  const aiWorkers = [...gs.aiWorkers].map(id => {
+    const pos      = gs.positions.get(id)
+    const behavior = gs.behaviors.get(id)
+    const storage  = gs.energyStorages.get(id)
+    return {
+      id,
+      pos:    pos ? `(${pos.x},${pos.y})` : "?",
+      state:  behavior?.state ?? "?",
+      energy: storage ? `${storage.current}/${storage.capacity}` : "?"
+    }
+  })
 
   return {
-    tick:        gs.tick,
-    base:        baseStorage ? `${baseStorage.current}/${baseStorage.capacity}` : "?",
-    workers:     { total: workers.length, harvesting, returning, idle, detail: workers },
-    sources:     { total: sources.length, active: sources.filter(s => s.energy !== "0/10").length, detail: sources },
-    extensions:  [...gs.structures.values()].filter(s => s.type === "extension").length
+    tick:       gs.tick,
+    base:       baseStorage   ? `${baseStorage.current}/${baseStorage.capacity}`   : "?",
+    aiBase:     aiBaseStorage ? `${aiBaseStorage.current}/${aiBaseStorage.capacity}` : "?",
+    workers:    { total: workers.length, harvesting, returning, idle, detail: workers },
+    aiWorkers:  { total: aiWorkers.length, detail: aiWorkers },
+    sources:    { total: sources.length, active: sources.filter(s => s.energy !== "0/10").length, detail: sources },
+    extensions: [...gs.structures.values()].filter(s => s.type === "extension").length,
+    aiExtensions: [...gs.structures.values()].filter(s => s.type === "ai-extension").length
   }
 }
 

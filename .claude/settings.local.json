@@ -8,7 +8,11 @@
       "Bash(exit 0)",
       "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(f''''Tick:{d[\"\"tick\"\"]} Base:{d[\"\"base\"\"]} Workers:{d[\"\"workers\"\"][\"\"total\"\"]} Cosechando:{d[\"\"workers\"\"][\"\"harvesting\"\"]} Retornando:{d[\"\"workers\"\"][\"\"returning\"\"]} SinTarea:{d[\"\"workers\"\"][\"\"idle\"\"]}''''\\); [print\\(f''''  W#{w[\"\"id\"\"]} {w[\"\"pos\"\"]} {w[\"\"state\"\"]} {w[\"\"energy\"\"]} target:{w[\"\"hasTarget\"\"]}''''\\) for w in d[''''workers''''][''''detail'''']]\")",
       "Bash(netstat -ano)",
-      "Bash(findstr \":3000\")"
+      "Bash(findstr \":3000\")",
+      "Bash(git push:*)",
+      "Bash(node -e \"const fs=require\\(''fs''\\); const pid=parseInt\\(fs.readFileSync\\(''.server.pid'',''utf8''\\)\\); process.kill\\(pid\\); fs.unlinkSync\\(''.server.pid''\\); console.log\\(''Detenido PID:'', pid\\);\")",
+      "Bash(node -e \"const fs=require\\(''fs''\\); const pid=parseInt\\(fs.readFileSync\\(''.server.pid'',''utf8''\\)\\); process.kill\\(pid\\); fs.unlinkSync\\(''.server.pid''\\); console.log\\(''Detenido:'', pid\\);\")",
+      "Bash(git add:*)"
     ]
   }
 }

@@ -104,23 +104,29 @@ const ctx = canvas.getContext("2d")
 const CELL = 24
 
 const COLORS = {
-  wall:      "#0d0d0d",
-  floor:     "#141420",
-  base:      "#1a3a5a",
-  worker:    "#1a4a1a",
-  source:    "#3a2e00",
-  extension: "#2a1a4a",
-  unknown:   "#1a1a2a"
+  wall:         "#0d0d0d",
+  floor:        "#141420",
+  base:         "#1a3a5a",
+  worker:       "#1a4a1a",
+  source:       "#3a2e00",
+  extension:    "#2a1a4a",
+  "ai-base":    "#4a0a0a",
+  "ai-worker":  "#4a1a00",
+  "ai-extension": "#3a0a2a",
+  unknown:      "#1a1a2a"
 }
 
 const BORDER = {
-  wall:      "#050508",
-  floor:     "#1a1a28",
-  base:      "#3a5a8a",
-  worker:    "#4a8a4a",
-  source:    "#8a7a00",
-  extension: "#6a3aaa",
-  unknown:   "#2a2a3a"
+  wall:         "#050508",
+  floor:        "#1a1a28",
+  base:         "#3a5a8a",
+  worker:       "#4a8a4a",
+  source:       "#8a7a00",
+  extension:    "#6a3aaa",
+  "ai-base":    "#cc2222",
+  "ai-worker":  "#cc5500",
+  "ai-extension": "#aa1166",
+  unknown:      "#2a2a3a"
 }
 
 // ─── RENDER PRINCIPAL ─────────────────────────────────────
@@ -136,7 +142,7 @@ function render(snapshot) {
     }
   }
 
-  const drawOrder = ["source", "extension", "base", "worker"]
+  const drawOrder = ["source", "extension", "ai-extension", "ai-base", "base", "ai-worker", "worker"]
   for (const type of drawOrder) {
     for (const e of entities) {
       if (e.type === type) drawEntity(e)
@@ -174,10 +180,16 @@ function drawEntity(e) {
   ctx.textAlign = "center"
   ctx.textBaseline = "middle"
 
-  const icons = { base: "🏠", worker: "W", source: "⚡", extension: "E" }
+  const icons = {
+    base: "🏠", worker: "W", source: "⚡", extension: "E",
+    "ai-base": "🔴", "ai-worker": "A", "ai-extension": "X"
+  }
 
   if (type === "worker" || type === "extension") {
     ctx.fillStyle = type === "worker" ? "#4a9a4a" : "#8a5add"
+    ctx.fillText(icons[type], px + CELL / 2, py + CELL / 2 + 1)
+  } else if (type === "ai-worker" || type === "ai-extension") {
+    ctx.fillStyle = type === "ai-worker" ? "#dd6622" : "#cc2266"
     ctx.fillText(icons[type], px + CELL / 2, py + CELL / 2 + 1)
   } else {
     ctx.font = `${CELL * 0.6}px serif`
@@ -214,6 +226,15 @@ function updatePanel(snapshot) {
 
   document.getElementById("worker-count").textContent = snapshot.workerCount
   document.getElementById("ext-count").textContent    = snapshot.extensions
+
+  if (snapshot.aiBase) {
+    const aiPct = (snapshot.aiBase.energy / snapshot.aiBase.capacity * 100).toFixed(0)
+    document.getElementById("ai-energy").textContent =
+      `${snapshot.aiBase.energy} / ${snapshot.aiBase.capacity}`
+    document.getElementById("ai-energy-bar").style.width = `${aiPct}%`
+  }
+  document.getElementById("ai-worker-count").textContent = snapshot.aiWorkerCount ?? 0
+  document.getElementById("ai-ext-count").textContent    = snapshot.aiExtensions ?? 0
 
   const list = document.getElementById("worker-list")
   list.innerHTML = ""

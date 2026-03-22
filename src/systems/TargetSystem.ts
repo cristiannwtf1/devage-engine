@@ -32,8 +32,11 @@ export class TargetSystem {
         }
 
       } else if (behavior.state === "returning") {
-        if (gameState.baseId === null) continue
-        const basePos = gameState.positions.get(gameState.baseId)
+        const homeId = gameState.aiWorkers.has(entityId)
+          ? gameState.aiBaseId
+          : gameState.baseId
+        if (homeId === null) continue
+        const basePos = gameState.positions.get(homeId)
         if (!basePos) continue
         gameState.targets.set(entityId, { targetX: basePos.x, targetY: basePos.y })
       }
@@ -56,7 +59,7 @@ export class TargetSystem {
     }
     for (const [wId, pos] of gameState.positions) {
       if (wId === selfId) continue
-      if (gameState.workers.has(wId)) {
+      if (gameState.workers.has(wId) || gameState.aiWorkers.has(wId)) {
         occupied.add(`${pos.x},${pos.y}`)
       }
     }
