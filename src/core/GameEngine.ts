@@ -10,6 +10,7 @@ import { SourceRegenSystem } from "../systems/SourceRegenSystem"
 import { SpawnSystem } from "../systems/SpawnSystem"
 import { PathfindingSystem } from "../systems/PathfindingSystem"
 import { ConstructionSystem } from "../systems/ConstructionSystem"
+import { PlayerScriptSystem } from "../systems/PlayerScriptSystem"
 
 export class GameEngine {
     private gameState: GameState
@@ -28,7 +29,8 @@ export class GameEngine {
     private sourceRegenSystem  = new SourceRegenSystem()
     private spawnSystem        = new SpawnSystem()
     private pathfindingSystem  = new PathfindingSystem()
-    private constructionSystem = new ConstructionSystem()
+    private constructionSystem  = new ConstructionSystem()
+    private playerScriptSystem  = new PlayerScriptSystem()
 
     constructor(gameState: GameState, tickRate: number = 200, onTick: (() => void) | null = null) {
         this.gameState = gameState
@@ -44,7 +46,10 @@ export class GameEngine {
         // 1️⃣ Decisiones de comportamiento
         this.behaviorSystem.update(this.gameState)
 
-        // 2️⃣ Asignar objetivos
+        // 1.5 Script del jugador (puede sobreescribir targets antes de TargetSystem)
+        this.playerScriptSystem.update(this.gameState)
+
+        // 2️⃣ Asignar objetivos (fallback para workers sin target)
         this.targetSystem.update(this.gameState)
 
         // 3️⃣ Trazar rutas

@@ -18,6 +18,7 @@ ws.onmessage = (event) => {
   lastSnapshot = JSON.parse(event.data)
   render(lastSnapshot)
   updatePanel(lastSnapshot)
+  updateScriptError(lastSnapshot.scriptError)
 }
 
 // ─── PAUSA ────────────────────────────────────────────────
@@ -29,12 +30,79 @@ btnPause.addEventListener("click", () => {
   btnPause.classList.toggle("active", paused)
 })
 
+// ─── EDITOR DE CÓDIGO ─────────────────────────────────────
+const codeEditor    = document.getElementById("code-editor")
+const btnRun        = document.getElementById("btn-run")
+const btnClear      = document.getElementById("btn-clear")
+const scriptStatus  = document.getElementById("script-status")
+const scriptError   = document.getElementById("script-error")
+
+// Restaurar script guardado localmente
+const savedScript = localStorage.getItem("devage_script")
+if (savedScript) {
+  codeEditor.value = savedScript
+}
+
+btnRun.addEventListener("click", async () => {
+  const code = codeEditor.value.trim()
+  localStorage.setItem("devage_script", code)
+
+  try {
+    const res = await fetch("/api/script", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code })
+    })
+    const data = await res.json()
+    if (data.ok) {
+      scriptStatus.textContent = code ? "activo" : "sin script"
+      scriptStatus.className   = "script-status " + (code ? "active" : "idle")
+      scriptError.style.display = "none"
+    } else {
+      showError(data.error || "Error desconocido")
+    }
+  } catch (err) {
+    showError("No se pudo conectar al servidor")
+  }
+})
+
+btnClear.addEventListener("click", async () => {
+  codeEditor.value = ""
+  localStorage.removeItem("devage_script")
+  await fetch("/api/script", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ code: "" })
+  })
+  scriptStatus.textContent = "sin script"
+  scriptStatus.className   = "script-status idle"
+  scriptError.style.display = "none"
+})
+
+// Ctrl+Enter para ejecutar desde el editor
+codeEditor.addEventListener("keydown", (e) => {
+  if (e.ctrlKey && e.key === "Enter") {
+    e.preventDefault()
+    btnRun.click()
+  }
+})
+
+function showError(msg) {
+  scriptError.textContent = "⚠ " + msg
+  scriptError.style.display = "block"
+}
+
+function updateScriptError(err) {
+  if (err) {
+    showError(err)
+  }
+}
+
 // ─── CANVAS SETUP ─────────────────────────────────────────
 const canvas = document.getElementById("gameCanvas")
 const ctx = canvas.getContext("2d")
-const CELL = 24   // tamaño de cada celda en píxeles
+const CELL = 24
 
-// Colores del mapa
 const COLORS = {
   wall:      "#0d0d0d",
   floor:     "#141420",
@@ -45,7 +113,6 @@ const COLORS = {
   unknown:   "#1a1a2a"
 }
 
-// Colores de borde/detalle
 const BORDER = {
   wall:      "#050508",
   floor:     "#1a1a28",
@@ -63,42 +130,28 @@ function render(snapshot) {
   canvas.width  = mapWidth  * CELL
   canvas.height = mapHeight * CELL
 
-  // 1. Dibujar tiles del mapa
   for (let y = 0; y < mapHeight; y++) {
     for (let x = 0; x < mapWidth; x++) {
-      const tile = tiles[y][x]
-      drawCell(x, y, tile === "#" ? "wall" : "floor")
+      drawCell(x, y, tiles[y][x] === "#" ? "wall" : "floor")
     }
   }
 
-  // 2. Construir mapa de entidades por posición
-  const entityMap = {}
-  for (const e of entities) {
-    entityMap[`${e.x},${e.y}`] = e
-  }
-
-  // 3. Dibujar entidades (en orden: sources → extensiones → base → workers)
   const drawOrder = ["source", "extension", "base", "worker"]
   for (const type of drawOrder) {
     for (const e of entities) {
-      if (e.type !== type) continue
-      drawEntity(e)
+      if (e.type === type) drawEntity(e)
     }
   }
 
-  // 4. Tick counter
   document.getElementById("tick").textContent = snapshot.tick
 }
 
-// ─── DIBUJAR CELDA BASE (TILE) ────────────────────────────
+// ─── DIBUJAR CELDA ────────────────────────────────────────
 function drawCell(x, y, type) {
   const px = x * CELL
   const py = y * CELL
-
   ctx.fillStyle = COLORS[type] || COLORS.floor
   ctx.fillRect(px, py, CELL, CELL)
-
-  // Línea de grid muy sutil
   ctx.strokeStyle = BORDER[type] || BORDER.floor
   ctx.lineWidth = 0.5
   ctx.strokeRect(px + 0.5, py + 0.5, CELL - 1, CELL - 1)
@@ -110,26 +163,18 @@ function drawEntity(e) {
   const py = e.y * CELL
   const type = e.type
 
-  // Fondo de la celda
   ctx.fillStyle = COLORS[type] || COLORS.unknown
   ctx.fillRect(px, py, CELL, CELL)
 
-  // Borde de color según tipo
   ctx.strokeStyle = BORDER[type] || BORDER.unknown
   ctx.lineWidth = 1.5
   ctx.strokeRect(px + 1, py + 1, CELL - 2, CELL - 2)
 
-  // Icono central
   ctx.font = `${CELL * 0.55}px Courier New`
   ctx.textAlign = "center"
   ctx.textBaseline = "middle"
 
-  const icons = {
-    base:      "🏠",
-    worker:    "W",
-    source:    "⚡",
-    extension: "E"
-  }
+  const icons = { base: "🏠", worker: "W", source: "⚡", extension: "E" }
 
   if (type === "worker" || type === "extension") {
     ctx.fillStyle = type === "worker" ? "#4a9a4a" : "#8a5add"
@@ -139,7 +184,6 @@ function drawEntity(e) {
     ctx.fillText(icons[type] || "?", px + CELL / 2, py + CELL / 2 + 1)
   }
 
-  // Barra de energía para workers
   if (type === "worker" && e.energy) {
     const pct = e.energy.current / e.energy.capacity
     const barW = CELL - 4
@@ -149,7 +193,6 @@ function drawEntity(e) {
     ctx.fillRect(px + 2, py + CELL - 5, barW * pct, 3)
   }
 
-  // Barra de energía para sources
   if (type === "source" && e.source) {
     const pct = e.source.energy / e.source.max
     const barW = CELL - 4
@@ -162,7 +205,6 @@ function drawEntity(e) {
 
 // ─── PANEL LATERAL ────────────────────────────────────────
 function updatePanel(snapshot) {
-  // Base
   if (snapshot.base) {
     const pct = (snapshot.base.energy / snapshot.base.capacity * 100).toFixed(0)
     document.getElementById("base-energy").textContent =
@@ -171,9 +213,8 @@ function updatePanel(snapshot) {
   }
 
   document.getElementById("worker-count").textContent = snapshot.workerCount
-  document.getElementById("ext-count").textContent = snapshot.extensions
+  document.getElementById("ext-count").textContent    = snapshot.extensions
 
-  // Workers
   const list = document.getElementById("worker-list")
   list.innerHTML = ""
   const workers = snapshot.entities.filter(e => e.type === "worker")

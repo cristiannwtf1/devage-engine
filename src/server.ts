@@ -53,10 +53,24 @@ const server = http.createServer(app)
 const wss = new WebSocketServer({ server })
 
 app.use(express.static(path.join(__dirname, "../public")))
+app.use(express.json())
 
 // ─── ENDPOINT DE DIAGNÓSTICO ──────────────────────────────
 app.get("/debug", (_req, res) => {
   res.json(buildDiagnostic(gameState))
+})
+
+// ─── SCRIPT DEL JUGADOR ───────────────────────────────────
+app.post("/api/script", (req, res) => {
+  const { code } = req.body as { code?: string }
+  if (typeof code !== "string") {
+    res.status(400).json({ error: "Se esperaba { code: string }" })
+    return
+  }
+  gameState.playerScript = code || null
+  gameState.scriptError  = null
+  console.log(`📝 Script del jugador actualizado (${code.length} chars)`)
+  res.json({ ok: true })
 })
 
 // ─── SERIALIZAR ESTADO PARA EL BROWSER ───────────────────
@@ -111,7 +125,8 @@ function buildSnapshot(gs: GameState) {
       ? { energy: baseStorage.current, capacity: baseStorage.capacity }
       : null,
     workerCount: gs.workers.size,
-    extensions: [...gs.structures.values()].filter(s => s.type === "extension").length
+    extensions: [...gs.structures.values()].filter(s => s.type === "extension").length,
+    scriptError: gs.scriptError ?? null
   }
 }
 
@@ -187,5 +202,7 @@ wss.on("connection", (ws) => {
 
 server.listen(3000, () => {
   console.log("🚀 DEVAGE ENGINE corriendo en http://localhost:3000")
+  // Guardar PID para poder matar el servidor con `npm run stop`
+  require("fs").writeFileSync(".server.pid", String(process.pid))
   engine.start()
 })

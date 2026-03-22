@@ -45,6 +45,10 @@ export class GameState {
   // 🔥 Referencia oficial a la base principal
   public baseId: EntityId | null = null
 
+  // Script del jugador (JS como string) + último error de ejecución
+  public playerScript: string | null = null
+  public scriptError:  string | null = null
+
   // Mapa del mundo
   public worldMap: WorldMap
 

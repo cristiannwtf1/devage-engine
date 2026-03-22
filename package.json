@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "npx ts-node src/server.ts",
+    "stop": "node -e \"const fs=require('fs'); const pid=parseInt(fs.readFileSync('.server.pid','utf8')); process.kill(pid); fs.unlinkSync('.server.pid'); console.log('Servidor detenido.')\" 2>/dev/null || echo 'No hay servidor corriendo.'",
     "build": "npx tsc",
     "start": "node dist/server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
