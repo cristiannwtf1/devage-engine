@@ -49,7 +49,7 @@ En lugar de hacer clic, **escribes código** para controlar tus unidades. Cada 3
 ---
 
 <div align="center">
-<img src="https://capsule-render.vercel.app/api?type=soft&color=0:001a3a,100:002255&height=60&section=header&text=Inicio+rápido&fontSize=22&fontColor=00aaff&fontAlignY=65" />
+<img src="https://capsule-render.vercel.app/api?type=soft&color=0:010408,50:001a35,100:003a6a&height=60&section=header&text=Inicio+rápido&fontSize=22&fontColor=44c8ff&fontAlignY=65" />
 </div>
 
 ```bash
@@ -83,7 +83,7 @@ for (const id in Game.workers) {
 ---
 
 <div align="center">
-<img src="https://capsule-render.vercel.app/api?type=soft&color=0:001a3a,100:002255&height=60&section=header&text=API+del+jugador&fontSize=22&fontColor=00aaff&fontAlignY=65" />
+<img src="https://capsule-render.vercel.app/api?type=soft&color=0:010408,50:001a35,100:003a6a&height=60&section=header&text=API+del+jugador&fontSize=22&fontColor=44c8ff&fontAlignY=65" />
 </div>
 
 <div align="center">
@@ -106,7 +106,7 @@ for (const id in Game.workers) {
 ---
 
 <div align="center">
-<img src="https://capsule-render.vercel.app/api?type=soft&color=0:001a3a,100:002255&height=60&section=header&text=Arquitectura+ECS&fontSize=22&fontColor=00aaff&fontAlignY=65" />
+<img src="https://capsule-render.vercel.app/api?type=soft&color=0:010408,50:001a35,100:003a6a&height=60&section=header&text=Arquitectura+ECS&fontSize=22&fontColor=44c8ff&fontAlignY=65" />
 </div>
 
 El engine usa **Entity Component System (ECS)** — un patrón de arquitectura de juegos donde los datos viven separados de la lógica, permitiendo que todos los sistemas operen en paralelo sobre las mismas entidades.
@@ -132,7 +132,7 @@ playerScript: string      12. AISystem           — IA enemiga
 ---
 
 <div align="center">
-<img src="https://capsule-render.vercel.app/api?type=soft&color=0:1a0005,100:330010&height=60&section=header&text=IA+Oponente&fontSize=22&fontColor=ff5544&fontAlignY=65" />
+<img src="https://capsule-render.vercel.app/api?type=soft&color=0:080104,50:1a0008,100:3a0014&height=60&section=header&text=IA+Oponente&fontSize=22&fontColor=ff6655&fontAlignY=65" />
 </div>
 
 La IA tiene **su propia base**, sus **propios workers** y su **propia economía**. Compite por las mismas fuentes de energía en tiempo real, toma decisiones de spawn y construcción de forma autónoma.
@@ -150,7 +150,7 @@ La IA tiene **su propia base**, sus **propios workers** y su **propia economía*
 ---
 
 <div align="center">
-<img src="https://capsule-render.vercel.app/api?type=soft&color=0:001a3a,100:002255&height=60&section=header&text=Visual&fontSize=22&fontColor=00aaff&fontAlignY=65" />
+<img src="https://capsule-render.vercel.app/api?type=soft&color=0:010408,50:001a35,100:003a6a&height=60&section=header&text=Visual&fontSize=22&fontColor=44c8ff&fontAlignY=65" />
 </div>
 
 El renderer corre a **60fps** usando `requestAnimationFrame` con **interpolación de posiciones** entre ticks — las unidades se mueven suavemente aunque el servidor actualice cada 300ms.
@@ -172,7 +172,7 @@ El renderer corre a **60fps** usando `requestAnimationFrame` con **interpolació
 ---
 
 <div align="center">
-<img src="https://capsule-render.vercel.app/api?type=soft&color=0:001a3a,100:002255&height=60&section=header&text=Roadmap&fontSize=22&fontColor=00aaff&fontAlignY=65" />
+<img src="https://capsule-render.vercel.app/api?type=soft&color=0:010408,50:001a35,100:003a6a&height=60&section=header&text=Roadmap&fontSize=22&fontColor=44c8ff&fontAlignY=65" />
 </div>
 
 <div align="center">

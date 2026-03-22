@@ -660,12 +660,12 @@ const codeEditor   = document.getElementById("code-editor")
 const btnRun       = document.getElementById("btn-run")
 const btnClear     = document.getElementById("btn-clear")
 
-const savedScript = localStorage.getItem("devage_script")
+const savedScript = localStorage.getItem("codestrike_script")
 if (savedScript) codeEditor.value = savedScript
 
 btnRun.addEventListener("click", async () => {
   const code = codeEditor.value.trim()
-  localStorage.setItem("devage_script", code)
+  localStorage.setItem("codestrike_script", code)
   try {
     const res  = await fetch("/api/script", {
       method: "POST",
@@ -685,7 +685,7 @@ btnRun.addEventListener("click", async () => {
 
 btnClear.addEventListener("click", async () => {
   codeEditor.value = ""
-  localStorage.removeItem("devage_script")
+  localStorage.removeItem("codestrike_script")
   await fetch("/api/script", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -705,3 +705,143 @@ function showError(msg) {
   scriptError.style.display = "block"
 }
 function updateScriptError(err) { if (err) showError(err) }
+
+// ═══════════════════════════════════════════════════════════
+//  MENÚ PRINCIPAL — Red neuronal animada + selección de modo
+// ═══════════════════════════════════════════════════════════
+
+let menuActive = true
+const menuScreen    = document.getElementById("menu-screen")
+const menuBgCanvas  = document.getElementById("menu-bg")
+const mctx          = menuBgCanvas.getContext("2d")
+
+// ── Puntos de la red neuronal del fondo ───────────────────
+const NET_DOTS = []
+
+function initMenuBg() {
+  menuBgCanvas.width  = window.innerWidth
+  menuBgCanvas.height = window.innerHeight
+  NET_DOTS.length = 0
+  for (let i = 0; i < 65; i++) {
+    NET_DOTS.push({
+      x:  Math.random() * menuBgCanvas.width,
+      y:  Math.random() * menuBgCanvas.height,
+      vx: (Math.random() - 0.5) * 0.3,
+      vy: (Math.random() - 0.5) * 0.3,
+      r:  0.8 + Math.random() * 1.8,
+      op: 0.12 + Math.random() * 0.3
+    })
+  }
+}
+
+function drawMenuBg() {
+  if (!menuActive) return
+  const w = menuBgCanvas.width, h = menuBgCanvas.height
+  mctx.clearRect(0, 0, w, h)
+
+  // Mover y dibujar puntos
+  for (const p of NET_DOTS) {
+    p.x += p.vx; p.y += p.vy
+    if (p.x < 0) p.x = w; if (p.x > w) p.x = 0
+    if (p.y < 0) p.y = h; if (p.y > h) p.y = 0
+    mctx.beginPath()
+    mctx.arc(p.x, p.y, p.r, 0, Math.PI * 2)
+    mctx.fillStyle = `rgba(0,170,255,${p.op})`
+    mctx.fill()
+  }
+
+  // Líneas de conexión entre puntos cercanos
+  for (let i = 0; i < NET_DOTS.length; i++) {
+    for (let j = i + 1; j < NET_DOTS.length; j++) {
+      const dx = NET_DOTS[i].x - NET_DOTS[j].x
+      const dy = NET_DOTS[i].y - NET_DOTS[j].y
+      const d  = Math.sqrt(dx * dx + dy * dy)
+      if (d < 115) {
+        mctx.strokeStyle = `rgba(0,170,255,${(1 - d / 115) * 0.1})`
+        mctx.lineWidth   = 0.5
+        mctx.beginPath()
+        mctx.moveTo(NET_DOTS[i].x, NET_DOTS[i].y)
+        mctx.lineTo(NET_DOTS[j].x, NET_DOTS[j].y)
+        mctx.stroke()
+      }
+    }
+  }
+  requestAnimationFrame(drawMenuBg)
+}
+
+// ── Template de la Misión 1 ───────────────────────────────
+const MISSION_1 = `// ═══════════════════════════════════════════════
+//  CODESTRIKE · MISIÓN 1 — "Tu primer ejército"
+// ═══════════════════════════════════════════════
+//  OBJETIVO: Llena la base al 100% antes que la IA.
+//
+//  CONCEPTOS JS que vas a aprender aquí:
+//    · Variables: const, let
+//    · Condicionales: if / else
+//    · Bucles: for...in
+//    · Objetos: propiedades y métodos
+// ═══════════════════════════════════════════════
+
+// Este código corre automáticamente cada 300ms.
+// Recorre todos tus workers y les da instrucciones:
+
+for (const id in Game.workers) {
+  const w = Game.workers[id]   // ← un worker
+
+  if (w.energy < w.energyCapacity) {
+    // El worker está vacío → busca la fuente más cercana
+    let nearest = null
+    let minDist = Infinity
+
+    for (const sid in Game.sources) {
+      const s = Game.sources[sid]
+      if (s.energy > 0) {
+        const d = Math.abs(w.x - s.x) + Math.abs(w.y - s.y)
+        if (d < minDist) { minDist = d; nearest = s }
+      }
+    }
+
+    if (nearest) w.harvest(nearest.id)   // ← ir a cosechar
+
+  } else {
+    // El worker está lleno → deposita en la base
+    w.transfer(Game.base.id)
+  }
+}
+`
+
+// ── Seleccionar modo y cerrar el menú ─────────────────────
+function selectMode(mode) {
+  menuActive = false
+  menuScreen.style.transition = "opacity 0.8s ease"
+  menuScreen.style.opacity    = "0"
+  menuScreen.style.pointerEvents = "none"
+  setTimeout(() => { menuScreen.style.display = "none" }, 850)
+
+  if (mode === "campaign") {
+    codeEditor.value = MISSION_1
+    localStorage.setItem("codestrike_script", MISSION_1)
+    // Auto-ejecuta el script después de que el menú desaparece
+    setTimeout(() => btnRun.click(), 950)
+  }
+}
+
+document.getElementById("card-campaign").addEventListener("click", () => selectMode("campaign"))
+document.getElementById("card-vs-ai").addEventListener("click",    () => selectMode("vs-ai"))
+
+document.addEventListener("keydown", e => {
+  if (!menuActive) return
+  if (e.key === "1") selectMode("campaign")
+  if (e.key === "2") selectMode("vs-ai")
+  if (e.key === "Enter") {
+    const focused = document.activeElement
+    if (focused && focused.classList.contains("menu-card")) focused.click()
+  }
+})
+
+window.addEventListener("resize", () => {
+  if (menuActive) initMenuBg()
+})
+
+initMenuBg()
+drawMenuBg()
