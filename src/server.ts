@@ -24,11 +24,7 @@ for (let y = 0; y < gameState.worldMap.height; y++) {
         regenCooldown: 5,
         currentCooldown: 0
       })
-      gameState.sourceClaims.set(sourceId, {
-        maxClaimers: 1,
-        currentClaimers: new Set()
-      })
-      gameState.worldMap.setTile(x, y, TileType.Floor)
+gameState.worldMap.setTile(x, y, TileType.Floor)
     }
   }
 }
@@ -139,14 +135,13 @@ function buildDiagnostic(gs: GameState) {
   })
 
   const sources = [...gs.sources.entries()].map(([id, src]) => {
-    const pos    = gs.positions.get(id)
-    const claim  = gs.sourceClaims.get(id)
+    const pos = gs.positions.get(id)
     return {
       id,
       pos:      pos ? `(${pos.x},${pos.y})` : "?",
       energy:   `${src.energy}/${src.maxEnergy}`,
       cooldown: src.currentCooldown,
-      claimers: claim ? claim.currentClaimers.size : 0
+      targeted: [...gs.targets.values()].some(t => t.targetX === pos?.x && t.targetY === pos?.y)
     }
   })
 

@@ -24,7 +24,8 @@ export class DepositSystem {
                    Math.abs(position.y - basePosition.y)
 
       if (dist <= DEPOSIT_RANGE) {
-        baseStorage.current += storage.current
+        const space = baseStorage.capacity - baseStorage.current
+        baseStorage.current += Math.min(storage.current, space)
         storage.current = 0
         behavior.state = "harvesting"
         // Limpiar target para que busque uno nuevo

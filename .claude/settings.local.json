@@ -1,7 +1,14 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(curl -s http://localhost:3000/debug)",
+      "Bash(npx --yes prettier --parser json)",
+      "Bash(taskkill:*)",
+      "Bash(exit 0)",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(f''''Tick:{d[\"\"tick\"\"]} Base:{d[\"\"base\"\"]} Workers:{d[\"\"workers\"\"][\"\"total\"\"]} Cosechando:{d[\"\"workers\"\"][\"\"harvesting\"\"]} Retornando:{d[\"\"workers\"\"][\"\"returning\"\"]} SinTarea:{d[\"\"workers\"\"][\"\"idle\"\"]}''''\\); [print\\(f''''  W#{w[\"\"id\"\"]} {w[\"\"pos\"\"]} {w[\"\"state\"\"]} {w[\"\"energy\"\"]} target:{w[\"\"hasTarget\"\"]}''''\\) for w in d[''''workers''''][''''detail'''']]\")",
+      "Bash(netstat -ano)",
+      "Bash(findstr \":3000\")"
     ]
   }
 }
