@@ -215,13 +215,61 @@ function drawVictoryScreen(winner, winTick) {
   ctx.fillText("[ Recarga la página para jugar de nuevo ]", w / 2, h * 0.68)
 }
 
+// ─── TERRAIN HASH ─────────────────────────────────────────
+// Función determinista por posición: mismo resultado siempre
+function terrainHash(x, y) {
+  const s = Math.sin(x * 127.1 + y * 311.7) * 43758.5453
+  return s - Math.floor(s)   // 0.0 → 1.0
+}
+
 // ─── TILE ─────────────────────────────────────────────────
-// Fills sólidos sin stroke — máxima nitidez, estilo Screeps
 function drawTile(x, y, type) {
   const px = x * CELL, py = y * CELL
   ctx.shadowBlur = 0
-  ctx.fillStyle  = type === "wall" ? "#010308" : "#071428"
+
+  if (type === "floor") {
+    // Floor: sutil cuadrícula de puntos para dar textura de arena digital
+    ctx.fillStyle = "#071428"
+    ctx.fillRect(px, py, CELL, CELL)
+    // Punto de grilla en intersecciones (cada 2 tiles)
+    if (x % 2 === 0 && y % 2 === 0) {
+      ctx.fillStyle = "rgba(0,60,120,0.18)"
+      ctx.fillRect(px, py, 1, 1)
+    }
+    return
+  }
+
+  // Wall — terreno con 4 niveles de altura según hash
+  const h = terrainHash(x, y)
+
+  // Nivel 0 — valle/foso (20%)
+  // Nivel 1 — terreno bajo (35%)
+  // Nivel 2 — colina (30%)
+  // Nivel 3 — cumbre/montaña (15%)
+  const level = h < 0.20 ? 0 : h < 0.55 ? 1 : h < 0.85 ? 2 : 3
+
+  const wallColors = ["#010208", "#020410", "#030615", "#04091c"]
+  ctx.fillStyle = wallColors[level]
   ctx.fillRect(px, py, CELL, CELL)
+
+  if (level >= 2) {
+    // Borde superior iluminado — simula luz cenital sobre la cumbre
+    const alpha = level === 3 ? 0.22 : 0.10
+    ctx.fillStyle = `rgba(0,80,160,${alpha})`
+    ctx.fillRect(px, py, CELL, 1)
+  }
+
+  if (level === 3) {
+    // Pico: pequeño triángulo de luz en el centro superior
+    const cx2 = px + CELL / 2
+    ctx.fillStyle = "rgba(0,100,200,0.18)"
+    ctx.beginPath()
+    ctx.moveTo(cx2, py + 3)
+    ctx.lineTo(cx2 - 3, py + 8)
+    ctx.lineTo(cx2 + 3, py + 8)
+    ctx.closePath()
+    ctx.fill()
+  }
 }
 
 // ─── SCAN LINES ───────────────────────────────────────────
