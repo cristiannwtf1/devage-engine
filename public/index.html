@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>DEVAGE ENGINE</title>
+  <title>CODESTRIKE</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
 
@@ -323,12 +323,35 @@
     }
     #status-bar.connected    { color: var(--cyan-d); }
     #status-bar.disconnected { color: var(--red-d); }
+
+    /* ── VICTORIA ── */
+    #victory-banner {
+      display: none;
+      position: absolute;
+      top: 12px; left: 50%; transform: translateX(-50%);
+      padding: 6px 20px;
+      font-size: 13px;
+      letter-spacing: 3px;
+      border: 1px solid;
+      z-index: 10;
+      pointer-events: none;
+    }
+    #victory-banner.player {
+      color: var(--cyan); border-color: var(--cyan);
+      background: rgba(0,20,10,0.9);
+      box-shadow: 0 0 20px rgba(0,255,187,0.4);
+    }
+    #victory-banner.ai {
+      color: var(--red); border-color: var(--red);
+      background: rgba(20,0,0,0.9);
+      box-shadow: 0 0 20px rgba(255,60,40,0.4);
+    }
   </style>
 </head>
 <body>
 
   <div id="header">
-    <h1>⬡ DEVAGE ENGINE <span>v2.0 — La Red de Neones</span></h1>
+    <h1>⬡ CODESTRIKE <span>v2.0 — La Red de Neones</span></h1>
     <div id="tick-info">TICK <span id="tick">—</span></div>
     <div id="controls">
       <button id="btn-pause">⏸ Pausar</button>
@@ -338,6 +361,7 @@
   <div id="main">
     <div id="canvas-wrapper">
       <canvas id="gameCanvas"></canvas>
+      <div id="victory-banner"></div>
     </div>
 
     <div id="panel">

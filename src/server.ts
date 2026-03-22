@@ -160,7 +160,9 @@ function buildSnapshot(gs: GameState) {
     aiWorkerCount: gs.aiWorkers.size,
     extensions:    [...gs.structures.values()].filter(s => s.type === "extension").length,
     aiExtensions:  [...gs.structures.values()].filter(s => s.type === "ai-extension").length,
-    scriptError:   gs.scriptError ?? null
+    scriptError:   gs.scriptError ?? null,
+    winner:        gs.winner,
+    winTick:       gs.winTick
   }
 }
 
@@ -251,7 +253,7 @@ wss.on("connection", (ws) => {
 })
 
 server.listen(3000, () => {
-  console.log("🚀 DEVAGE ENGINE corriendo en http://localhost:3000")
+  console.log("🚀 CODESTRIKE corriendo en http://localhost:3000")
   // Guardar PID para poder matar el servidor con `npm run stop`
   require("fs").writeFileSync(".server.pid", String(process.pid))
   engine.start()
