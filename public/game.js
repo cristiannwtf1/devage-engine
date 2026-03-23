@@ -504,15 +504,19 @@ function showVictoryOverlay(winner, winTick) {
 
   const isPlayer  = winner === "player"
   const isCampaign = currentMode === "campaign" && selectedMission
-  const stars     = isCampaign ? (winTick < 300 ? 3 : winTick < 500 ? 2 : 1) : 0
-  const nextId    = isCampaign ? selectedMission + 1 : null
-  const hasNext   = nextId && MISSIONS[nextId]
-  const accent    = isPlayer ? "#00aaff" : "#ff4422"
-  const secs      = (winTick * 0.3).toFixed(0)
+  const stars      = isCampaign && isPlayer ? (winTick < 300 ? 3 : winTick < 500 ? 2 : 1) : 0
+  const nextId     = isCampaign && isPlayer ? selectedMission + 1 : null
+  const hasNext    = nextId && MISSIONS[nextId]
+  const accent     = isPlayer ? "#00aaff" : "#ff4422"
+  const secs       = (winTick * 0.3).toFixed(0)
 
-  const starsHtml = isCampaign
+  const starsHtml = stars > 0
     ? `<div class="vo-stars">${"★".repeat(stars)}${"☆".repeat(3 - stars)}</div>`
     : ""
+
+  // Subtítulo según resultado y modo
+  let subText = isPlayer ? "Tu código dominó el mapa" : "La IA tomó el control"
+  if (!isPlayer && isCampaign) subText = "Ajusta tu código e inténtalo de nuevo"
 
   const ov = document.createElement("div")
   ov.id = "victory-overlay"
@@ -522,13 +526,13 @@ function showVictoryOverlay(winner, winTick) {
   ov.innerHTML = `
     <div class="vo-box">
       <div class="vo-title">${isPlayer ? "VICTORIA" : "DERROTA"}</div>
-      <div class="vo-sub">${isPlayer ? "Tu código dominó el mapa" : "La IA tomó el control"}</div>
+      <div class="vo-sub">${subText}</div>
       ${starsHtml}
       <div class="vo-tick">Tick ${winTick} · ${secs}s</div>
       <div class="vo-actions">
-        ${hasNext ? `<button class="vo-btn vo-primary" id="vo-next">MISIÓN ${nextId} →</button>` : ""}
-        <button class="vo-btn vo-secondary" id="vo-retry">↺ REINTENTAR</button>
-        <button class="vo-btn vo-ghost"     id="vo-menu">← MENÚ</button>
+        ${hasNext    ? `<button class="vo-btn vo-primary"   id="vo-next">MISIÓN ${nextId} →</button>` : ""}
+        ${isCampaign ? `<button class="vo-btn vo-secondary" id="vo-retry">↺ REINTENTAR</button>` : ""}
+        <button class="vo-btn vo-ghost" id="vo-menu">← MENÚ</button>
       </div>
     </div>`
   document.body.appendChild(ov)
@@ -537,13 +541,16 @@ function showVictoryOverlay(winner, winTick) {
     document.getElementById("vo-next").onclick = () => {
       ov.remove()
       document.getElementById("victory-banner").style.display = "none"
+      hideMissionPanel()
       showBriefing(nextId)
     }
   }
-  document.getElementById("vo-retry").onclick = () => {
-    ov.remove()
-    document.getElementById("victory-banner").style.display = "none"
-    doRestartMission()
+  if (isCampaign) {
+    document.getElementById("vo-retry").onclick = () => {
+      ov.remove()
+      document.getElementById("victory-banner").style.display = "none"
+      doRestartMission()
+    }
   }
   document.getElementById("vo-menu").onclick = () => {
     ov.remove()
@@ -2579,12 +2586,20 @@ let freshGameMinTick = 0        // ignorar victorias hasta que el servidor confi
 function selectMode(mode) {
   currentMode = mode
   if (mode === "campaign") {
-    hideMenu(() => openMissionScreen())
+    hideMenu(() => startCampaignFromProgress())
   } else if (mode === "vs-ai") {
     hideMenu(() => openDifficultyModal())
   } else if (mode === "sandbox") {
     hideMenu(() => launchSandbox())
   }
+}
+
+// Inicia campaña desde la primera misión sin completar (o M1 si no hay progreso)
+function startCampaignFromProgress() {
+  const progress   = getMissionProgress()
+  const allMissions = [1,2,3,4,5,6]   // Season I — expand con más misiones después
+  const next = allMissions.find(id => !progress[id]) ?? allMissions[0]
+  showBriefing(next)
 }
 
 // ── Modal de dificultad (VS IA) ───────────────────────────
@@ -2732,6 +2747,20 @@ function doRestartMission() {
 btnAbandonRestart.addEventListener("click", doRestartMission)
 btnAbandonConfirm.addEventListener("click", doReturnToMenu)
 btnAbandonCancel.addEventListener("click", () => closeAbandonModal(true))
+
+document.getElementById("btn-abandon-missions").addEventListener("click", () => {
+  closeAbandonModal(false)
+  paused = false
+  btnPause.textContent = "⏸ Pausar"
+  btnPause.classList.remove("active")
+  hideMissionPanel()
+  document.getElementById("victory-banner").style.display = "none"
+  // Abrir selector de misiones sin volver al menú principal
+  document.getElementById("mission-screen").style.display = "flex"
+  document.getElementById("world-view").style.display     = "flex"
+  document.getElementById("season-view").style.display    = "none"
+  refreshWorldCards()
+})
 
 // Cerrar con click en el overlay
 modalAbandon.addEventListener("click", e => {
