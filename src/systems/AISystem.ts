@@ -6,7 +6,7 @@ import { EntityId } from "../ecs/Entity"
 // Referencia Screeps: los "Invaders" también escalan por nivel de room (RCL)
 export type AiDifficulty = "tutorial" | "easy" | "medium" | "hard" | "expert"
 
-// Balance respecto al jugador (SpawnSystem: maxWorkers=8, spawnDelay=5, spawnCost=20)
+// Balance respecto al jugador (SpawnSystem: maxWorkers=3, spawnDelay=5, spawnCost=20)
 // tutorial → IA muy lenta, jugador domina sin código
 // easy     → IA ligeramente inferior al jugador
 // medium   → IA casi igual al jugador, partida reñida
@@ -18,7 +18,7 @@ const DIFFICULTY_CONFIGS: Record<AiDifficulty, {
   spawnDelay: number     // ticks entre spawns — más alto = más lento
   buildThreshold: number // % de base llena antes de construir extensión
 }> = {
-  tutorial: { maxWorkers: 3,  spawnCost: 20, spawnDelay: 15, buildThreshold: 0.95 },
+  tutorial: { maxWorkers: 2,  spawnCost: 20, spawnDelay: 20, buildThreshold: 0.95 },
   easy:     { maxWorkers: 5,  spawnCost: 20, spawnDelay: 10, buildThreshold: 0.80 },
   medium:   { maxWorkers: 8,  spawnCost: 20, spawnDelay:  6, buildThreshold: 0.65 },
   hard:     { maxWorkers: 10, spawnCost: 20, spawnDelay:  4, buildThreshold: 0.50 },
@@ -31,7 +31,7 @@ export class AISystem {
   private cfg:              typeof DIFFICULTY_CONFIGS["expert"]
   private spawnCooldown:    number = 0
   private nextWorkerId:     number = 5000   // IDs de workers IA (evita colisiones con jugador)
-  private maxExtensions:    number = 5
+  private maxExtensions:    number = 0   // Extensions deshabilitadas en M1
   private baseCost:         number = 50
   private costPerLevel:     number = 50
 
@@ -82,8 +82,7 @@ export class AISystem {
     })
     gs.structures.set(newId, { type: "ai-extension" })
 
-    aiBaseStorage.capacity += 200
-    aiBaseStorage.current  -= cost
+    aiBaseStorage.current -= cost
 
     console.log(`🤖🏗 IA Extension #${extensionCount + 1} | Costo: ${cost} | Cap: ${aiBaseStorage.capacity}`)
   }

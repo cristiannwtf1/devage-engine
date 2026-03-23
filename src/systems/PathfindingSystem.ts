@@ -4,14 +4,6 @@ export class PathfindingSystem {
 
   public update(gameState: GameState): void {
 
-    // Construir set de posiciones ocupadas por otros workers UNA sola vez por tick
-    const workerPositions = new Map<string, number>() // "x,y" → entityId
-    for (const [wId, pos] of gameState.positions) {
-      if (gameState.workers.has(wId)) {
-        workerPositions.set(`${pos.x},${pos.y}`, wId)
-      }
-    }
-
     for (const [entityId, target] of gameState.targets) {
 
       // Si ya tiene path, no recalcular
@@ -28,9 +20,7 @@ export class PathfindingSystem {
         position.x,
         position.y,
         target.targetX,
-        target.targetY,
-        entityId,
-        workerPositions
+        target.targetY
       )
 
       if (path && path.length > 0) {
@@ -44,71 +34,13 @@ export class PathfindingSystem {
     startX: number,
     startY: number,
     targetX: number,
-    targetY: number,
-    selfId: number,
-    workerPositions: Map<string, number>
-  ): { x: number; y: number }[] | null {
-
-    const queue: { x: number; y: number }[] = []
-    const visited = new Set<string>()
-    const cameFrom = new Map<string, string>()
-
-    const startKey  = `${startX},${startY}`
-    const targetKey = `${targetX},${targetY}`
-
-    queue.push({ x: startX, y: startY })
-    visited.add(startKey)
-
-    const directions = [
-      { dx: 1, dy: 0 }, { dx: -1, dy: 0 },
-      { dx: 0, dy: 1 }, { dx: 0,  dy: -1 }
-    ]
-
-    while (queue.length > 0) {
-      const current = queue.shift()!
-      const currentKey = `${current.x},${current.y}`
-
-      if (currentKey === targetKey) {
-        return this.reconstructPath(cameFrom, startKey, targetKey)
-      }
-
-      for (const dir of directions) {
-        const newX = current.x + dir.dx
-        const newY = current.y + dir.dy
-        const newKey = `${newX},${newY}`
-
-        if (visited.has(newKey)) continue
-        if (!gameState.worldMap.isWalkable(newX, newY)) continue
-
-        // Esquivar otros workers — excepto el tile destino (pueden solaparse brevemente)
-        if (newKey !== targetKey) {
-          const occupant = workerPositions.get(newKey)
-          if (occupant !== undefined && occupant !== selfId) continue
-        }
-
-        visited.add(newKey)
-        cameFrom.set(newKey, currentKey)
-        queue.push({ x: newX, y: newY })
-      }
-    }
-
-    // Si no encuentra ruta esquivando workers, intentar sin restricción
-    // (evita que workers queden atrapados sin salida)
-    return this.bfsFallback(gameState, startX, startY, targetX, targetY)
-  }
-
-  // BFS sin considerar workers como obstáculos (fallback)
-  private bfsFallback(
-    gameState: GameState,
-    startX: number,
-    startY: number,
-    targetX: number,
     targetY: number
   ): { x: number; y: number }[] | null {
 
     const queue: { x: number; y: number }[] = []
     const visited = new Set<string>()
     const cameFrom = new Map<string, string>()
+
     const startKey  = `${startX},${startY}`
     const targetKey = `${targetX},${targetY}`
 
@@ -123,15 +55,19 @@ export class PathfindingSystem {
     while (queue.length > 0) {
       const current = queue.shift()!
       const currentKey = `${current.x},${current.y}`
+
       if (currentKey === targetKey) {
         return this.reconstructPath(cameFrom, startKey, targetKey)
       }
+
       for (const dir of directions) {
         const newX = current.x + dir.dx
         const newY = current.y + dir.dy
         const newKey = `${newX},${newY}`
+
         if (visited.has(newKey)) continue
         if (!gameState.worldMap.isWalkable(newX, newY)) continue
+
         visited.add(newKey)
         cameFrom.set(newKey, currentKey)
         queue.push({ x: newX, y: newY })

@@ -13,22 +13,19 @@ export class TargetSystem {
 
       const currentTarget = gameState.targets.get(entityId)
 
-      // ── Source del target se agotó → soltar y buscar otro ────
-      if (currentTarget && behavior.state === "harvesting") {
-        if (!this.sourceExistsAt(gameState, currentTarget.targetX, currentTarget.targetY)) {
-          gameState.targets.delete(entityId)
-          gameState.paths.delete(entityId)
-        }
-      }
-
       // ── Ya tiene target válido → no reasignar ─────────────────
       if (gameState.targets.has(entityId)) continue
+
+      // ── "idle" — worker del jugador esperando código, no auto-asignar ──
+      if (behavior.state === "idle") continue
 
       // ── Asignar nuevo target según estado ─────────────────────
       if (behavior.state === "harvesting") {
         const src = this.findBestSource(gameState, position.x, position.y, entityId)
         if (src) {
-          gameState.targets.set(entityId, { targetX: src.x, targetY: src.y })
+          // Apuntar al tile adyacente al source — evita amontonamiento (Screeps: range 1)
+          const adj = this.findHarvestTile(gameState, src.x, src.y, position.x, position.y, entityId)
+          gameState.targets.set(entityId, { targetX: adj.x, targetY: adj.y })
         }
 
       } else if (behavior.state === "returning") {
@@ -43,7 +40,7 @@ export class TargetSystem {
     }
   }
 
-  // Fuente sin target apuntando a ella, con energía, y path accesible
+  // Source con energía más cercana y accesible
   private findBestSource(
     gameState: GameState,
     startX: number,
@@ -51,30 +48,18 @@ export class TargetSystem {
     selfId: number
   ): { x: number; y: number } | null {
 
-    // Sources ya ocupadas: otro worker las tiene como target O está físicamente encima
-    const occupied = new Set<string>()
-    for (const [wId, target] of gameState.targets) {
-      if (wId === selfId) continue
-      occupied.add(`${target.targetX},${target.targetY}`)
-    }
-    for (const [wId, pos] of gameState.positions) {
-      if (wId === selfId) continue
-      if (gameState.workers.has(wId) || gameState.aiWorkers.has(wId)) {
-        occupied.add(`${pos.x},${pos.y}`)
-      }
-    }
-
     let best: { x: number; y: number } | null = null
     let minDist = Infinity
 
     for (const [sourceId, source] of gameState.sources) {
       if (source.energy <= 0) continue
 
+      // Workers IA solo cosechan su propio source (no el del jugador), y viceversa
+      if (gameState.aiWorkers.has(selfId) && gameState.playerSourceIds.has(sourceId)) continue
+      if (!gameState.aiWorkers.has(selfId) && !gameState.playerSourceIds.has(sourceId)) continue
+
       const pos = gameState.positions.get(sourceId)
       if (!pos) continue
-
-      // Saltar si está ocupada (target de otro worker o worker encima)
-      if (occupied.has(`${pos.x},${pos.y}`)) continue
 
       const dist = computePathLength(gameState, startX, startY, pos.x, pos.y)
       if (dist === null) continue
@@ -88,11 +73,25 @@ export class TargetSystem {
     return best
   }
 
-  private sourceExistsAt(gameState: GameState, x: number, y: number): boolean {
-    for (const [sourceId, source] of gameState.sources) {
-      const pos = gameState.positions.get(sourceId)
-      if (pos && pos.x === x && pos.y === y && source.energy > 0) return true
+  // Tile adyacente al source más cercano al worker
+  private findHarvestTile(
+    gameState: GameState,
+    sourceX: number, sourceY: number,
+    workerX: number, workerY: number,
+    selfId: number
+  ): { x: number; y: number } {
+    const offsets = [{ x: 1, y: 0 }, { x: -1, y: 0 }, { x: 0, y: 1 }, { x: 0, y: -1 }]
+    let bestX = sourceX, bestY = sourceY
+    let bestDist = Infinity
+
+    for (const off of offsets) {
+      const ax = sourceX + off.x, ay = sourceY + off.y
+      if (!gameState.worldMap.isWalkable(ax, ay)) continue
+      const d = Math.abs(ax - workerX) + Math.abs(ay - workerY)
+      if (d < bestDist) { bestDist = d; bestX = ax; bestY = ay }
     }
-    return false
+
+    return { x: bestX, y: bestY }
   }
+
 }

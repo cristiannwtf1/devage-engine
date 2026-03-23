@@ -9,7 +9,7 @@ export class SpawnSystem {
   // 🧠 Balance variables
   private spawnCooldown: number = 0
   private spawnDelay: number = 5
-  private maxWorkers: number = 8
+  private maxWorkers: number = 3
 
   public update(gameState: GameState): void {
 
@@ -44,7 +44,7 @@ export class SpawnSystem {
     gameState.healths.set(newWorkerId, { current: 20, max: 100 })
     gameState.workers.set(newWorkerId, { isWorker: true })
     gameState.energyStorages.set(newWorkerId, { current: 0, capacity: 10 })
-    gameState.behaviors.set(newWorkerId, { state: "harvesting" })
+    gameState.behaviors.set(newWorkerId, { state: "idle" })
 
     baseStorage.current -= this.spawnCost
 
