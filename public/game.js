@@ -100,6 +100,32 @@ let lastTickTime  = 0
 let animFrame     = 0
 let canvasSized   = false
 
+// ─── NOISE CANVAS (pre-renderizado, se rehace solo si cambia el mapa) ──
+let noiseCanvas = null
+let noiseSeedW  = 0
+function buildNoiseCanvas(w, h) {
+  if (noiseCanvas && noiseSeedW === w) return  // ya existe para este tamaño
+  noiseSeedW  = w
+  noiseCanvas = document.createElement("canvas")
+  noiseCanvas.width  = w
+  noiseCanvas.height = h
+  const nc = noiseCanvas.getContext("2d")
+  // Micro-partículas azules: textura orgánica sobre el piso
+  const count = Math.floor(w * h * 0.06)
+  for (let i = 0; i < count; i++) {
+    const nx = Math.random() * w | 0
+    const ny = Math.random() * h | 0
+    const a  = (0.02 + Math.random() * 0.06).toFixed(3)
+    nc.fillStyle = `rgba(0,70,140,${a})`
+    nc.fillRect(nx, ny, 1, 1)
+  }
+  // Líneas de escáner horizontales muy sutiles (cada 4px)
+  for (let sy = 0; sy < h; sy += 4) {
+    nc.fillStyle = "rgba(0,0,8,0.10)"
+    nc.fillRect(0, sy, w, 1)
+  }
+}
+
 // ─── ZOOM + PAN ────────────────────────────────────────────
 let zoom = 1.0
 let panX = 0, panY = 0
@@ -291,6 +317,7 @@ function renderFrame() {
     canvas.width  = mapWidth  * CELL
     canvas.height = mapHeight * CELL
     canvasSized   = true
+    buildNoiseCanvas(canvas.width, canvas.height)
   }
 
   const t = Math.min(1, (performance.now() - lastTickTime) / TICK_MS)
@@ -305,8 +332,15 @@ function renderFrame() {
   // 1. Tiles
   for (let y = 0; y < mapHeight; y++) {
     for (let x = 0; x < mapWidth; x++) {
-      drawTile(x, y, tiles[y][x] === "#" ? "wall" : "floor")
+      drawTile(x, y, tiles[y][x] === "#" ? "wall" : "floor", tiles)
     }
+  }
+  // Aplicar noise/scanlines pre-renderizado sobre todo el mapa
+  if (noiseCanvas) {
+    ctx.save()
+    ctx.globalAlpha = 0.75
+    ctx.drawImage(noiseCanvas, 0, 0)
+    ctx.restore()
   }
 
   // 2. Hover highlight
@@ -500,52 +534,68 @@ function terrainHash(x, y) {
 }
 
 // ─── TILE ─────────────────────────────────────────────────
-function drawTile(x, y, type) {
+function drawTile(x, y, type, tiles) {
   const px = x * CELL, py = y * CELL
   ctx.shadowBlur = 0
 
   if (type === "floor") {
-    // Floor: sutil cuadrícula de puntos para dar textura de arena digital
-    ctx.fillStyle = "#071428"
+    // Base del piso — azul-oscuro profundo
+    ctx.fillStyle = "#060f1e"
     ctx.fillRect(px, py, CELL, CELL)
-    // Punto de grilla en intersecciones (cada 2 tiles)
-    if (x % 2 === 0 && y % 2 === 0) {
-      ctx.fillStyle = "rgba(0,60,120,0.18)"
-      ctx.fillRect(px, py, 1, 1)
+
+    // Sombra proyectada desde muro superior (eje Y-1)
+    if (tiles && tiles[y - 1]?.[x] === "#") {
+      const gs = ctx.createLinearGradient(px, py, px, py + 7)
+      gs.addColorStop(0, "rgba(0,0,0,0.60)")
+      gs.addColorStop(1, "rgba(0,0,0,0)")
+      ctx.fillStyle = gs
+      ctx.fillRect(px, py, CELL, 7)
+    }
+    // Sombra proyectada desde muro a la izquierda (eje X-1)
+    if (tiles && tiles[y]?.[x - 1] === "#") {
+      const gs = ctx.createLinearGradient(px, py, px + 5, py)
+      gs.addColorStop(0, "rgba(0,0,0,0.30)")
+      gs.addColorStop(1, "rgba(0,0,0,0)")
+      ctx.fillStyle = gs
+      ctx.fillRect(px, py, 5, CELL)
     }
     return
   }
 
   // Wall — terreno con 4 niveles de altura según hash
   const h = terrainHash(x, y)
-
-  // Nivel 0 — valle/foso (20%)
-  // Nivel 1 — terreno bajo (35%)
-  // Nivel 2 — colina (30%)
-  // Nivel 3 — cumbre/montaña (15%)
   const level = h < 0.20 ? 0 : h < 0.55 ? 1 : h < 0.85 ? 2 : 3
 
-  const wallColors = ["#010208", "#020410", "#030615", "#04091c"]
+  // Colores base — más ricos que antes (azul-pizarra oscuro)
+  const wallColors = ["#0c1220", "#0f1628", "#111b30", "#131e36"]
   ctx.fillStyle = wallColors[level]
   ctx.fillRect(px, py, CELL, CELL)
 
-  if (level >= 2) {
-    // Borde superior iluminado — simula luz cenital sobre la cumbre
-    const alpha = level === 3 ? 0.22 : 0.10
-    ctx.fillStyle = `rgba(0,80,160,${alpha})`
-    ctx.fillRect(px, py, CELL, 1)
-  }
+  // ── Bevel: highlight arriba + izquierda (luz viene de arriba-izquierda) ──
+  const hlAlpha = [0.07, 0.11, 0.16, 0.22][level]
+  ctx.fillStyle = `rgba(80,130,220,${hlAlpha})`
+  ctx.fillRect(px,     py,     CELL, 2)  // borde top
+  ctx.fillRect(px,     py + 2, 2, CELL - 2)  // borde left
 
+  // ── Bevel: sombra abajo + derecha ──
+  const shAlpha = [0.28, 0.38, 0.48, 0.58][level]
+  ctx.fillStyle = `rgba(0,0,0,${shAlpha})`
+  ctx.fillRect(px,           py + CELL - 2, CELL, 2)  // borde bottom
+  ctx.fillRect(px + CELL - 2, py,           2, CELL)  // borde right
+
+  // Detalle de pico — solo en muros de nivel 3
   if (level === 3) {
-    // Pico: pequeño triángulo de luz en el centro superior
     const cx2 = px + CELL / 2
-    ctx.fillStyle = "rgba(0,100,200,0.18)"
+    ctx.fillStyle = "rgba(60,110,200,0.18)"
     ctx.beginPath()
-    ctx.moveTo(cx2, py + 3)
-    ctx.lineTo(cx2 - 3, py + 8)
-    ctx.lineTo(cx2 + 3, py + 8)
+    ctx.moveTo(cx2, py + 4)
+    ctx.lineTo(cx2 - 3, py + 10)
+    ctx.lineTo(cx2 + 3, py + 10)
     ctx.closePath()
     ctx.fill()
+    // Brillo tenue en el centro del muro alto
+    ctx.fillStyle = "rgba(80,140,255,0.06)"
+    ctx.fillRect(px + 4, py + 4, CELL - 8, CELL - 8)
   }
 }
 
@@ -717,47 +767,67 @@ function drawBase(px, py, cx, cy, isAI) {
   ctx.fill()
 }
 
-// ─── SOURCE — estilo Screeps: círculo limpio + gradiente ──
+// ─── SOURCE — 3 capas estilo Screeps ──────────────────────
 function drawSource(px, py, cx, cy, e) {
   const energy = e.source ? e.source.energy / e.source.max : 1
-  const pulse  = 0.5 + 0.5 * Math.sin(animFrame * 0.08 + cx * 0.2)
-  const r      = CELL * 0.38
+  const pulse  = 0.5 + 0.5 * Math.sin(animFrame * 0.07 + cx * 0.15)
+  const r      = CELL * 0.36
 
-  // Agotado: anillo sutil, sin ruido visual
+  // Agotado: hueco oscuro, sin ruido visual
   if (energy <= 0) {
     ctx.shadowBlur  = 0
-    ctx.strokeStyle = "rgba(80,60,10,0.35)"
+    ctx.strokeStyle = "rgba(80,60,10,0.30)"
     ctx.lineWidth   = 1
     ctx.beginPath()
-    ctx.arc(cx, cy, r * 0.7, 0, Math.PI * 2)
+    ctx.arc(cx, cy, r * 0.65, 0, Math.PI * 2)
     ctx.stroke()
     return
   }
 
-  // Cuerpo: gradiente radial limpio (luz off-center = realismo)
-  const grad = ctx.createRadialGradient(
-    cx - r * 0.25, cy - r * 0.25, 0,
+  // Capa 1 — halo exterior grande (aura difusa)
+  const haloR = r * (1.8 + 0.4 * pulse)
+  const halo  = ctx.createRadialGradient(cx, cy, r * 0.4, cx, cy, haloR)
+  halo.addColorStop(0,   `rgba(220,160,0,${0.18 * energy})`)
+  halo.addColorStop(1,   "rgba(220,160,0,0)")
+  ctx.shadowBlur = 0
+  ctx.fillStyle  = halo
+  ctx.beginPath()
+  ctx.arc(cx, cy, haloR, 0, Math.PI * 2)
+  ctx.fill()
+
+  // Capa 2 — núcleo con gradiente off-center (la "fuente de luz")
+  const core = ctx.createRadialGradient(
+    cx - r * 0.22, cy - r * 0.22, 0,
     cx, cy, r
   )
-  grad.addColorStop(0,   `rgba(255,245,170,${0.95 * energy})`)
-  grad.addColorStop(0.45,`rgba(235,175,20,${0.88 * energy})`)
-  grad.addColorStop(1,   `rgba(150,90,0,${0.72 * energy})`)
+  core.addColorStop(0,    `rgba(255,248,180,${0.98 * energy})`)
+  core.addColorStop(0.40, `rgba(240,180,20,${0.90 * energy})`)
+  core.addColorStop(0.80, `rgba(180,100,0,${0.75 * energy})`)
+  core.addColorStop(1,    `rgba(80,40,0,${0.60 * energy})`)
 
-  // Un solo shadowBlur controlado — máx 7px
   ctx.shadowColor = "#ffcc00"
-  ctx.shadowBlur  = 3 + pulse * 4 * energy
-  ctx.fillStyle   = grad
+  ctx.shadowBlur  = 4 + pulse * 6 * energy
+  ctx.fillStyle   = core
   ctx.beginPath()
   ctx.arc(cx, cy, r, 0, Math.PI * 2)
   ctx.fill()
 
-  // Borde nítido, sin blur
+  // Borde nítido sin blur
   ctx.shadowBlur  = 0
-  ctx.strokeStyle = `rgba(255,215,50,${0.5 + energy * 0.4})`
+  ctx.strokeStyle = `rgba(255,220,60,${0.55 + energy * 0.35})`
   ctx.lineWidth   = 1
   ctx.beginPath()
   ctx.arc(cx, cy, r, 0, Math.PI * 2)
   ctx.stroke()
+
+  // Capa 3 — punto central brillante (chispa)
+  ctx.shadowColor = "#fff8aa"
+  ctx.shadowBlur  = 3 + pulse * 4
+  ctx.fillStyle   = `rgba(255,252,220,${0.7 + 0.3 * pulse * energy})`
+  ctx.beginPath()
+  ctx.arc(cx - r * 0.18, cy - r * 0.18, 2 * pulse, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.shadowBlur = 0
 }
 
 // ─── WORKER ───────────────────────────────────────────────
