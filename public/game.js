@@ -100,6 +100,56 @@ let lastTickTime  = 0
 let animFrame     = 0
 let canvasSized   = false
 
+// ─── NOISE CANVAS (pre-renderizado, se rehace solo si cambia el mapa) ──
+let noiseCanvas = null
+let noiseSeedW  = 0
+function buildNoiseCanvas(w, h) {
+  if (noiseCanvas && noiseSeedW === w) return  // ya existe para este tamaño
+  noiseSeedW  = w
+  noiseCanvas = document.createElement("canvas")
+  noiseCanvas.width  = w
+  noiseCanvas.height = h
+  const nc = noiseCanvas.getContext("2d")
+  // Micro-partículas azules: textura orgánica sobre el piso
+  const count = Math.floor(w * h * 0.06)
+  for (let i = 0; i < count; i++) {
+    const nx = Math.random() * w | 0
+    const ny = Math.random() * h | 0
+    const a  = (0.02 + Math.random() * 0.06).toFixed(3)
+    nc.fillStyle = `rgba(0,70,140,${a})`
+    nc.fillRect(nx, ny, 1, 1)
+  }
+  // Líneas de escáner horizontales muy sutiles (cada 4px)
+  for (let sy = 0; sy < h; sy += 4) {
+    nc.fillStyle = "rgba(0,0,8,0.10)"
+    nc.fillRect(0, sy, w, 1)
+  }
+}
+
+// ─── ZOOM + PAN ────────────────────────────────────────────
+let zoom = 1.0
+let panX = 0, panY = 0
+const ZOOM_MIN = 0.4, ZOOM_MAX = 5.0
+let isPanning = false
+let panDragOriginX = 0, panDragOriginY = 0
+
+function resetView() {
+  zoom = 1.0; panX = 0; panY = 0
+}
+
+// Convierte posición de pantalla → tile del mapa
+function screenToTile(screenX, screenY) {
+  const rect   = canvas.getBoundingClientRect()
+  const scaleX = canvas.width  / rect.width
+  const scaleY = canvas.height / rect.height
+  const cx = (screenX - rect.left) * scaleX
+  const cy = (screenY - rect.top)  * scaleY
+  return {
+    tx: Math.floor((cx - panX) / (CELL * zoom)),
+    ty: Math.floor((cy - panY) / (CELL * zoom))
+  }
+}
+
 // ─── WEBSOCKET ────────────────────────────────────────────
 const ws        = new WebSocket(`ws://${location.host}`)
 const statusBar = document.getElementById("status-bar")
@@ -141,13 +191,16 @@ let hoverTile = null
 
 canvas.addEventListener("mousemove", e => {
   if (!currSnapshot) return
-  const rect   = canvas.getBoundingClientRect()
-  const scaleX = canvas.width  / rect.width
-  const scaleY = canvas.height / rect.height
-  const px     = (e.clientX - rect.left) * scaleX
-  const py     = (e.clientY - rect.top)  * scaleY
-  const tx     = Math.floor(px / CELL)
-  const ty     = Math.floor(py / CELL)
+  const { tx, ty } = screenToTile(e.clientX, e.clientY)
+
+  // Pan con botón derecho o medio presionado
+  if (isPanning) {
+    const rect   = canvas.getBoundingClientRect()
+    const scaleX = canvas.width / rect.width
+    const scaleY = canvas.height / rect.height
+    panX = e.clientX * scaleX - panDragOriginX
+    panY = e.clientY * scaleY - panDragOriginY
+  }
   const { mapWidth, mapHeight, tiles, entities } = currSnapshot
   if (tx < 0 || tx >= mapWidth || ty < 0 || ty >= mapHeight) {
     hoverTile = null; hoverTip.style.display = "none"; return
@@ -215,6 +268,37 @@ canvas.addEventListener("mouseleave", () => {
   hoverTip.style.display = "none"
 })
 
+// ─── ZOOM + PAN — EVENTOS ──────────────────────────────────
+canvas.addEventListener("wheel", e => {
+  e.preventDefault()
+  const rect   = canvas.getBoundingClientRect()
+  const scaleX = canvas.width  / rect.width
+  const scaleY = canvas.height / rect.height
+  const cx = (e.clientX - rect.left) * scaleX
+  const cy = (e.clientY - rect.top)  * scaleY
+  const factor  = e.deltaY < 0 ? 1.15 : 1 / 1.15
+  const newZoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, zoom * factor))
+  panX = cx - (cx - panX) * (newZoom / zoom)
+  panY = cy - (cy - panY) * (newZoom / zoom)
+  zoom = newZoom
+}, { passive: false })
+
+canvas.addEventListener("mousedown", e => {
+  if (e.button === 1 || e.button === 2) {
+    isPanning = true
+    const rect   = canvas.getBoundingClientRect()
+    const scaleX = canvas.width  / rect.width
+    const scaleY = canvas.height / rect.height
+    panDragOriginX = e.clientX * scaleX - panX
+    panDragOriginY = e.clientY * scaleY - panY
+    e.preventDefault()
+  }
+})
+
+canvas.addEventListener("mouseup",    e => { if (e.button === 1 || e.button === 2) isPanning = false })
+canvas.addEventListener("contextmenu", e => e.preventDefault())
+canvas.addEventListener("dblclick",    () => resetView())
+
 // ─── LOOP PRINCIPAL 60FPS ─────────────────────────────────
 function loop() {
   if (currSnapshot) renderFrame()
@@ -233,15 +317,30 @@ function renderFrame() {
     canvas.width  = mapWidth  * CELL
     canvas.height = mapHeight * CELL
     canvasSized   = true
+    buildNoiseCanvas(canvas.width, canvas.height)
   }
 
   const t = Math.min(1, (performance.now() - lastTickTime) / TICK_MS)
 
+  // Limpiar antes de transformar
+  ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+  // Aplicar zoom + pan
+  ctx.save()
+  ctx.setTransform(zoom, 0, 0, zoom, panX, panY)
+
   // 1. Tiles
   for (let y = 0; y < mapHeight; y++) {
     for (let x = 0; x < mapWidth; x++) {
-      drawTile(x, y, tiles[y][x] === "#" ? "wall" : "floor")
+      drawTile(x, y, tiles[y][x] === "#" ? "wall" : "floor", tiles)
     }
+  }
+  // Aplicar noise/scanlines pre-renderizado sobre todo el mapa
+  if (noiseCanvas) {
+    ctx.save()
+    ctx.globalAlpha = 0.75
+    ctx.drawImage(noiseCanvas, 0, 0)
+    ctx.restore()
   }
 
   // 2. Hover highlight
@@ -291,6 +390,32 @@ function renderFrame() {
   }
   drawParticles()
 
+  // 3.6 Harvest beams — trompa de energía source → worker
+  const sourceEntities = entities.filter(e => e.type === "source")
+  for (const e of entities) {
+    if (e.type !== "worker" && e.type !== "ai-worker") continue
+    const prev = prevEntities[e.id]
+    const ix   = prev ? lerp(prev.x, e.x, t) : e.x
+    const iy   = prev ? lerp(prev.y, e.y, t) : e.y
+    drawHarvestBeam({ ...e, ix, iy }, sourceEntities)
+  }
+
+  // 3.7 Calcular qué sources están siendo cosechados ahora mismo
+  // (worker harvesting + parado en tile adyacente al source)
+  const harvestedSources = new Set()
+  for (const e of entities) {
+    if ((e.type !== "worker" && e.type !== "ai-worker") || e.state !== "harvesting") continue
+    if (e.targetX === undefined) continue
+    const prev = prevEntities[e.id]
+    const ix = prev ? lerp(prev.x, e.x, t) : e.x
+    const iy = prev ? lerp(prev.y, e.y, t) : e.y
+    if (Math.abs(ix - e.targetX) > 1.2 || Math.abs(iy - e.targetY) > 1.2) continue
+    for (const src of sourceEntities) {
+      const d = Math.abs(src.x - e.targetX) + Math.abs(src.y - e.targetY)
+      if (d <= 1) harvestedSources.add(`${src.x},${src.y}`)
+    }
+  }
+
   // 4. Entidades con interpolación
   const drawOrder = ["source", "extension", "ai-extension", "ai-base", "base", "ai-worker", "worker"]
   for (const type of drawOrder) {
@@ -299,15 +424,30 @@ function renderFrame() {
       const prev = prevEntities[e.id]
       const ix   = prev ? lerp(prev.x, e.x, t) : e.x
       const iy   = prev ? lerp(prev.y, e.y, t) : e.y
-      drawEntity({ ...e, ix, iy })
+      const isHarvested = type === "source" && harvestedSources.has(`${e.x},${e.y}`)
+      drawEntity({ ...e, ix, iy, isHarvested })
     }
   }
 
-  // 5. Viñeta sutil
+  // Restaurar transformación antes de viñeta y overlay
+  ctx.restore()
+
+  // 5. Viñeta sutil (sin zoom — siempre cubre el canvas)
   drawVignette()
 
   // 6. Pantalla de victoria
   if (snap.winner) drawVictoryScreen(snap.winner, snap.winTick)
+
+  // 7. Indicador de zoom (esquina inferior derecha)
+  if (zoom !== 1.0) {
+    ctx.save()
+    ctx.font = "11px 'Share Tech Mono', monospace"
+    ctx.fillStyle = "rgba(0,170,255,0.5)"
+    ctx.textAlign = "right"
+    ctx.textBaseline = "bottom"
+    ctx.fillText(`ZOOM ${zoom.toFixed(1)}×  [doble click para reset]`, canvas.width - 10, canvas.height - 8)
+    ctx.restore()
+  }
 
   document.getElementById("tick").textContent = snap.tick
   animFrame++
@@ -421,52 +561,68 @@ function terrainHash(x, y) {
 }
 
 // ─── TILE ─────────────────────────────────────────────────
-function drawTile(x, y, type) {
+function drawTile(x, y, type, tiles) {
   const px = x * CELL, py = y * CELL
   ctx.shadowBlur = 0
 
   if (type === "floor") {
-    // Floor: sutil cuadrícula de puntos para dar textura de arena digital
-    ctx.fillStyle = "#071428"
+    // Base del piso — azul-oscuro profundo
+    ctx.fillStyle = "#060f1e"
     ctx.fillRect(px, py, CELL, CELL)
-    // Punto de grilla en intersecciones (cada 2 tiles)
-    if (x % 2 === 0 && y % 2 === 0) {
-      ctx.fillStyle = "rgba(0,60,120,0.18)"
-      ctx.fillRect(px, py, 1, 1)
+
+    // Sombra proyectada desde muro superior (eje Y-1)
+    if (tiles && tiles[y - 1]?.[x] === "#") {
+      const gs = ctx.createLinearGradient(px, py, px, py + 7)
+      gs.addColorStop(0, "rgba(0,0,0,0.60)")
+      gs.addColorStop(1, "rgba(0,0,0,0)")
+      ctx.fillStyle = gs
+      ctx.fillRect(px, py, CELL, 7)
+    }
+    // Sombra proyectada desde muro a la izquierda (eje X-1)
+    if (tiles && tiles[y]?.[x - 1] === "#") {
+      const gs = ctx.createLinearGradient(px, py, px + 5, py)
+      gs.addColorStop(0, "rgba(0,0,0,0.30)")
+      gs.addColorStop(1, "rgba(0,0,0,0)")
+      ctx.fillStyle = gs
+      ctx.fillRect(px, py, 5, CELL)
     }
     return
   }
 
   // Wall — terreno con 4 niveles de altura según hash
   const h = terrainHash(x, y)
-
-  // Nivel 0 — valle/foso (20%)
-  // Nivel 1 — terreno bajo (35%)
-  // Nivel 2 — colina (30%)
-  // Nivel 3 — cumbre/montaña (15%)
   const level = h < 0.20 ? 0 : h < 0.55 ? 1 : h < 0.85 ? 2 : 3
 
-  const wallColors = ["#010208", "#020410", "#030615", "#04091c"]
+  // Colores base — más ricos que antes (azul-pizarra oscuro)
+  const wallColors = ["#0c1220", "#0f1628", "#111b30", "#131e36"]
   ctx.fillStyle = wallColors[level]
   ctx.fillRect(px, py, CELL, CELL)
 
-  if (level >= 2) {
-    // Borde superior iluminado — simula luz cenital sobre la cumbre
-    const alpha = level === 3 ? 0.22 : 0.10
-    ctx.fillStyle = `rgba(0,80,160,${alpha})`
-    ctx.fillRect(px, py, CELL, 1)
-  }
+  // ── Bevel: highlight arriba + izquierda (luz viene de arriba-izquierda) ──
+  const hlAlpha = [0.07, 0.11, 0.16, 0.22][level]
+  ctx.fillStyle = `rgba(80,130,220,${hlAlpha})`
+  ctx.fillRect(px,     py,     CELL, 2)  // borde top
+  ctx.fillRect(px,     py + 2, 2, CELL - 2)  // borde left
 
+  // ── Bevel: sombra abajo + derecha ──
+  const shAlpha = [0.28, 0.38, 0.48, 0.58][level]
+  ctx.fillStyle = `rgba(0,0,0,${shAlpha})`
+  ctx.fillRect(px,           py + CELL - 2, CELL, 2)  // borde bottom
+  ctx.fillRect(px + CELL - 2, py,           2, CELL)  // borde right
+
+  // Detalle de pico — solo en muros de nivel 3
   if (level === 3) {
-    // Pico: pequeño triángulo de luz en el centro superior
     const cx2 = px + CELL / 2
-    ctx.fillStyle = "rgba(0,100,200,0.18)"
+    ctx.fillStyle = "rgba(60,110,200,0.18)"
     ctx.beginPath()
-    ctx.moveTo(cx2, py + 3)
-    ctx.lineTo(cx2 - 3, py + 8)
-    ctx.lineTo(cx2 + 3, py + 8)
+    ctx.moveTo(cx2, py + 4)
+    ctx.lineTo(cx2 - 3, py + 10)
+    ctx.lineTo(cx2 + 3, py + 10)
     ctx.closePath()
     ctx.fill()
+    // Brillo tenue en el centro del muro alto
+    ctx.fillStyle = "rgba(80,140,255,0.06)"
+    ctx.fillRect(px + 4, py + 4, CELL - 8, CELL - 8)
   }
 }
 
@@ -638,95 +794,265 @@ function drawBase(px, py, cx, cy, isAI) {
   ctx.fill()
 }
 
-// ─── SOURCE — estilo Screeps: círculo limpio + gradiente ──
+// ─── SOURCE — 3 capas estilo Screeps ──────────────────────
 function drawSource(px, py, cx, cy, e) {
-  const energy = e.source ? e.source.energy / e.source.max : 1
-  const pulse  = 0.5 + 0.5 * Math.sin(animFrame * 0.08 + cx * 0.2)
-  const r      = CELL * 0.38
+  const energy     = e.source ? e.source.energy / e.source.max : 1
+  const isHarvested = !!e.isHarvested
+  const pulse      = 0.5 + 0.5 * Math.sin(animFrame * 0.07 + cx * 0.15)
+  const activePulse = isHarvested ? (0.5 + 0.5 * Math.sin(animFrame * 0.20)) : 0
+  const r          = CELL * 0.36
 
-  // Agotado: anillo sutil, sin ruido visual
+  // Agotado: hueco oscuro, sin ruido visual
   if (energy <= 0) {
     ctx.shadowBlur  = 0
-    ctx.strokeStyle = "rgba(80,60,10,0.35)"
+    ctx.strokeStyle = "rgba(80,60,10,0.30)"
     ctx.lineWidth   = 1
     ctx.beginPath()
-    ctx.arc(cx, cy, r * 0.7, 0, Math.PI * 2)
+    ctx.arc(cx, cy, r * 0.65, 0, Math.PI * 2)
     ctx.stroke()
     return
   }
 
-  // Cuerpo: gradiente radial limpio (luz off-center = realismo)
-  const grad = ctx.createRadialGradient(
-    cx - r * 0.25, cy - r * 0.25, 0,
+  // Capa 0 — halo extra cuando está siendo cosechado
+  if (isHarvested) {
+    const harvestR = r * (2.8 + 0.6 * activePulse)
+    const hh = ctx.createRadialGradient(cx, cy, r * 0.5, cx, cy, harvestR)
+    hh.addColorStop(0, `rgba(255,200,0,${0.22 * activePulse})`)
+    hh.addColorStop(1, "rgba(255,180,0,0)")
+    ctx.shadowBlur = 0
+    ctx.fillStyle  = hh
+    ctx.beginPath()
+    ctx.arc(cx, cy, harvestR, 0, Math.PI * 2)
+    ctx.fill()
+
+    // Anillo pulsante de actividad
+    ctx.strokeStyle = `rgba(255,220,60,${0.35 * activePulse})`
+    ctx.lineWidth   = 1.5
+    ctx.shadowColor = "#ffdd00"
+    ctx.shadowBlur  = 8 * activePulse
+    ctx.beginPath()
+    ctx.arc(cx, cy, r * (1.4 + 0.3 * activePulse), 0, Math.PI * 2)
+    ctx.stroke()
+    ctx.shadowBlur = 0
+  }
+
+  // Capa 1 — halo exterior base
+  const haloR = r * (1.8 + 0.4 * pulse)
+  const halo  = ctx.createRadialGradient(cx, cy, r * 0.4, cx, cy, haloR)
+  halo.addColorStop(0, `rgba(220,160,0,${(0.18 + 0.12 * activePulse) * energy})`)
+  halo.addColorStop(1, "rgba(220,160,0,0)")
+  ctx.shadowBlur = 0
+  ctx.fillStyle  = halo
+  ctx.beginPath()
+  ctx.arc(cx, cy, haloR, 0, Math.PI * 2)
+  ctx.fill()
+
+  // Capa 2 — núcleo con gradiente off-center
+  const core = ctx.createRadialGradient(
+    cx - r * 0.22, cy - r * 0.22, 0,
     cx, cy, r
   )
-  grad.addColorStop(0,   `rgba(255,245,170,${0.95 * energy})`)
-  grad.addColorStop(0.45,`rgba(235,175,20,${0.88 * energy})`)
-  grad.addColorStop(1,   `rgba(150,90,0,${0.72 * energy})`)
+  core.addColorStop(0,    `rgba(255,248,180,${0.98 * energy})`)
+  core.addColorStop(0.40, `rgba(240,180,20,${0.90 * energy})`)
+  core.addColorStop(0.80, `rgba(180,100,0,${0.75 * energy})`)
+  core.addColorStop(1,    `rgba(80,40,0,${0.60 * energy})`)
 
-  // Un solo shadowBlur controlado — máx 7px
   ctx.shadowColor = "#ffcc00"
-  ctx.shadowBlur  = 3 + pulse * 4 * energy
-  ctx.fillStyle   = grad
+  ctx.shadowBlur  = (4 + pulse * 6 + activePulse * 8) * energy
+  ctx.fillStyle   = core
   ctx.beginPath()
   ctx.arc(cx, cy, r, 0, Math.PI * 2)
   ctx.fill()
 
-  // Borde nítido, sin blur
+  // Borde nítido
   ctx.shadowBlur  = 0
-  ctx.strokeStyle = `rgba(255,215,50,${0.5 + energy * 0.4})`
-  ctx.lineWidth   = 1
+  ctx.strokeStyle = `rgba(255,220,60,${0.55 + energy * 0.35})`
+  ctx.lineWidth   = isHarvested ? 1.5 : 1
   ctx.beginPath()
   ctx.arc(cx, cy, r, 0, Math.PI * 2)
   ctx.stroke()
+
+  // Capa 3 — chispa central
+  ctx.shadowColor = "#fff8aa"
+  ctx.shadowBlur  = 3 + pulse * 4
+  ctx.fillStyle   = `rgba(255,252,220,${0.7 + 0.3 * pulse * energy})`
+  ctx.beginPath()
+  ctx.arc(cx - r * 0.18, cy - r * 0.18, 2 * pulse, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.shadowBlur = 0
 }
 
 // ─── WORKER ───────────────────────────────────────────────
 function drawWorker(px, py, cx, cy, e, isAI) {
-  const isIdle   = e.state === "idle"
-  const color    = isAI ? "#cc3300" : (isIdle ? "#223344" : "#0077bb")
-  const glow     = isAI ? "#ff5500" : (isIdle ? "#334455" : "#00aaff")
-  const energy   = e.energy ? e.energy.current / e.energy.capacity : 0
-  const isReturn = e.state === "returning"
-  const icon     = isAI ? "⬟" : "◈"
-  const r        = CELL * 0.39
+  const isIdle    = e.state === "idle"
+  const isHarvest = e.state === "harvesting"
+  const isReturn  = e.state === "returning"
+  const energy    = e.energy ? e.energy.current / e.energy.capacity : 0
+  const color     = isAI ? "#cc3300" : (isIdle ? "#1a2d40" : "#0077bb")
+  const glow      = isAI ? "#ff5500" : (isIdle ? "#2a3d50" : "#00aaff")
+  const r         = CELL * 0.39
+  const icon      = isAI ? "⬟" : "◈"
+  const pulse     = 0.5 + 0.5 * Math.sin(animFrame * 0.09 + cx * 0.3)
 
-  // Cuerpo circular — idle aparece más apagado
   ctx.save()
-  if (isIdle) ctx.globalAlpha = 0.45
+  if (isIdle) ctx.globalAlpha = 0.40
+
+  // 1. Fondo del círculo
   ctx.shadowBlur = 0
-  ctx.fillStyle  = isAI ? "#110200" : "#000810"
+  ctx.fillStyle  = isAI ? "#100100" : "#000810"
   ctx.beginPath()
-  ctx.arc(cx, cy - 1, r, 0, Math.PI * 2)
+  ctx.arc(cx, cy, r, 0, Math.PI * 2)
   ctx.fill()
 
-  // Borde — más brillante cuando vuelve lleno
+  // 2. Llenado interior — líquido que sube de abajo hacia arriba
+  if (energy > 0.01) {
+    ctx.save()
+    // Clip al círculo interior
+    ctx.beginPath()
+    ctx.arc(cx, cy, r - 1.5, 0, Math.PI * 2)
+    ctx.clip()
+
+    const fillH = (r * 2 - 3) * energy
+    const fillY = cy + (r - 1.5) - fillH
+
+    // Gradiente vertical del líquido
+    const lg = ctx.createLinearGradient(0, fillY, 0, fillY + fillH)
+    if (isAI) {
+      lg.addColorStop(0, `rgba(255,120,0,${0.15 + energy * 0.35})`)
+      lg.addColorStop(1, `rgba(220,40,0,${0.35 + energy * 0.40})`)
+    } else {
+      lg.addColorStop(0, `rgba(0,180,255,${0.12 + energy * 0.30})`)
+      lg.addColorStop(1, `rgba(0,100,220,${0.30 + energy * 0.40})`)
+    }
+    ctx.fillStyle = lg
+    ctx.fillRect(cx - r, fillY, r * 2, fillH + 2)
+
+    // Borde superior del líquido — línea brillante que ondula
+    const waveY = fillY + Math.sin(animFrame * 0.15 + cx) * 1.2
+    ctx.strokeStyle = isAI
+      ? `rgba(255,180,60,${0.5 + energy * 0.4})`
+      : `rgba(80,220,255,${0.5 + energy * 0.4})`
+    ctx.lineWidth  = 1
+    ctx.shadowBlur = 0
+    ctx.beginPath()
+    ctx.moveTo(cx - r, waveY)
+    ctx.lineTo(cx + r, waveY)
+    ctx.stroke()
+
+    ctx.restore()
+  }
+
+  // 3. Borde exterior
   ctx.shadowColor = glow
-  ctx.shadowBlur  = isReturn ? 6 : 3
+  ctx.shadowBlur  = isReturn ? 10 : (isHarvest ? 5 : 2)
   ctx.strokeStyle = isReturn ? glow : color
-  ctx.lineWidth   = isReturn ? 2 : 1.5
+  ctx.lineWidth   = isReturn ? 2.5 : 1.5
   ctx.beginPath()
-  ctx.arc(cx, cy - 1, r, 0, Math.PI * 2)
+  ctx.arc(cx, cy, r, 0, Math.PI * 2)
   ctx.stroke()
 
-  // Icono de facción
+  // 4. Anillo pulsante exterior — solo cuando returning lleno
+  if (isReturn && energy > 0.8) {
+    ctx.globalAlpha = 0.25 * pulse
+    ctx.strokeStyle = glow
+    ctx.lineWidth   = 2
+    ctx.shadowBlur  = 12
+    ctx.beginPath()
+    ctx.arc(cx, cy, r + 3 + pulse * 2, 0, Math.PI * 2)
+    ctx.stroke()
+    ctx.globalAlpha = isIdle ? 0.40 : 1
+  }
+
+  // 5. Icono de facción
   ctx.shadowColor  = glow
-  ctx.shadowBlur   = isReturn ? 5 : 3
-  ctx.fillStyle    = isReturn ? glow : color
-  ctx.font         = `bold ${Math.floor(CELL * 0.46)}px 'Courier New'`
+  ctx.shadowBlur   = isReturn ? 7 : 3
+  ctx.fillStyle    = isReturn ? glow : (isIdle ? "#2a3d50" : color)
+  ctx.font         = `bold ${Math.floor(CELL * 0.40)}px 'Courier New'`
   ctx.textAlign    = "center"
   ctx.textBaseline = "middle"
-  ctx.fillText(icon, cx, cy - 1)
+  ctx.fillText(icon, cx, cy + 1)
 
-  // Barra de energía
-  const bw = CELL - 6
-  ctx.shadowBlur = 0
-  ctx.fillStyle  = isAI ? "#0a0100" : "#000508"
-  ctx.fillRect(px + 3, py + CELL - 5, bw, 3)
-  ctx.fillStyle   = glow
-  ctx.shadowColor = glow
-  ctx.shadowBlur  = 3
-  ctx.fillRect(px + 3, py + CELL - 5, bw * energy, 3)
+  ctx.restore()
+}
+
+// ─── HARVEST BEAM — cadena de oruga (estilo carrito-tanque) ─
+// Llamado desde renderFrame con acceso a todas las entidades
+function drawHarvestBeam(e, sourceEntities) {
+  if (e.state !== "harvesting") return
+  if (e.targetX === undefined) return
+
+  // Verificar que el worker esté cerca de su target (harvesting activo)
+  const dx = e.ix - e.targetX, dy = e.iy - e.targetY
+  if (Math.abs(dx) > 1.2 || Math.abs(dy) > 1.2) return
+
+  // Buscar source adyacente a la posición de cosecha
+  let nearestSource = null
+  let bestDist = 99
+  for (const src of sourceEntities) {
+    const d = Math.abs(src.x - e.targetX) + Math.abs(src.y - e.targetY)
+    if (d <= 1 && d < bestDist) { nearestSource = src; bestDist = d }
+  }
+  if (!nearestSource) return
+
+  const energy = e.energy ? e.energy.current / e.energy.capacity : 0
+  if (energy >= 1) return  // lleno — no hay flujo
+
+  const isAI = e.type === "ai-worker"
+  const wx = (e.ix + 0.5) * CELL
+  const wy = (e.iy + 0.5) * CELL
+  const sx = (nearestSource.x + 0.5) * CELL
+  const sy = (nearestSource.y + 0.5) * CELL
+
+  const len  = Math.hypot(wx - sx, wy - sy)
+  const ux   = (wx - sx) / len   // vector unitario source → worker
+  const uy   = (wy - sy) / len
+
+  ctx.save()
+
+  // Riel de fondo — tubo grueso y oscuro
+  ctx.strokeStyle = isAI ? "rgba(80,20,0,0.7)" : "rgba(0,40,80,0.7)"
+  ctx.lineWidth   = 5
+  ctx.shadowBlur  = 0
+  ctx.beginPath()
+  ctx.moveTo(sx, sy)
+  ctx.lineTo(wx, wy)
+  ctx.stroke()
+
+  // Cadena animada — segmentos que avanzan source → worker
+  const SEG_LEN  = 5   // longitud de cada eslabón
+  const GAP      = 3   // espacio entre eslabones
+  const STEP     = SEG_LEN + GAP
+  const offset   = (animFrame * 1.4) % STEP  // velocidad del flujo
+  const glowColor = isAI ? "#ff7700" : "#ffdd00"
+  const segColor  = isAI ? `rgba(255,140,30,0.90)` : `rgba(255,220,60,0.90)`
+
+  ctx.shadowColor = glowColor
+  ctx.shadowBlur  = 6
+  ctx.strokeStyle = segColor
+  ctx.lineWidth   = 3
+  ctx.lineCap     = "round"
+
+  let d = offset
+  while (d < len - 2) {
+    const x1 = sx + ux * d
+    const y1 = sy + uy * d
+    const x2 = sx + ux * Math.min(d + SEG_LEN, len)
+    const y2 = sy + uy * Math.min(d + SEG_LEN, len)
+    ctx.beginPath()
+    ctx.moveTo(x1, y1)
+    ctx.lineTo(x2, y2)
+    ctx.stroke()
+    d += STEP
+  }
+
+  // Destello en el punto de contacto con el worker
+  const pulse = 0.6 + 0.4 * Math.sin(animFrame * 0.18)
+  ctx.shadowBlur  = 10 * pulse
+  ctx.fillStyle   = isAI ? `rgba(255,160,40,${0.8 * pulse})` : `rgba(255,230,80,${0.8 * pulse})`
+  ctx.beginPath()
+  ctx.arc(wx, wy, 3 * pulse, 0, Math.PI * 2)
+  ctx.fill()
+
   ctx.restore()
 }
 
@@ -2228,6 +2554,7 @@ function launchMission(id) {
   selectedMission  = id
   setSandboxUI(false)
   freshGameMinTick = Date.now() // marcar reset — ignorar victorias hasta tick fresco
+  resetView()
   fetch("/api/reset", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
