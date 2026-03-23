@@ -140,8 +140,12 @@ canvas.addEventListener("mousemove", e => {
     cls  = tileClass
     html = `<div class="ht-type">${typeLabel}</div>
             <div class="ht-name">${name}</div>`
-    if (entity.energy !== undefined)
-      html += `<div class="ht-stat">Energía <span>${entity.energy}${entity.maxEnergy ? " / " + entity.maxEnergy : ""}</span></div>`
+    if (entity.energy !== undefined) {
+      const eVal = typeof entity.energy === "object"
+        ? `${entity.energy.current} / ${entity.energy.capacity}`
+        : entity.energy
+      html += `<div class="ht-stat">Energía <span>${eVal}</span></div>`
+    }
     if (entity.state)
       html += `<div class="ht-stat">Estado <span>${entity.state}</span></div>`
     html += `<div class="ht-stat">Pos <span>(${tx}, ${ty})</span></div>`
@@ -1121,16 +1125,16 @@ function updateComms(snap) {
   }
 
   // Hitos de energía del jugador
-  if (playerBase && playerBase.maxEnergy) {
-    const pct = playerBase.energy / playerBase.maxEnergy * 100
+  if (playerBase && playerBase.energy?.capacity) {
+    const pct = playerBase.energy.current / playerBase.energy.capacity * 100
     if (pct >= 25 && !commState.shownEvents.has("energy_25")) fireComm("energy_25")
     if (pct >= 50 && !commState.shownEvents.has("energy_50")) fireComm("energy_50")
     if (pct >= 75 && !commState.shownEvents.has("energy_75")) fireComm("energy_75")
   }
 
   // Amenaza IA
-  if (aiBase && aiBase.maxEnergy) {
-    const aiPct = aiBase.energy / aiBase.maxEnergy * 100
+  if (aiBase && aiBase.energy?.capacity) {
+    const aiPct = aiBase.energy.current / aiBase.energy.capacity * 100
     if (aiPct >= 80 && !commState.shownEvents.has("ai_threat"))   fireComm("ai_threat")
     if (aiPct >= 95 && !commState.shownEvents.has("ai_critical")) fireComm("ai_critical")
   }
@@ -1261,7 +1265,7 @@ const MISSIONS = {
       "Llena la base al 100% antes que la IA",
       "Aprende: variables, if/else, for...in"
     ],
-    hint: "Usa for (const id in Game.workers) para iterar. Si w.energy < w.energyCapacity → w.harvest(fuenteId). Si está lleno → w.transfer(Game.base.id).",
+    hint: "Usa for (const id in Game.workers) para iterar. Si !w.store.isFull() → w.harvest(fuenteId). Si w.store.isFull() → w.transfer(Game.base.id).",
     code: `// ═══════════════════════════════════════════════
 //  MISIÓN 1 — "Tu primer ejército"
 //  OBJETIVO: llena tu base al 100% antes que NEXUS
@@ -1289,11 +1293,12 @@ for (const id in Game.workers) {
   // Un worker no puede cosechar y depositar al
   // mismo tiempo. Necesita decidir.
   //
-  // Preguntamos: ¿tiene espacio para más energía?
-  //   w.energy         → cuánta energía lleva ahora
-  //   w.energyCapacity → cuánto puede llevar máximo
+  // w.store es la "mochila" del worker:
+  //   w.store.energy    → energía que lleva ahora
+  //   w.store.capacity  → cuánto puede llevar
+  //   w.store.isFull()  → true si está lleno
 
-  if (w.energy < w.energyCapacity) {
+  if (!w.store.isFull()) {
 
     // ── PASO 3a: está vacío → buscar un cristal ─
     //
@@ -1328,9 +1333,9 @@ for (const id in Game.workers) {
 // ── FIN ─────────────────────────────────────────
 //
 // ¿Quieres experimentar? Prueba cambiar esta línea:
-//   if (w.energy < w.energyCapacity)
+//   if (!w.store.isFull())
 // por:
-//   if (w.energy < 5)
+//   if (w.store.energy < 5)
 //
 // ¿Qué crees que pasará? Ejecútalo y mira.
 `
@@ -1400,7 +1405,7 @@ function findNearest(worker, sources) {
 for (const id in Game.workers) {
   const w = Game.workers[id]
 
-  if (w.energy < w.energyCapacity) {
+  if (!w.store.isFull()) {
     const source = findNearest(w, Game.sources)   // ← llamar la función
     if (source) w.harvest(source.id)
   } else {
@@ -1481,7 +1486,7 @@ function findBest(worker, sources) {
 for (const id in Game.workers) {
   const w = Game.workers[id]
 
-  if (w.energy < w.energyCapacity) {
+  if (!w.store.isFull()) {
     const source = findBest(w, Game.sources)   // ← mejor opción, no solo la más cercana
     if (source) w.harvest(source.id)
   } else {
@@ -1551,7 +1556,7 @@ for (const id in Game.workers) {
   }
 
   // Buscar una fuente sin asignar para este worker
-  if (!asig[id] && w.energy < w.energyCapacity) {
+  if (!asig[id] && !w.store.isFull()) {
     const usadas = new Set(Object.values(asig))   // fuentes ya tomadas
 
     for (const sid in Game.sources) {
@@ -1562,7 +1567,7 @@ for (const id in Game.workers) {
     }
   }
 
-  if (w.energy < w.energyCapacity) {
+  if (!w.store.isFull()) {
     const fuente = asig[id] ? Game.sources[asig[id]] : null
     if (fuente) w.harvest(fuente.id)
   } else {
@@ -1651,7 +1656,7 @@ for (const id in Game.workers) {
   }
 
   // Lógica normal: cosechar si está vacío, depositar si está lleno
-  if (w.energy < w.energyCapacity) {
+  if (!w.store.isFull()) {
     const source = findBest(w, Game.sources)
     if (source) w.harvest(source.id)
   } else {
@@ -2417,7 +2422,7 @@ const TOUR_STEPS = [
     badge:  "02 · TUS WORKERS",
     title:  "Tienes trabajadores. Están parados.",
     desc:   "Esas unidades azules son <strong>tus workers</strong>.\n\nPueden cosechar energía y transportarla. Pero ahora mismo están <em>completamente quietos</em>.\n\n¿Por qué? Porque nadie les dio instrucciones. <strong>Ese nadie eres tú.</strong>",
-    code:   "// Un worker tiene:\nw.energy          // energía que lleva ahora\nw.energyCapacity  // máximo que puede cargar\nw.harvest(id)     // → ir a cosechar\nw.transfer(id)    // → depositar en base"
+    code:   "// Un worker tiene:\nw.store.energy    // energía que lleva ahora\nw.store.capacity  // máximo que puede cargar\nw.store.isFull()  // true si está lleno\nw.harvest(id)     // → ir a cosechar\nw.transfer(id)    // → depositar en base"
   },
 
   // ── ACT 3 — El volumen ──────────────────────────────────
@@ -2449,7 +2454,7 @@ const TOUR_STEPS = [
     badge:  "04 · LA SOLUCIÓN: if / else",
     title:  "if / else: el semáforo de tu código.",
     desc:   "<strong>if</strong> pregunta una condición.\n<strong>else</strong> es el \"si no\".\n\nComo un semáforo:\n<em>verde → avanzar / rojo → parar</em>\n\nAquí:\n<em>vacío → cosechar / lleno → depositar</em>",
-    code:   "if (w.energy < w.energyCapacity) {\n  // tiene espacio → ir a cosechar\n\n} else {\n  // está lleno  → depositar en base\n}"
+    code:   "if (!w.store.isFull()) {\n  // tiene espacio → ir a cosechar\n\n} else {\n  // está lleno  → depositar en base\n}"
   },
 
   // ── ACT 5 — El enemigo ──────────────────────────────────
@@ -2836,7 +2841,7 @@ const CODEX_DATA = {
           type: "condición",
           why: "Un worker no puede cosechar y depositar al mismo tiempo. Necesita decidir.",
           desc: "<strong>if</strong>: si la condición es verdadera, ejecuta este bloque.\n<strong>else</strong>: si no, ejecuta el otro.\nComo un semáforo: verde o rojo, nunca los dos.",
-          code: "if (w.energy < w.energyCapacity) {\n  // VERDAD: tiene espacio → cosechar\n  w.harvest(nearest.id)\n} else {\n  // FALSO: está lleno → depositar\n  w.transfer(Game.base.id)\n}"
+          code: "if (!w.store.isFull()) {\n  // VERDAD: tiene espacio → cosechar\n  w.harvest(nearest.id)\n} else {\n  // FALSO: está lleno → depositar\n  w.transfer(Game.base.id)\n}"
         }
       ]
     },
@@ -2882,7 +2887,7 @@ const CODEX_DATA = {
           type: "misión 1",
           why: "El patrón fundamental. Todo lo demás se construye encima de esto.",
           desc: "El ciclo completo: recorrer workers → buscar fuente → decidir cosechar o depositar.",
-          code: "for (const id in Game.workers) {\n  const w = Game.workers[id]\n\n  if (w.energy < w.energyCapacity) {\n    // buscar cristal más cercano\n    let nearest = null, minDist = Infinity\n    for (const sid in Game.sources) {\n      const s = Game.sources[sid]\n      if (s.energy > 0) {\n        const d = Math.abs(w.x-s.x) + Math.abs(w.y-s.y)\n        if (d < minDist) { minDist = d; nearest = s }\n      }\n    }\n    if (nearest) w.harvest(nearest.id)\n  } else {\n    w.transfer(Game.base.id)\n  }\n}"
+          code: "for (const id in Game.workers) {\n  const w = Game.workers[id]\n\n  if (!w.store.isFull()) {\n    // buscar cristal más cercano\n    let nearest = null, minDist = Infinity\n    for (const sid in Game.sources) {\n      const s = Game.sources[sid]\n      if (s.energy > 0) {\n        const d = Math.abs(w.x-s.x) + Math.abs(w.y-s.y)\n        if (d < minDist) { minDist = d; nearest = s }\n      }\n    }\n    if (nearest) w.harvest(nearest.id)\n  } else {\n    w.transfer(Game.base.id)\n  }\n}"
         }
       ]
     },
@@ -2894,7 +2899,7 @@ const CODEX_DATA = {
           type: "misión 1+",
           why: "Si dos workers van al mismo cristal, uno hace el viaje en vano.",
           desc: "Registra qué fuentes ya fueron reclamadas en este tick para evitar conflictos.",
-          code: "const claimed = {}  // cristales ya reclamados este tick\n\nfor (const id in Game.workers) {\n  const w = Game.workers[id]\n  if (w.energy < w.energyCapacity) {\n    let nearest = null, minDist = Infinity\n    for (const sid in Game.sources) {\n      const s = Game.sources[sid]\n      if (s.energy > 0 && !claimed[s.id]) {  // ← no reclamada\n        const d = Math.abs(w.x-s.x) + Math.abs(w.y-s.y)\n        if (d < minDist) { minDist = d; nearest = s }\n      }\n    }\n    if (nearest) {\n      claimed[nearest.id] = true  // ← reclamar\n      w.harvest(nearest.id)\n    }\n  } else {\n    w.transfer(Game.base.id)\n  }\n}"
+          code: "const claimed = {}  // cristales ya reclamados este tick\n\nfor (const id in Game.workers) {\n  const w = Game.workers[id]\n  if (!w.store.isFull()) {\n    let nearest = null, minDist = Infinity\n    for (const sid in Game.sources) {\n      const s = Game.sources[sid]\n      if (s.energy > 0 && !claimed[s.id]) {  // ← no reclamada\n        const d = Math.abs(w.x-s.x) + Math.abs(w.y-s.y)\n        if (d < minDist) { minDist = d; nearest = s }\n      }\n    }\n    if (nearest) {\n      claimed[nearest.id] = true  // ← reclamar\n      w.harvest(nearest.id)\n    }\n  } else {\n    w.transfer(Game.base.id)\n  }\n}"
         },
         {
           name: "Elegir el cristal más rentable",
@@ -2908,7 +2913,7 @@ const CODEX_DATA = {
           type: "misión 4",
           why: "Las variables locales se borran cada tick. Game.memory no.",
           desc: "Asignar una fuente exclusiva a cada worker y recordarla entre ticks.",
-          code: "// inicializar una sola vez:\nif (!Game.memory.asig) Game.memory.asig = {}\n\nconst asig = Game.memory.asig\n\nfor (const id in Game.workers) {\n  const w = Game.workers[id]\n\n  // liberar si la fuente se vació:\n  if (asig[id] && (!Game.sources[asig[id]] ||\n      Game.sources[asig[id]].energy === 0)) {\n    delete asig[id]\n  }\n\n  // asignar una fuente libre:\n  if (!asig[id] && w.energy < w.energyCapacity) {\n    const usadas = new Set(Object.values(asig))\n    for (const sid in Game.sources) {\n      if (Game.sources[sid].energy > 0 && !usadas.has(sid)) {\n        asig[id] = sid; break\n      }\n    }\n  }\n\n  // actuar:\n  if (w.energy < w.energyCapacity) {\n    const fuente = asig[id] ? Game.sources[asig[id]] : null\n    if (fuente) w.harvest(fuente.id)\n  } else {\n    w.transfer(Game.base.id)\n  }\n}"
+          code: "// inicializar una sola vez:\nif (!Game.memory.asig) Game.memory.asig = {}\n\nconst asig = Game.memory.asig\n\nfor (const id in Game.workers) {\n  const w = Game.workers[id]\n\n  // liberar si la fuente se vació:\n  if (asig[id] && (!Game.sources[asig[id]] ||\n      Game.sources[asig[id]].energy === 0)) {\n    delete asig[id]\n  }\n\n  // asignar una fuente libre:\n  if (!asig[id] && !w.store.isFull()) {\n    const usadas = new Set(Object.values(asig))\n    for (const sid in Game.sources) {\n      if (Game.sources[sid].energy > 0 && !usadas.has(sid)) {\n        asig[id] = sid; break\n      }\n    }\n  }\n\n  // actuar:\n  if (!w.store.isFull()) {\n    const fuente = asig[id] ? Game.sources[asig[id]] : null\n    if (fuente) w.harvest(fuente.id)\n  } else {\n    w.transfer(Game.base.id)\n  }\n}"
         }
       ]
     }
