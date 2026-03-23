@@ -2077,12 +2077,15 @@ function showBriefing(id) {
   async function runSequence() {
     briefingTyping = true
     for (const { node, text } of nodes) {
+      if (!briefingTyping) break
       await new Promise(r => setTimeout(r, 300))
+      if (!briefingTyping) break
       node.classList.add("visible")
       const textEl = node.querySelector(".brf-text")
       await typewrite(textEl, text, 18)
       await new Promise(r => setTimeout(r, 200))
     }
+    if (!briefingTyping) return  // cancelado — skipBriefing ya hizo el trabajo
     // Mostrar objetivos
     for (const obj of objNodes) {
       await new Promise(r => setTimeout(r, 120))
@@ -2103,6 +2106,12 @@ function typewrite(el, text, speed) {
     el.appendChild(cursor)
 
     const iv = setInterval(() => {
+      if (!briefingTyping) {   // cancelado por skipBriefing
+        clearInterval(iv)
+        cursor.remove()
+        resolve()
+        return
+      }
       if (i < text.length) {
         cursor.insertAdjacentText("beforebegin", text[i])
         i++
@@ -2216,6 +2225,7 @@ function launchMission(id) {
   currentMode      = "campaign"
   currentGameMode  = "campaign"
   currentMissionId = id
+  selectedMission  = id
   setSandboxUI(false)
   freshGameMinTick = Date.now() // marcar reset — ignorar victorias hasta tick fresco
   fetch("/api/reset", {
