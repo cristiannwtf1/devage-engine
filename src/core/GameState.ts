@@ -49,6 +49,12 @@ export class GameState {
   public aiBaseId:  EntityId | null = null
   public aiWorkers: Set<EntityId>   = new Set()
 
+  // Sources del jugador (no incluye el de la IA)
+  public playerSourceIds: Set<EntityId> = new Set()
+
+  // Límite de workers del jugador — varía por misión (M1=3, M2=6, ...)
+  public maxPlayerWorkers: number = 3
+
   // Script del jugador (JS como string) + último error de ejecución
   public playerScript: string | null = null
   public scriptError:  string | null = null
@@ -76,7 +82,7 @@ export class GameState {
     return this.nextEntityId++
   }
 
-  constructor(width: number = 20, height: number = 10) {
-    this.worldMap = new WorldMap(width, height)
+  constructor(width: number = 40, height: number = 22) {
+    this.worldMap = new WorldMap(width, height, true)  // flat=true — mapa determinista para misiones
   }
 }

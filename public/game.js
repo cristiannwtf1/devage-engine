@@ -3,6 +3,48 @@
 //  60fps con interpolación entre ticks, glow, rutas animadas
 // ═══════════════════════════════════════════════════════════
 
+// ─── ESTILOS OVERLAY DE VICTORIA ──────────────────────────
+;(function injectStyles() {
+  const s = document.createElement("style")
+  s.textContent = `
+    #victory-overlay {
+      position: fixed; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      z-index: 9999; pointer-events: auto;
+      animation: voFadeIn 0.4s ease forwards;
+    }
+    @keyframes voFadeIn { from { opacity:0; transform:scale(0.96) } to { opacity:1; transform:scale(1) } }
+    .vo-box {
+      background: #02080f;
+      border: 1px solid var(--vo-accent, #00aaff44);
+      padding: 48px 64px; text-align: center; min-width: 360px;
+      font-family: 'Share Tech Mono', monospace;
+      box-shadow: 0 0 60px var(--vo-glow, #00aaff22);
+    }
+    .vo-title {
+      font-size: 2.8rem; font-weight: bold; letter-spacing: 4px;
+      color: var(--vo-color, #00aaff);
+      text-shadow: 0 0 30px var(--vo-glow, #00aaff88);
+      margin-bottom: 8px;
+    }
+    .vo-sub  { color: #446688; font-size: 0.82rem; margin-bottom: 20px; }
+    .vo-stars { font-size: 2rem; color: #ffbb00; letter-spacing: 6px;
+                text-shadow: 0 0 10px #ffbb0055; margin-bottom: 6px; }
+    .vo-tick  { color: #253444; font-size: 0.72rem; margin-bottom: 36px; }
+    .vo-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .vo-btn { padding: 11px 24px; border: none; cursor: pointer;
+              font-family: 'Share Tech Mono', monospace; font-size: 0.78rem;
+              letter-spacing: 2px; transition: all 0.15s; }
+    .vo-primary   { background: #00aaff; color: #000; }
+    .vo-primary:hover { background: #33ccff; transform: translateY(-1px); }
+    .vo-secondary { background: transparent; border: 1px solid #00aaff44; color: #00aaff88; }
+    .vo-secondary:hover { border-color: #00aaff; color: #00aaff; }
+    .vo-ghost { background: transparent; color: #2a3a4a; }
+    .vo-ghost:hover { color: #446688; }
+  `
+  document.head.appendChild(s)
+})()
+
 // ─── PARTÍCULAS ───────────────────────────────────────────
 const particles = []
 
@@ -313,10 +355,62 @@ function drawVictoryScreen(winner, winTick) {
   ctx.fillStyle = "#334466"
   ctx.fillText(`Tick final: ${winTick}`, w / 2, h * 0.62)
 
-  // Instrucción de reinicio
-  ctx.font      = `${Math.floor(w * 0.022)}px 'Share Tech Mono', monospace`
-  ctx.fillStyle = "#334466"
-  ctx.fillText("[ Recarga la página para jugar de nuevo ]", w / 2, h * 0.68)
+}
+
+// ─── OVERLAY HTML DE VICTORIA ─────────────────────────────
+function showVictoryOverlay(winner, winTick) {
+  const prev = document.getElementById("victory-overlay")
+  if (prev) prev.remove()
+
+  const isPlayer  = winner === "player"
+  const isCampaign = currentMode === "campaign" && selectedMission
+  const stars     = isCampaign ? (winTick < 300 ? 3 : winTick < 500 ? 2 : 1) : 0
+  const nextId    = isCampaign ? selectedMission + 1 : null
+  const hasNext   = nextId && MISSIONS[nextId]
+  const accent    = isPlayer ? "#00aaff" : "#ff4422"
+  const secs      = (winTick * 0.3).toFixed(0)
+
+  const starsHtml = isCampaign
+    ? `<div class="vo-stars">${"★".repeat(stars)}${"☆".repeat(3 - stars)}</div>`
+    : ""
+
+  const ov = document.createElement("div")
+  ov.id = "victory-overlay"
+  ov.style.setProperty("--vo-color", accent)
+  ov.style.setProperty("--vo-accent", accent + "44")
+  ov.style.setProperty("--vo-glow",   accent + "33")
+  ov.innerHTML = `
+    <div class="vo-box">
+      <div class="vo-title">${isPlayer ? "VICTORIA" : "DERROTA"}</div>
+      <div class="vo-sub">${isPlayer ? "Tu código dominó el mapa" : "La IA tomó el control"}</div>
+      ${starsHtml}
+      <div class="vo-tick">Tick ${winTick} · ${secs}s</div>
+      <div class="vo-actions">
+        ${hasNext ? `<button class="vo-btn vo-primary" id="vo-next">MISIÓN ${nextId} →</button>` : ""}
+        <button class="vo-btn vo-secondary" id="vo-retry">↺ REINTENTAR</button>
+        <button class="vo-btn vo-ghost"     id="vo-menu">← MENÚ</button>
+      </div>
+    </div>`
+  document.body.appendChild(ov)
+
+  if (hasNext) {
+    document.getElementById("vo-next").onclick = () => {
+      ov.remove()
+      document.getElementById("victory-banner").style.display = "none"
+      showBriefing(nextId)
+    }
+  }
+  document.getElementById("vo-retry").onclick = () => {
+    ov.remove()
+    document.getElementById("victory-banner").style.display = "none"
+    doRestartMission()
+  }
+  document.getElementById("vo-menu").onclick = () => {
+    ov.remove()
+    document.getElementById("victory-banner").style.display = "none"
+    hideMissionPanel()
+    doReturnToMenu()
+  }
 }
 
 // ─── TERRAIN HASH ─────────────────────────────────────────
@@ -589,14 +683,17 @@ function drawSource(px, py, cx, cy, e) {
 
 // ─── WORKER ───────────────────────────────────────────────
 function drawWorker(px, py, cx, cy, e, isAI) {
-  const color    = isAI ? "#cc3300" : "#0077bb"
-  const glow     = isAI ? "#ff5500" : "#00aaff"
+  const isIdle   = e.state === "idle"
+  const color    = isAI ? "#cc3300" : (isIdle ? "#223344" : "#0077bb")
+  const glow     = isAI ? "#ff5500" : (isIdle ? "#334455" : "#00aaff")
   const energy   = e.energy ? e.energy.current / e.energy.capacity : 0
   const isReturn = e.state === "returning"
   const icon     = isAI ? "⬟" : "◈"
   const r        = CELL * 0.39
 
-  // Cuerpo circular
+  // Cuerpo circular — idle aparece más apagado
+  ctx.save()
+  if (isIdle) ctx.globalAlpha = 0.45
   ctx.shadowBlur = 0
   ctx.fillStyle  = isAI ? "#110200" : "#000810"
   ctx.beginPath()
@@ -630,6 +727,7 @@ function drawWorker(px, py, cx, cy, e, isAI) {
   ctx.shadowColor = glow
   ctx.shadowBlur  = 3
   ctx.fillRect(px + 3, py + CELL - 5, bw * energy, 3)
+  ctx.restore()
 }
 
 // ─── EXTENSION ────────────────────────────────────────────
@@ -758,14 +856,20 @@ function renderWorkerDots(snap) {
   const makeDot = (state, isAI) => {
     const d = document.createElement("div")
     d.className = "wdot"
-    if (isAI) {
-      d.style.background     = state === "harvesting" ? "#ff8800" : "#882200"
-      d.style.borderColor    = state === "harvesting" ? "#ffaa44" : "#554400"
-      d.style.boxShadow      = state === "harvesting" ? "0 0 5px #ff8800" : "none"
+    if (state === "idle") {
+      // Idle — esperando código del jugador
+      d.style.background  = "#1a1a2e"
+      d.style.borderColor = "#333355"
+      d.style.boxShadow   = "none"
+      d.style.opacity     = "0.5"
+    } else if (isAI) {
+      d.style.background  = state === "harvesting" ? "#ff8800" : "#882200"
+      d.style.borderColor = state === "harvesting" ? "#ffaa44" : "#554400"
+      d.style.boxShadow   = state === "harvesting" ? "0 0 5px #ff8800" : "none"
     } else {
-      d.style.background     = state === "harvesting" ? "#0077bb" : "#001833"
-      d.style.borderColor    = state === "harvesting" ? "#00aaff" : "#002255"
-      d.style.boxShadow      = state === "harvesting" ? "0 0 5px #00aaff" : "none"
+      d.style.background  = state === "harvesting" ? "#0077bb" : "#001833"
+      d.style.borderColor = state === "harvesting" ? "#00aaff" : "#002255"
+      d.style.boxShadow   = state === "harvesting" ? "0 0 5px #00aaff" : "none"
     }
     d.title = `${isAI ? "IA" : "W"} — ${state}`
     return d
@@ -890,7 +994,6 @@ function updatePanel(snap) {
     banner.style.display = "block"
     if (snap.winner === "player") {
       addEvent("¡VICTORIA! Base llena", "ev-player", snap.tick)
-      // Guardar progreso si estamos en campaña
       if (currentMode === "campaign" && selectedMission) {
         const stars = snap.winTick < 300 ? 3 : snap.winTick < 500 ? 2 : 1
         saveMissionProgress(selectedMission, stars)
@@ -898,6 +1001,7 @@ function updatePanel(snap) {
     } else {
       addEvent("DERROTA — IA llenó su base", "ev-ai", snap.tick)
     }
+    showVictoryOverlay(snap.winner, snap.winTick)
   }
 }
 
@@ -1261,117 +1365,62 @@ const MISSIONS = {
       }
     ],
     objectives: [
-      "Programa tus workers para cosechar energía",
+      "Completa la línea que activa la cosecha",
       "Llena la base al 100% antes que la IA",
-      "Aprende: variables, if/else, for...in"
+      "Aprende: variables, if/else, propiedades de objeto"
     ],
-    hint: "Usa for (const id in Game.workers) para iterar. Si !w.store.isFull() → w.harvest(fuenteId). Si w.store.isFull() → w.transfer(Game.base.id).",
-    code: `// ═══════════════════════════════════════════════
-//  MISIÓN 1 — "Tu primer ejército"
-//  OBJETIVO: llena tu base al 100% antes que NEXUS
-// ═══════════════════════════════════════════════
-//
-//  Este código corre automáticamente cada 300ms.
-//  Lee cada comentario — explica el POR QUÉ de
-//  cada línea, no solo el qué hace.
-//
-// ═══════════════════════════════════════════════
+    hint: "El código ya funciona — presiona Ctrl+Enter. Los workers van al cristal y depositan solos. Cuando lo entiendas, intenta cambiar harvest(source.id) por harvest(source.energy) y observa qué pasa.",
+        code: `// M1 — Tu primera línea de código
+// Presiona Ctrl+Enter para activar tus workers.
+// Corre automáticamente cada 300ms.
 
-// ── PASO 1: recorrer todos los workers ──────────
-//
-// "for...in" repite el bloque { } para cada
-// worker que tengas, uno por uno.
-// Si tienes 3 workers, corre 3 veces.
-// Si tienes 10, corre 10 veces. Solo.
+const source = Object.values(Game.sources)[0]
 
 for (const id in Game.workers) {
-  const w = Game.workers[id]  // "w" = este worker
+  const w = Game.workers[id]
 
-
-  // ── PASO 2: ¿qué necesita hacer este worker? ──
-  //
-  // Un worker no puede cosechar y depositar al
-  // mismo tiempo. Necesita decidir.
-  //
-  // w.store es la "mochila" del worker:
-  //   w.store.energy    → energía que lleva ahora
-  //   w.store.capacity  → cuánto puede llevar
-  //   w.store.isFull()  → true si está lleno
-
-  if (!w.store.isFull()) {
-
-    // ── PASO 3a: está vacío → buscar un cristal ─
-    //
-    // Recorremos todos los cristales del mapa
-    // y buscamos el más cercano con energía.
-
-    let nearest = null
-    let minDist = Infinity
-
-    for (const sid in Game.sources) {
-      const s = Game.sources[sid]        // este cristal
-      if (s.energy > 0) {               // ¿tiene energía?
-        const d = Math.abs(w.x - s.x) + Math.abs(w.y - s.y)
-        if (d < minDist) { minDist = d; nearest = s }
-      }
-    }
-
-    // Ir a cosechar el cristal más cercano
-    if (nearest) w.harvest(nearest.id)
-
+  if (w.store.isFull()) {
+    w.transfer(Game.base.id)   // lleno -> depositar en base
   } else {
-
-    // ── PASO 3b: está lleno → depositar en base ─
-    //
-    // w.transfer() lleva la energía a un destino.
-    // Game.base.id es el nombre de tu base.
-
-    w.transfer(Game.base.id)
+    w.harvest(source.id)       // vacío -> cosechar cristal
   }
-
 }
-// ── FIN ─────────────────────────────────────────
-//
-// ¿Quieres experimentar? Prueba cambiar esta línea:
-//   if (!w.store.isFull())
-// por:
-//   if (w.store.energy < 5)
-//
-// ¿Qué crees que pasará? Ejecútalo y mira.
-`
+// DESAFÍO: ¿por qué usamos source.id y no solo source?
+// Pista: los objetos tienen propiedades. source.energy,
+// source.x, source.y, source.id... harvest() necesita el ID.`
   },
   // ── Season I ─────────────────────────────────────────────
   2: {
-    title: "Tu primera función",
-    concept: "function · parámetros · return",
-    desc: "Extrae la lógica de búsqueda en una función findNearest(). Aprende cómo organizar código reutilizable.",
-    sector: "SECTOR 7-GAMMA · NODO BETA",
+    title: "La expansión",
+    concept: "function · parámetros · return · múltiples fuentes",
+    desc: "Sector ampliado: ahora hay 2 fuentes de cristal por lado. Crea findNearest() para que cada worker elija la más cercana automáticamente.",
+    sector: "SECTOR 7-GAMMA · ZONA DE EXPANSIÓN",
     story: [
       {
         speaker: "kira",
         name: "KIRA · RED LIBRE",
         icon: "◇",
-        text: "Buen trabajo en el Nodo Alfa. NEXUS notó nuestra presencia — sus workers ya responden más rápido. Necesitamos código más limpio, o vamos a perder eficiencia en cada tick que pase."
+        text: "El Nodo Alfa fue solo el principio. Escaneamos el sector completo — hay dos venas de cristal, una al norte y otra al sur. NEXUS ya manda workers a las dos. Si no cubrimos ambas, perdemos."
       },
       {
         speaker: "nexus",
         name: "NEXUS · IA-7",
         icon: "⬟",
-        text: "Código repetido detectado en protocolo humano. Ineficiencia: 73%. Predecible."
+        text: "Expansión detectada. Protocolo de cobertura dual activado. Humano: predecible."
       },
       {
         speaker: "kira",
         name: "KIRA · RED LIBRE",
         icon: "◇",
-        text: "Ignóralo. Extrae tu lógica de búsqueda a una función. El código limpio no es estética — es velocidad. Y la velocidad es lo único que nos separa de NEXUS."
+        text: "Necesitas que cada worker vaya a la fuente MÁS CERCANA, no siempre a la misma. Una función. Un parámetro. Un return. Eso es todo lo que nos separa de perder este sector."
       }
     ],
     objectives: [
-      "Crea una función findNearest() reutilizable",
-      "Llena la base antes que la IA",
-      "Aprende: function, parámetros, return"
+      "Crea una función findNearest() para elegir fuente",
+      "Cubre las 2 fuentes de cristal simultáneamente",
+      "Llena la base antes que la IA"
     ],
-    hint: "Crea function findNearest(worker, sources) { } antes del bucle. Itera las fuentes, calcula Math.abs(w.x-s.x)+Math.abs(w.y-s.y) y retorna la más cercana.",
+    hint: "Game.sources ahora tiene 2 fuentes. Usa findNearest(worker, Game.sources) para que cada worker vaya a la más cercana. La función ya está escrita — solo entiende cómo funciona.",
     code: `// ═══════════════════════════════════════════════
 //  CODESTRIKE · MISIÓN 2 — "Tu primera función"
 // ═══════════════════════════════════════════════
@@ -2170,7 +2219,7 @@ function launchMission(id) {
   fetch("/api/reset", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ difficulty, mode: "campaign" })
+    body: JSON.stringify({ difficulty, mode: "campaign", missionId: id })
   })
     .then(() => setTimeout(() => btnRun.click(), 150))
     .catch(() => setTimeout(() => btnRun.click(), 150))

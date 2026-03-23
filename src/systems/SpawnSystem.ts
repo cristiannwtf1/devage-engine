@@ -9,7 +9,6 @@ export class SpawnSystem {
   // 🧠 Balance variables
   private spawnCooldown: number = 0
   private spawnDelay: number = 5
-  private maxWorkers: number = 3
 
   public update(gameState: GameState): void {
 
@@ -26,9 +25,9 @@ export class SpawnSystem {
       return
     }
 
-    // 👥 Límite de población
+    // 👥 Límite de población (varía por misión)
     const workerCount = gameState.workers.size
-    if (workerCount >= this.maxWorkers) return
+    if (workerCount >= gameState.maxPlayerWorkers) return
 
     // 💰 Energía insuficiente
     if (baseStorage.current < this.spawnCost) return
