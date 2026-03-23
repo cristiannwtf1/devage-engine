@@ -390,6 +390,16 @@ function renderFrame() {
   }
   drawParticles()
 
+  // 3.6 Harvest beams — trompa de energía source → worker
+  const sourceEntities = entities.filter(e => e.type === "source")
+  for (const e of entities) {
+    if (e.type !== "worker" && e.type !== "ai-worker") continue
+    const prev = prevEntities[e.id]
+    const ix   = prev ? lerp(prev.x, e.x, t) : e.x
+    const iy   = prev ? lerp(prev.y, e.y, t) : e.y
+    drawHarvestBeam({ ...e, ix, iy }, sourceEntities)
+  }
+
   // 4. Entidades con interpolación
   const drawOrder = ["source", "extension", "ai-extension", "ai-base", "base", "ai-worker", "worker"]
   for (const type of drawOrder) {
@@ -832,50 +842,140 @@ function drawSource(px, py, cx, cy, e) {
 
 // ─── WORKER ───────────────────────────────────────────────
 function drawWorker(px, py, cx, cy, e, isAI) {
-  const isIdle   = e.state === "idle"
-  const color    = isAI ? "#cc3300" : (isIdle ? "#223344" : "#0077bb")
-  const glow     = isAI ? "#ff5500" : (isIdle ? "#334455" : "#00aaff")
-  const energy   = e.energy ? e.energy.current / e.energy.capacity : 0
-  const isReturn = e.state === "returning"
-  const icon     = isAI ? "⬟" : "◈"
-  const r        = CELL * 0.39
+  const isIdle    = e.state === "idle"
+  const isHarvest = e.state === "harvesting"
+  const isReturn  = e.state === "returning"
+  const energy    = e.energy ? e.energy.current / e.energy.capacity : 0
+  const color     = isAI ? "#cc3300" : (isIdle ? "#1a2d40" : "#0077bb")
+  const glow      = isAI ? "#ff5500" : (isIdle ? "#2a3d50" : "#00aaff")
+  const r         = CELL * 0.39
+  const icon      = isAI ? "⬟" : "◈"
+  const pulse     = 0.5 + 0.5 * Math.sin(animFrame * 0.09 + cx * 0.3)
 
-  // Cuerpo circular — idle aparece más apagado
   ctx.save()
-  if (isIdle) ctx.globalAlpha = 0.45
+  if (isIdle) ctx.globalAlpha = 0.40
+
+  // 1. Fondo del círculo
   ctx.shadowBlur = 0
-  ctx.fillStyle  = isAI ? "#110200" : "#000810"
+  ctx.fillStyle  = isAI ? "#100100" : "#000810"
   ctx.beginPath()
-  ctx.arc(cx, cy - 1, r, 0, Math.PI * 2)
+  ctx.arc(cx, cy, r, 0, Math.PI * 2)
   ctx.fill()
 
-  // Borde — más brillante cuando vuelve lleno
+  // 2. Llenado interior — líquido que sube de abajo hacia arriba
+  if (energy > 0.01) {
+    ctx.save()
+    // Clip al círculo interior
+    ctx.beginPath()
+    ctx.arc(cx, cy, r - 1.5, 0, Math.PI * 2)
+    ctx.clip()
+
+    const fillH = (r * 2 - 3) * energy
+    const fillY = cy + (r - 1.5) - fillH
+
+    // Gradiente vertical del líquido
+    const lg = ctx.createLinearGradient(0, fillY, 0, fillY + fillH)
+    if (isAI) {
+      lg.addColorStop(0, `rgba(255,120,0,${0.15 + energy * 0.35})`)
+      lg.addColorStop(1, `rgba(220,40,0,${0.35 + energy * 0.40})`)
+    } else {
+      lg.addColorStop(0, `rgba(0,180,255,${0.12 + energy * 0.30})`)
+      lg.addColorStop(1, `rgba(0,100,220,${0.30 + energy * 0.40})`)
+    }
+    ctx.fillStyle = lg
+    ctx.fillRect(cx - r, fillY, r * 2, fillH + 2)
+
+    // Borde superior del líquido — línea brillante que ondula
+    const waveY = fillY + Math.sin(animFrame * 0.15 + cx) * 1.2
+    ctx.strokeStyle = isAI
+      ? `rgba(255,180,60,${0.5 + energy * 0.4})`
+      : `rgba(80,220,255,${0.5 + energy * 0.4})`
+    ctx.lineWidth  = 1
+    ctx.shadowBlur = 0
+    ctx.beginPath()
+    ctx.moveTo(cx - r, waveY)
+    ctx.lineTo(cx + r, waveY)
+    ctx.stroke()
+
+    ctx.restore()
+  }
+
+  // 3. Borde exterior
   ctx.shadowColor = glow
-  ctx.shadowBlur  = isReturn ? 6 : 3
+  ctx.shadowBlur  = isReturn ? 10 : (isHarvest ? 5 : 2)
   ctx.strokeStyle = isReturn ? glow : color
-  ctx.lineWidth   = isReturn ? 2 : 1.5
+  ctx.lineWidth   = isReturn ? 2.5 : 1.5
   ctx.beginPath()
-  ctx.arc(cx, cy - 1, r, 0, Math.PI * 2)
+  ctx.arc(cx, cy, r, 0, Math.PI * 2)
   ctx.stroke()
 
-  // Icono de facción
+  // 4. Anillo pulsante exterior — solo cuando returning lleno
+  if (isReturn && energy > 0.8) {
+    ctx.globalAlpha = 0.25 * pulse
+    ctx.strokeStyle = glow
+    ctx.lineWidth   = 2
+    ctx.shadowBlur  = 12
+    ctx.beginPath()
+    ctx.arc(cx, cy, r + 3 + pulse * 2, 0, Math.PI * 2)
+    ctx.stroke()
+    ctx.globalAlpha = isIdle ? 0.40 : 1
+  }
+
+  // 5. Icono de facción
   ctx.shadowColor  = glow
-  ctx.shadowBlur   = isReturn ? 5 : 3
-  ctx.fillStyle    = isReturn ? glow : color
-  ctx.font         = `bold ${Math.floor(CELL * 0.46)}px 'Courier New'`
+  ctx.shadowBlur   = isReturn ? 7 : 3
+  ctx.fillStyle    = isReturn ? glow : (isIdle ? "#2a3d50" : color)
+  ctx.font         = `bold ${Math.floor(CELL * 0.40)}px 'Courier New'`
   ctx.textAlign    = "center"
   ctx.textBaseline = "middle"
-  ctx.fillText(icon, cx, cy - 1)
+  ctx.fillText(icon, cx, cy + 1)
 
-  // Barra de energía
-  const bw = CELL - 6
-  ctx.shadowBlur = 0
-  ctx.fillStyle  = isAI ? "#0a0100" : "#000508"
-  ctx.fillRect(px + 3, py + CELL - 5, bw, 3)
-  ctx.fillStyle   = glow
-  ctx.shadowColor = glow
-  ctx.shadowBlur  = 3
-  ctx.fillRect(px + 3, py + CELL - 5, bw * energy, 3)
+  ctx.restore()
+}
+
+// ─── HARVEST BEAM — trompa de energía hacia el source ─────
+// Llamado desde renderFrame con acceso a todas las entidades
+function drawHarvestBeam(e, sourceEntities) {
+  if (e.state !== "harvesting") return
+  if (e.targetX === undefined) return
+
+  // Verificar que el worker esté cerca de su target (harvesting activo)
+  const dx = e.ix - e.targetX, dy = e.iy - e.targetY
+  if (Math.abs(dx) > 1.2 || Math.abs(dy) > 1.2) return  // todavía moviéndose
+
+  // Buscar source adyacente a la posición de cosecha
+  let nearestSource = null
+  let bestDist = 99
+  for (const src of sourceEntities) {
+    const d = Math.abs(src.x - e.targetX) + Math.abs(src.y - e.targetY)
+    if (d <= 1 && d < bestDist) { nearestSource = src; bestDist = d }
+  }
+  if (!nearestSource) return
+
+  const isAI  = e.type === "ai-worker"
+  const pulse = 0.4 + 0.6 * Math.abs(Math.sin(animFrame * 0.12 + e.ix))
+  const energy = e.energy ? e.energy.current / e.energy.capacity : 0
+  if (energy >= 1) return  // lleno — no hay flujo
+
+  const wx = (e.ix + 0.5) * CELL
+  const wy = (e.iy + 0.5) * CELL
+  const sx = (nearestSource.x + 0.5) * CELL
+  const sy = (nearestSource.y + 0.5) * CELL
+
+  ctx.save()
+  ctx.shadowBlur  = 4
+  ctx.shadowColor = isAI ? "#ff6600" : "#ffcc00"
+  ctx.strokeStyle = isAI
+    ? `rgba(255,140,0,${0.4 * pulse})`
+    : `rgba(255,220,60,${0.45 * pulse})`
+  ctx.lineWidth   = 1.5
+  ctx.setLineDash([2, 3])
+  ctx.lineDashOffset = -(animFrame * 0.8)  // flujo animado hacia el worker
+  ctx.beginPath()
+  ctx.moveTo(sx, sy)
+  ctx.lineTo(wx, wy)
+  ctx.stroke()
+  ctx.setLineDash([])
   ctx.restore()
 }
 
