@@ -2322,3 +2322,340 @@ function scheduleTourIfNeeded() {
 window.addEventListener("resize", () => {
   if (tourActive) showTourStep(tourStep)
 })
+
+// ═══════════════════════════════════════════════════════════
+//  CODEX — Manual de referencia in-game
+//  Tres secciones: Game API · Conceptos JS · Recetas
+// ═══════════════════════════════════════════════════════════
+
+const CODEX_DATA = {
+
+  api: [
+    {
+      section: "TUS WORKERS",
+      entries: [
+        {
+          name: "Game.workers",
+          type: "objeto",
+          why: "¿Por qué existe? Sin esto no puedes hablar con tus workers.",
+          desc: "Contiene <strong>todos tus workers</strong>. Cada clave es el ID único de un worker.",
+          code: "for (const id in Game.workers) {\n  const w = Game.workers[id]\n  // w = este worker\n}"
+        },
+        {
+          name: "w.energy",
+          type: "número",
+          why: "Para saber si el worker necesita cosechar o depositar.",
+          desc: "Cuánta energía lleva el worker <strong>ahora mismo</strong>. Va de 0 hasta w.energyCapacity.",
+          code: "if (w.energy < w.energyCapacity) {\n  // tiene espacio → ir a cosechar\n}"
+        },
+        {
+          name: "w.energyCapacity",
+          type: "número",
+          why: "Es el límite. Cuando w.energy == w.energyCapacity, está lleno.",
+          desc: "Máximo de energía que puede cargar el worker. Normalmente es <strong>100</strong>.",
+          code: "// ¿está lleno?\nif (w.energy >= w.energyCapacity) {\n  w.transfer(Game.base.id)\n}"
+        },
+        {
+          name: "w.harvest(sourceId)",
+          type: "método",
+          why: "Sin esto el worker se queda quieto para siempre.",
+          desc: "Envía el worker a cosechar un cristal. El worker camina hasta allá y recolecta automáticamente.",
+          code: "w.harvest(nearest.id)  // ir a cosechar este cristal"
+        },
+        {
+          name: "w.transfer(targetId)",
+          type: "método",
+          why: "La base no se llena sola. El worker tiene que depositar.",
+          desc: "Lleva la energía del worker al destino indicado. Úsalo con <strong>Game.base.id</strong> para depositar en tu base.",
+          code: "w.transfer(Game.base.id)  // depositar en tu base"
+        },
+        {
+          name: "w.x · w.y",
+          type: "números",
+          why: "Para calcular qué cristal está más cerca del worker.",
+          desc: "Posición del worker en el mapa. Coordenadas en tiles (columna, fila).",
+          code: "// distancia al cristal s:\nconst d = Math.abs(w.x - s.x) + Math.abs(w.y - s.y)"
+        }
+      ]
+    },
+    {
+      section: "LOS CRISTALES",
+      entries: [
+        {
+          name: "Game.sources",
+          type: "objeto",
+          why: "Sin esto no puedes encontrar dónde está la energía.",
+          desc: "Contiene <strong>todos los cristales</strong> del mapa. Itera igual que Game.workers.",
+          code: "for (const sid in Game.sources) {\n  const s = Game.sources[sid]\n  // s = este cristal\n}"
+        },
+        {
+          name: "s.energy",
+          type: "número",
+          why: "Para no ir a un cristal vacío — sería un viaje inútil.",
+          desc: "Cuánta energía le queda al cristal. Cuando llega a <strong>0</strong> está agotado.",
+          code: "if (s.energy > 0) {\n  // tiene energía, vale la pena ir\n}"
+        },
+        {
+          name: "s.id",
+          type: "texto",
+          why: "harvest() necesita saber a qué cristal ir — usa su ID.",
+          desc: "Identificador único del cristal. Lo usas para enviar un worker a cosechar.",
+          code: "w.harvest(s.id)  // ir a este cristal específico"
+        },
+        {
+          name: "s.x · s.y",
+          type: "números",
+          why: "Para calcular cuál cristal está más cerca de tu worker.",
+          desc: "Posición del cristal en el mapa. Igual que w.x y w.y.",
+          code: "const dist = Math.abs(w.x - s.x) + Math.abs(w.y - s.y)"
+        }
+      ]
+    },
+    {
+      section: "TU BASE",
+      entries: [
+        {
+          name: "Game.base",
+          type: "objeto",
+          why: "Tu objetivo principal. Todo el juego gira en torno a esto.",
+          desc: "Tu base. Los workers depositan aquí. La primera en llegar al 100% gana.",
+          code: "// estado actual de tu base:\nGame.base.energy    // energía que tiene ahora\nGame.base.capacity  // meta para ganar"
+        },
+        {
+          name: "Game.base.energy",
+          type: "número",
+          why: "Para saber qué tan cerca estás de ganar.",
+          desc: "Cuánta energía tiene tu base <strong>ahora mismo</strong>. Empieza en 0.",
+          code: "const ratio = Game.base.energy / Game.base.capacity\n// ratio = 0.0 (vacía) → 1.0 (llena = victoria)"
+        },
+        {
+          name: "Game.base.id",
+          type: "texto",
+          why: "transfer() necesita saber a dónde llevar la energía.",
+          desc: "El ID de tu base. Úsalo siempre en <strong>w.transfer()</strong>.",
+          code: "w.transfer(Game.base.id)  // depositar aquí"
+        }
+      ]
+    },
+    {
+      section: "MEMORIA PERSISTENTE",
+      entries: [
+        {
+          name: "Game.memory",
+          type: "objeto",
+          why: "Las variables normales se borran cada tick. Game.memory sobrevive.",
+          desc: "Objeto que <strong>persiste entre ticks</strong>. Guarda aquí todo lo que necesites recordar de un tick al siguiente.",
+          code: "// Guardar algo:\nGame.memory.miDato = 42\n\n// Leerlo en el siguiente tick:\nconst dato = Game.memory.miDato  // → 42"
+        }
+      ]
+    }
+  ],
+
+  conceptos: [
+    {
+      section: "VARIABLES",
+      entries: [
+        {
+          name: "const · let",
+          type: "variables",
+          why: "Para darle nombre a un valor y poder usarlo después.",
+          desc: "<strong>const</strong>: el valor no cambia (worker, fuente).\n<strong>let</strong>: el valor puede cambiar (distancia mínima, mejor candidato).",
+          code: "const w = Game.workers[id]  // no cambia: es este worker\nlet nearest = null          // va a cambiar: el más cercano"
+        }
+      ]
+    },
+    {
+      section: "BUCLES",
+      entries: [
+        {
+          name: "for...in",
+          type: "bucle",
+          why: "Tienes múltiples workers. Escribir uno por uno no escala.",
+          desc: "Recorre <strong>cada propiedad</strong> de un objeto, una por una. Se ejecuta N veces — una por cada elemento.",
+          code: "for (const id in Game.workers) {\n  const w = Game.workers[id]\n  // esto corre para cada worker\n  // primero w1, luego w2, luego w3...\n}"
+        }
+      ]
+    },
+    {
+      section: "CONDICIONES",
+      entries: [
+        {
+          name: "if · else",
+          type: "condición",
+          why: "Un worker no puede cosechar y depositar al mismo tiempo. Necesita decidir.",
+          desc: "<strong>if</strong>: si la condición es verdadera, ejecuta este bloque.\n<strong>else</strong>: si no, ejecuta el otro.\nComo un semáforo: verde o rojo, nunca los dos.",
+          code: "if (w.energy < w.energyCapacity) {\n  // VERDAD: tiene espacio → cosechar\n  w.harvest(nearest.id)\n} else {\n  // FALSO: está lleno → depositar\n  w.transfer(Game.base.id)\n}"
+        }
+      ]
+    },
+    {
+      section: "FUNCIONES",
+      entries: [
+        {
+          name: "function",
+          type: "función",
+          why: "Si repites el mismo código en varios lugares, ponlo en una función.",
+          desc: "Un bloque de código con nombre que puedes llamar cuantas veces quieras. Recibe <strong>parámetros</strong> y puede devolver un resultado con <strong>return</strong>.",
+          code: "function findNearest(worker, sources) {\n  let nearest = null\n  let minDist = Infinity\n  for (const sid in sources) {\n    const s = sources[sid]\n    if (s.energy > 0) {\n      const d = Math.abs(worker.x-s.x) + Math.abs(worker.y-s.y)\n      if (d < minDist) { minDist = d; nearest = s }\n    }\n  }\n  return nearest  // ← devuelve el resultado\n}\n\n// llamarla:\nconst source = findNearest(w, Game.sources)"
+        }
+      ]
+    },
+    {
+      section: "MATEMÁTICAS",
+      entries: [
+        {
+          name: "Math.abs(n)",
+          type: "función",
+          why: "La distancia nunca es negativa. Math.abs elimina el signo.",
+          desc: "Devuelve el valor absoluto de un número. Si es negativo, lo vuelve positivo.",
+          code: "// distancia Manhattan entre worker y cristal:\nconst dx = Math.abs(w.x - s.x)\nconst dy = Math.abs(w.y - s.y)\nconst dist = dx + dy"
+        },
+        {
+          name: "Infinity",
+          type: "constante",
+          why: "Para empezar comparando: cualquier distancia real va a ser menor.",
+          desc: "El número más grande posible. Útil para inicializar una variable que va a buscar el mínimo.",
+          code: "let minDist = Infinity  // empieza muy grande\nfor (const sid in Game.sources) {\n  const d = calcularDistancia()\n  if (d < minDist) { minDist = d; nearest = s }\n  // la primera distancia real siempre gana\n}"
+        }
+      ]
+    }
+  ],
+
+  recetas: [
+    {
+      section: "BÁSICO",
+      entries: [
+        {
+          name: "Cosechar básico",
+          type: "misión 1",
+          why: "El patrón fundamental. Todo lo demás se construye encima de esto.",
+          desc: "El ciclo completo: recorrer workers → buscar fuente → decidir cosechar o depositar.",
+          code: "for (const id in Game.workers) {\n  const w = Game.workers[id]\n\n  if (w.energy < w.energyCapacity) {\n    // buscar cristal más cercano\n    let nearest = null, minDist = Infinity\n    for (const sid in Game.sources) {\n      const s = Game.sources[sid]\n      if (s.energy > 0) {\n        const d = Math.abs(w.x-s.x) + Math.abs(w.y-s.y)\n        if (d < minDist) { minDist = d; nearest = s }\n      }\n    }\n    if (nearest) w.harvest(nearest.id)\n  } else {\n    w.transfer(Game.base.id)\n  }\n}"
+        }
+      ]
+    },
+    {
+      section: "INTERMEDIO",
+      entries: [
+        {
+          name: "No ir dos al mismo cristal",
+          type: "misión 1+",
+          why: "Si dos workers van al mismo cristal, uno hace el viaje en vano.",
+          desc: "Registra qué fuentes ya fueron reclamadas en este tick para evitar conflictos.",
+          code: "const claimed = {}  // cristales ya reclamados este tick\n\nfor (const id in Game.workers) {\n  const w = Game.workers[id]\n  if (w.energy < w.energyCapacity) {\n    let nearest = null, minDist = Infinity\n    for (const sid in Game.sources) {\n      const s = Game.sources[sid]\n      if (s.energy > 0 && !claimed[s.id]) {  // ← no reclamada\n        const d = Math.abs(w.x-s.x) + Math.abs(w.y-s.y)\n        if (d < minDist) { minDist = d; nearest = s }\n      }\n    }\n    if (nearest) {\n      claimed[nearest.id] = true  // ← reclamar\n      w.harvest(nearest.id)\n    }\n  } else {\n    w.transfer(Game.base.id)\n  }\n}"
+        },
+        {
+          name: "Elegir el cristal más rentable",
+          type: "misión 3",
+          why: "El más cercano no siempre es el mejor. Uno lejano pero lleno puede valer más.",
+          desc: "Puntuación = energía / distancia. Mayor puntuación = mejor opción.",
+          code: "// función de puntuación:\nfunction scoreSource(worker, source) {\n  const dist = Math.abs(worker.x-source.x) + Math.abs(worker.y-source.y)\n  return source.energy / (dist + 1)  // +1 evita dividir por cero\n}\n\n// usar en el bucle:\nlet best = null, bestScore = -1\nfor (const sid in Game.sources) {\n  const s = Game.sources[sid]\n  if (s.energy > 0) {\n    const score = scoreSource(w, s)\n    if (score > bestScore) { bestScore = score; best = s }\n  }\n}\nif (best) w.harvest(best.id)"
+        },
+        {
+          name: "Recordar entre ticks",
+          type: "misión 4",
+          why: "Las variables locales se borran cada tick. Game.memory no.",
+          desc: "Asignar una fuente exclusiva a cada worker y recordarla entre ticks.",
+          code: "// inicializar una sola vez:\nif (!Game.memory.asig) Game.memory.asig = {}\n\nconst asig = Game.memory.asig\n\nfor (const id in Game.workers) {\n  const w = Game.workers[id]\n\n  // liberar si la fuente se vació:\n  if (asig[id] && (!Game.sources[asig[id]] ||\n      Game.sources[asig[id]].energy === 0)) {\n    delete asig[id]\n  }\n\n  // asignar una fuente libre:\n  if (!asig[id] && w.energy < w.energyCapacity) {\n    const usadas = new Set(Object.values(asig))\n    for (const sid in Game.sources) {\n      if (Game.sources[sid].energy > 0 && !usadas.has(sid)) {\n        asig[id] = sid; break\n      }\n    }\n  }\n\n  // actuar:\n  if (w.energy < w.energyCapacity) {\n    const fuente = asig[id] ? Game.sources[asig[id]] : null\n    if (fuente) w.harvest(fuente.id)\n  } else {\n    w.transfer(Game.base.id)\n  }\n}"
+        }
+      ]
+    }
+  ]
+}
+
+// ─── Lógica del CODEX ────────────────────────────────────
+let codexOpen    = false
+let codexTabAct  = "api"
+
+function openCodex(tab) {
+  codexOpen = true
+  codexTabAct = tab || "api"
+  document.getElementById("codex-overlay").classList.add("open")
+  document.querySelectorAll(".cx-tab").forEach(t =>
+    t.classList.toggle("active", t.dataset.tab === codexTabAct))
+  renderCodexTab(codexTabAct)
+}
+
+function closeCodex() {
+  codexOpen = false
+  document.getElementById("codex-overlay").classList.remove("open")
+}
+
+function renderCodexTab(tab) {
+  const data    = CODEX_DATA[tab]
+  const content = document.getElementById("codex-content")
+  content.innerHTML = ""
+
+  for (const group of data) {
+    const label = document.createElement("div")
+    label.className   = "cx-section-label"
+    label.textContent = group.section
+    content.appendChild(label)
+
+    for (const entry of group.entries) {
+      const el = document.createElement("div")
+      el.className = "cx-entry"
+      el.innerHTML = `
+        <div class="cx-entry-head">
+          <span class="cx-entry-name">${entry.name}</span>
+          <span class="cx-entry-type">${entry.type}</span>
+        </div>
+        <div class="cx-entry-body">
+          ${entry.why ? `<div class="cx-entry-why">¿Por qué existe? ${entry.why}</div>` : ""}
+          <div class="cx-entry-desc">${entry.desc.replace(/\n/g,"<br>")}</div>
+          ${entry.code ? `
+          <div class="cx-code-wrap">
+            <pre class="cx-code">${entry.code}</pre>
+            <button class="cx-copy">Copiar</button>
+          </div>` : ""}
+        </div>`
+
+      // Toggle open/close al hacer click en el header
+      el.querySelector(".cx-entry-head").addEventListener("click", () =>
+        el.classList.toggle("open"))
+
+      // Copiar código
+      const copyBtn = el.querySelector(".cx-copy")
+      if (copyBtn) {
+        copyBtn.addEventListener("click", e => {
+          e.stopPropagation()
+          navigator.clipboard.writeText(entry.code).then(() => {
+            copyBtn.textContent = "¡Copiado!"
+            copyBtn.classList.add("copied")
+            setTimeout(() => {
+              copyBtn.textContent = "Copiar"
+              copyBtn.classList.remove("copied")
+            }, 1500)
+          })
+        })
+      }
+
+      content.appendChild(el)
+    }
+  }
+}
+
+// Botón del header
+document.getElementById("btn-codex").addEventListener("click", () =>
+  codexOpen ? closeCodex() : openCodex())
+
+// Cerrar
+document.getElementById("btn-codex-close").addEventListener("click", closeCodex)
+document.getElementById("codex-overlay").addEventListener("click", e => {
+  if (e.target === document.getElementById("codex-overlay")) closeCodex()
+})
+
+// Tabs
+document.querySelectorAll(".cx-tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    codexTabAct = tab.dataset.tab
+    document.querySelectorAll(".cx-tab").forEach(t =>
+      t.classList.toggle("active", t === tab))
+    renderCodexTab(codexTabAct)
+  })
+})
+
+// F1 abre/cierra el CODEX desde cualquier lugar
+document.addEventListener("keydown", e => {
+  if (e.key === "F1") { e.preventDefault(); codexOpen ? closeCodex() : openCodex() }
+})
