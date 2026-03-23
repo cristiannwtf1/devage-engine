@@ -29,6 +29,13 @@ function buildWallsM1(gs: GameState): void {
   row(8,  6, 12);  row(14, 6, 12);  col(12, 8, 14)
   // Compound IA — source(31,11) — entrada este y=9-13
   row(8,  27, 33); row(14, 27, 33); col(27, 8, 14)
+
+  // Rocas centrales decorativas — 4 grupos simétricos
+  // No bloquean y=11 (corredor central) ni los accesos a los compounds
+  row(5,  17, 19);  row(6,  17, 19)   // roca norte-izquierda
+  row(5,  20, 22);  row(6,  20, 22)   // roca norte-derecha
+  row(15, 17, 19);  row(16, 17, 19)   // roca sur-izquierda
+  row(15, 20, 22);  row(16, 20, 22)   // roca sur-derecha
 }
 
 function buildWorldM1(gs: GameState): void {

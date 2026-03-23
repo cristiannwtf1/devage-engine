@@ -986,9 +986,10 @@ function updatePanel(snap) {
     }
   }
 
-  // Victoria
+  // Victoria — ignorar si acabamos de hacer reset (evita overlay de partida anterior)
+  if (snap.tick < 10) freshGameMinTick = 0  // servidor confirmó juego nuevo
   const banner = document.getElementById("victory-banner")
-  if (snap.winner && banner.style.display === "none") {
+  if (snap.winner && banner.style.display === "none" && freshGameMinTick === 0) {
     banner.className    = snap.winner === "player" ? "player" : "ai"
     banner.textContent  = snap.winner === "player" ? "⬡ VICTORIA" : "◈ DERROTA"
     banner.style.display = "block"
@@ -2216,6 +2217,7 @@ function launchMission(id) {
   currentGameMode  = "campaign"
   currentMissionId = id
   setSandboxUI(false)
+  freshGameMinTick = Date.now() // marcar reset — ignorar victorias hasta tick fresco
   fetch("/api/reset", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -2235,6 +2237,7 @@ function startMission(id) {
 let currentMode      = null
 let currentGameMode  = "vs-ia"  // modo activo del servidor (vs-ia | sandbox | campaign)
 let currentMissionId = null
+let freshGameMinTick = 0        // ignorar victorias hasta que el servidor confirme tick nuevo
 
 function selectMode(mode) {
   currentMode = mode
