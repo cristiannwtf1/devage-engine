@@ -26,7 +26,15 @@
       "Bash(npm start:*)",
       "Bash(node:*)",
       "Bash(grep -E \"\\(//|function|class|const [A-Z]\\)\")",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(f\"\"Tick: {d[''''tick'''']}\\\\nBase player: {d[''''base'''']}\\\\nBase IA: {d[''''aiBase'''']}\\\\nWorkers player: {d[''''workers''''][''''total'''']}\\\\nWorkers IA: {d[''''aiWorkers''''][''''total'''']}\"\"\\)\")",
+      "Bash(git checkout:*)",
+      "Bash(Stop-Process -Name node -Force)",
+      "Bash(kill -9 13440)",
+      "Bash(cmd /c \"taskkill /PID 13440 /F\")",
+      "Bash(cmd /c \"taskkill /PID 13440 /F /T\" 2>&1)",
+      "Bash(cmd /c \"powershell -Command \\\\\"Stop-Process -Id 13440 -Force -ErrorAction SilentlyContinue; Write-Host done\\\\\"\" 2>&1)",
+      "Bash(git merge:*)"
     ]
   }
 }

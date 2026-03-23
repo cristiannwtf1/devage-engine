@@ -38,10 +38,11 @@ export class ConstructionSystem {
 
     gameState.structures.set(newId, { type: "extension" })
 
-    baseEnergy.capacity += 200
+    // Las extensiones no modifican la meta de victoria (capacity de base permanece igual)
+    // Solo cuestan energía — son nodos de almacenamiento independientes
     baseEnergy.current -= cost
 
-    console.log(`🏗 Extension #${extensionCount + 1} construida! Costo: ${cost} | Capacidad base: ${baseEnergy.capacity}`)
+    console.log(`🏗 Extension #${extensionCount + 1} construida! Costo: ${cost}`)
   }
 
   private getOffset(index: number): { x: number; y: number } {

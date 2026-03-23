@@ -57,6 +57,9 @@ export class GameState {
   // Se reinicia solo cuando se llama a resetGame(), no entre ticks
   public playerMemory: Record<string, unknown> = {}
 
+  // say() — mensajes que los workers muestran como burbuja (duran 3 ticks)
+  public workerSays: Map<EntityId, { msg: string; until: number }> = new Map()
+
   // Modo de juego: afecta si hay IA y condición de victoria
   public gameMode: "vs-ia" | "sandbox" | "campaign" = "vs-ia"
 

@@ -429,6 +429,41 @@ function drawEntity(e) {
     case "ai-extension": drawExtension(px, py, cx, cy, true);  break
   }
   ctx.restore()
+
+  // Burbuja say() — solo workers del jugador
+  if (e.say && (e.type === "worker")) {
+    drawSayBubble(cx, py, e.say)
+  }
+}
+
+// ─── BURBUJA SAY() ────────────────────────────────────────
+function drawSayBubble(cx, py, msg) {
+  ctx.save()
+  ctx.font = "8px 'Share Tech Mono', monospace"
+  const tw  = ctx.measureText(msg).width
+  const bw  = tw + 10
+  const bh  = 12
+  const bx  = cx - bw / 2
+  const by  = py - bh - 4
+
+  // Fondo
+  ctx.fillStyle   = "rgba(3,8,20,0.92)"
+  ctx.strokeStyle = "#00aaff"
+  ctx.lineWidth   = 0.8
+  ctx.shadowColor = "#00aaff"
+  ctx.shadowBlur  = 6
+  ctx.beginPath()
+  ctx.roundRect(bx, by, bw, bh, 2)
+  ctx.fill()
+  ctx.stroke()
+
+  // Texto
+  ctx.shadowBlur  = 0
+  ctx.fillStyle   = "#88ccff"
+  ctx.textAlign   = "center"
+  ctx.textBaseline = "middle"
+  ctx.fillText(msg, cx, by + bh / 2)
+  ctx.restore()
 }
 
 // ─── BASE (JUGADOR / IA) ──────────────────────────────────
@@ -2652,39 +2687,46 @@ const CODEX_DATA = {
           code: "for (const id in Game.workers) {\n  const w = Game.workers[id]\n  // w = este worker\n}"
         },
         {
-          name: "w.energy",
-          type: "número",
-          why: "Para saber si el worker necesita cosechar o depositar.",
-          desc: "Cuánta energía lleva el worker <strong>ahora mismo</strong>. Va de 0 hasta w.energyCapacity.",
-          code: "if (w.energy < w.energyCapacity) {\n  // tiene espacio → ir a cosechar\n}"
-        },
-        {
-          name: "w.energyCapacity",
-          type: "número",
-          why: "Es el límite. Cuando w.energy == w.energyCapacity, está lleno.",
-          desc: "Máximo de energía que puede cargar el worker. Normalmente es <strong>100</strong>.",
-          code: "// ¿está lleno?\nif (w.energy >= w.energyCapacity) {\n  w.transfer(Game.base.id)\n}"
+          name: "w.store",
+          type: "objeto",
+          why: "Para saber si el worker necesita cosechar o depositar — el estado más importante.",
+          desc: "La 'mochila' del worker. Tiene <strong>energy</strong> (cuánta lleva), <strong>capacity</strong> (cuánto cabe), y dos métodos útiles.",
+          code: "w.store.energy     // energía que lleva ahora\nw.store.capacity   // máximo que puede cargar\nw.store.isEmpty()  // true si no lleva nada\nw.store.isFull()   // true si está lleno"
         },
         {
           name: "w.harvest(sourceId)",
-          type: "método",
+          type: "método → código",
           why: "Sin esto el worker se queda quieto para siempre.",
-          desc: "Envía el worker a cosechar un cristal. El worker camina hasta allá y recolecta automáticamente.",
-          code: "w.harvest(nearest.id)  // ir a cosechar este cristal"
+          desc: "Envía el worker a cosechar un cristal. Devuelve un <strong>código de resultado</strong> para que puedas reaccionar.",
+          code: "const r = w.harvest(s.id)\nif (r === Game.ERR_FULL) {\n  w.transfer(Game.base.id) // está lleno, depositar\n}"
         },
         {
           name: "w.transfer(targetId)",
-          type: "método",
+          type: "método → código",
           why: "La base no se llena sola. El worker tiene que depositar.",
-          desc: "Lleva la energía del worker al destino indicado. Úsalo con <strong>Game.base.id</strong> para depositar en tu base.",
+          desc: "Lleva la energía al destino. Devuelve <strong>ERR_NOT_ENOUGH_ENERGY</strong> si el worker está vacío.",
           code: "w.transfer(Game.base.id)  // depositar en tu base"
         },
         {
-          name: "w.x · w.y",
-          type: "números",
-          why: "Para calcular qué cristal está más cerca del worker.",
-          desc: "Posición del worker en el mapa. Coordenadas en tiles (columna, fila).",
-          code: "// distancia al cristal s:\nconst d = Math.abs(w.x - s.x) + Math.abs(w.y - s.y)"
+          name: "w.say(texto)",
+          type: "método",
+          why: "Para ver qué está 'pensando' tu worker — el mejor debug visual.",
+          desc: "Muestra una <strong>burbuja de texto</strong> encima del worker en el mapa durante 3 ticks.",
+          code: "w.say('⛏ cosechando')\nw.say('🚚 entregando')\nw.say('💤 idle')"
+        },
+        {
+          name: "w.pos",
+          type: "objeto",
+          why: "Para calcular distancias o pasar la posición a moveTo().",
+          desc: "Posición del worker como objeto <strong>{x, y}</strong>. Igual en sources y bases.",
+          code: "w.pos          // {x: 3, y: 7}\nw.pos.x        // solo la columna\nw.moveTo(s.pos) // moveTo acepta objetos pos"
+        },
+        {
+          name: "Códigos de resultado",
+          type: "constantes",
+          why: "Para saber qué pasó cuando ordenas algo — y reaccionar inteligentemente.",
+          desc: "Cada método devuelve un número. Compáralo con las constantes de Game para saber el resultado.",
+          code: "Game.OK                   // 0  — éxito\nGame.ERR_NOT_IN_RANGE     // -1 — lejos del target\nGame.ERR_NOT_ENOUGH_ENERGY// -2 — worker vacío\nGame.ERR_FULL             // -3 — worker lleno\nGame.ERR_INVALID_TARGET   // -4 — target no existe"
         }
       ]
     },

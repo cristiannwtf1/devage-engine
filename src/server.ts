@@ -234,6 +234,10 @@ function buildSnapshot(gs: GameState) {
     const source = gs.sources.get(id)
     if (source) entry.source = { energy: source.energy, max: source.maxEnergy }
 
+    // say() — burbuja de texto del worker
+    const say = gs.workerSays.get(id)
+    if (say && say.until > gs.tick) entry.say = say.msg
+
     entities.push(entry)
   }
 
