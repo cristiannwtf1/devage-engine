@@ -86,7 +86,7 @@
     button.active { border-color: var(--cyan); color: var(--cyan); box-shadow: 0 0 10px rgba(0,170,255,0.25); }
 
     /* ── MAIN ── */
-    #main { display: flex; flex: 1; overflow: hidden; }
+    #main { display: flex; flex: 1; overflow: hidden; min-height: 0; }
 
     /* ── CANVAS ── */
     #canvas-wrapper {
@@ -114,14 +114,15 @@
 
     canvas { flex-shrink: 0; }
 
-    /* ── PANEL ── */
+    /* ── PANEL DERECHO — solo stats + misión ── */
     #panel {
-      width: 320px;
+      width: 240px;
       background: var(--bg-2);
       border-left: 1px solid var(--border2);
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      flex-shrink: 0;
     }
 
     #panel-top {
@@ -130,8 +131,8 @@
       flex-direction: column;
       gap: 6px;
       overflow-y: auto;
-      max-height: 28%;
-      flex-shrink: 0;
+      flex: 1;
+      min-height: 0;
     }
 
     /* Scrollbar estilizado */
@@ -310,26 +311,39 @@
     }
     #mp-hint-text { font-size: 9px; color: #886622; line-height: 1.6; }
 
-    /* ── EDITOR ── */
-    #editor-panel {
-      border-top: 1px solid var(--border2);
-      flex: 1;
+    /* ── EDITOR INFERIOR ── */
+    #editor-bottom {
+      height: 220px;
+      flex-shrink: 0;
       display: flex;
       flex-direction: column;
-      padding: 10px;
-      background: #050509;
-      min-height: 0;
+      background: #040408;
+      border-top: 1px solid var(--border2);
+      position: relative;
+      min-height: 100px;
     }
 
-    #editor-panel h3 {
-      font-size: 9px;
-      letter-spacing: 3px;
-      color: var(--text-d);
-      text-transform: uppercase;
-      margin-bottom: 8px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
+    /* Handle de resize — arrastra para cambiar la altura */
+    #editor-resize-handle {
+      position: absolute; top: 0; left: 0; right: 0;
+      height: 5px; cursor: ns-resize; z-index: 10;
+      background: transparent;
+      transition: background 0.15s;
+    }
+    #editor-resize-handle:hover { background: rgba(0,170,255,0.18); }
+
+    /* Barra superior del editor */
+    #editor-topbar {
+      display: flex; align-items: center; gap: 10px;
+      padding: 5px 12px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    #editor-topbar-label {
+      font-size: 9px; letter-spacing: 3px;
+      color: var(--text-d); text-transform: uppercase;
+      flex: 1;
+      display: flex; align-items: center; gap: 8px;
     }
 
     .script-status {
@@ -339,39 +353,36 @@
     .script-status.active { color: var(--cyan-d); border-color: var(--cyan-d); box-shadow: 0 0 6px rgba(0,170,255,0.2); }
     .script-status.idle   { color: var(--text-d); }
 
+    #editor-actions { display: flex; gap: 6px; }
+    #btn-run   { border-color: var(--cyan-d); color: var(--cyan-d); }
+    #btn-run:hover { border-color: var(--cyan); color: var(--cyan); box-shadow: 0 0 8px rgba(0,170,255,0.2); }
+    #btn-clear { border-color: var(--border2); color: var(--text-d); }
+    #btn-clear:hover { border-color: #aa3333; color: #cc4444; }
+
+    /* El textarea ocupa todo el espacio restante */
     #code-editor {
-      flex: 1; min-height: 220px;
+      flex: 1; min-height: 0;
       background: #030306;
-      border: 1px solid var(--border2);
+      border: none;
+      border-top: 1px solid var(--border);
       color: #7799ee;
       font-family: 'Share Tech Mono', 'Courier New', monospace;
       font-size: 11px;
       line-height: 1.55;
-      padding: 8px;
+      padding: 10px 14px;
       resize: none; outline: none;
+      tab-size: 2;
     }
     #code-editor:focus { border-color: var(--blue); }
     #code-editor::placeholder { color: var(--border2); }
 
-    #editor-footer { display: flex; gap: 6px; margin-top: 6px; }
-
-    #btn-run   { border-color: var(--cyan-d); color: var(--cyan-d); }
-    #btn-run:hover { border-color: var(--cyan); color: var(--cyan); box-shadow: 0 0 8px rgba(0,170,255,0.2); }
-
-    #btn-clear { border-color: var(--border2); color: var(--text-d); }
-    #btn-clear:hover { border-color: #aa3333; color: #cc4444; }
-
     #script-error {
       display: none;
-      font-size: 10px;
-      color: var(--red);
-      background: #0d0305;
-      border: 1px solid #3a0808;
-      padding: 5px 7px;
-      margin-top: 5px;
-      word-break: break-all;
-      line-height: 1.4;
-      letter-spacing: 0.3px;
+      font-size: 10px; color: var(--red);
+      background: #0d0305; border-top: 1px solid #3a0808;
+      padding: 5px 14px;
+      word-break: break-all; line-height: 1.4;
+      letter-spacing: 0.3px; flex-shrink: 0;
     }
 
     /* ── STATUS BAR ── */
@@ -1620,27 +1631,32 @@
 
       </div>
 
-      <div id="editor-panel">
-        <h3>
-          Script
-          <span id="script-status" class="script-status idle">sin script</span>
-        </h3>
-        <textarea id="code-editor" spellcheck="false" placeholder="// Tu código JS corre cada tick
-// Controla tus workers:
+    </div>
+  </div>
+
+  <!-- ── EDITOR INFERIOR (ancho completo) ── -->
+  <div id="editor-bottom">
+    <div id="editor-resize-handle"></div>
+    <div id="editor-topbar">
+      <div id="editor-topbar-label">
+        ◈ CONSOLA
+        <span id="script-status" class="script-status idle">sin script</span>
+      </div>
+      <div id="editor-actions">
+        <button id="btn-run">▶ Ejecutar</button>
+        <button id="btn-clear">✕ Limpiar</button>
+      </div>
+    </div>
+    <textarea id="code-editor" spellcheck="false" placeholder="// Tu código JS corre cada tick (300ms)
+// Controla tus workers con la Game API:
 
 for (const id in Game.workers) {
   const w = Game.workers[id]
-  // w.harvest(sourceId)
-  // w.transfer(Game.base.id)
-  // w.moveTo(x, y)
+  // w.harvest(sourceId)   → recolecta energía
+  // w.transfer(Game.base.id) → entrega a la base
+  // w.moveTo(x, y)        → mueve a posición
 }"></textarea>
-        <div id="editor-footer">
-          <button id="btn-run">▶ Ejecutar</button>
-          <button id="btn-clear">✕ Limpiar</button>
-        </div>
-        <div id="script-error"></div>
-      </div>
-    </div>
+    <div id="script-error"></div>
   </div>
 
   <div id="status-bar">Conectando...</div>

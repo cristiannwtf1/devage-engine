@@ -816,6 +816,34 @@ function showError(msg) {
 }
 function updateScriptError(err) { if (err) showError(err) }
 
+// ─── RESIZE HANDLE (editor inferior) ──────────────────────
+const editorBottom = document.getElementById("editor-bottom")
+const resizeHandle = document.getElementById("editor-resize-handle")
+let   resizing     = false
+let   resizeStartY = 0
+let   resizeStartH = 0
+
+resizeHandle.addEventListener("mousedown", e => {
+  resizing     = true
+  resizeStartY = e.clientY
+  resizeStartH = editorBottom.offsetHeight
+  document.body.style.cursor    = "ns-resize"
+  document.body.style.userSelect = "none"
+  e.preventDefault()
+})
+document.addEventListener("mousemove", e => {
+  if (!resizing) return
+  const delta  = resizeStartY - e.clientY   // arrastrar hacia arriba = más alto
+  const newH   = Math.max(100, Math.min(600, resizeStartH + delta))
+  editorBottom.style.height = newH + "px"
+})
+document.addEventListener("mouseup", () => {
+  if (!resizing) return
+  resizing = false
+  document.body.style.cursor    = ""
+  document.body.style.userSelect = ""
+})
+
 // ═══════════════════════════════════════════════════════════
 //  MENÚ PRINCIPAL — Red neuronal animada + selección de modo
 // ═══════════════════════════════════════════════════════════
