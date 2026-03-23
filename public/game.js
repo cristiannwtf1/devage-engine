@@ -3192,6 +3192,20 @@ const CODEX_DATA = {
           why: "Las variables normales se borran cada tick. Game.memory sobrevive.",
           desc: "Objeto que <strong>persiste entre ticks</strong>. Guarda aquí todo lo que necesites recordar de un tick al siguiente.",
           code: "// Guardar algo:\nGame.memory.miDato = 42\n\n// Leerlo en el siguiente tick:\nconst dato = Game.memory.miDato  // → 42"
+        },
+        {
+          name: "w.memory",
+          type: "objeto",
+          why: "Para que cada worker recuerde su propio rol sin mezclar datos con otros.",
+          desc: "Memoria <strong>exclusiva de este worker</strong>. Igual que Game.memory pero separada por worker. Se borra automáticamente si el worker muere.",
+          code: "// Asignar un rol a cada worker:\nif (!w.memory.rol) {\n  w.memory.rol = 'recolector'\n}\n\n// Leer el rol en el siguiente tick:\nif (w.memory.rol === 'recolector') {\n  w.harvest(source.id)\n}"
+        },
+        {
+          name: "Game.getObjectById(id)",
+          type: "método → entidad",
+          why: "Para recuperar un worker, cristal o base cuando solo tienes su ID guardado en memoria.",
+          desc: "Busca <strong>cualquier entidad</strong> (worker, source, base) por su ID. Devuelve el objeto o <strong>null</strong> si no existe.",
+          code: "// Guardar ID en memoria:\nGame.memory.sourceAsignado = s.id\n\n// Recuperarlo en el siguiente tick:\nconst src = Game.getObjectById(Game.memory.sourceAsignado)\nif (src) w.harvest(src.id)"
         }
       ]
     }
