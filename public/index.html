@@ -385,6 +385,74 @@
       letter-spacing: 0.3px; flex-shrink: 0;
     }
 
+    /* ── HOVER TOOLTIP ── */
+    #hover-tooltip {
+      position: fixed;
+      z-index: 50;
+      background: rgba(4,8,20,0.97);
+      border: 1px solid var(--border2);
+      border-left: 2px solid var(--cyan-d);
+      padding: 7px 11px;
+      font-size: 10px;
+      letter-spacing: 0.5px;
+      color: var(--text);
+      pointer-events: none;
+      display: none;
+      white-space: nowrap;
+      line-height: 1.7;
+      box-shadow: 0 0 14px rgba(0,100,200,0.15);
+    }
+    #hover-tooltip .ht-type  { font-size: 9px; letter-spacing: 2px; color: var(--text-d); margin-bottom: 2px; }
+    #hover-tooltip .ht-name  { color: var(--cyan); font-size: 11px; }
+    #hover-tooltip .ht-stat  { color: var(--text-d); font-size: 9px; }
+    #hover-tooltip .ht-stat span { color: var(--text); }
+    #hover-tooltip.enemy-tile  { border-left-color: #cc4422; }
+    #hover-tooltip.wall-tile   { border-left-color: var(--border2); }
+    #hover-tooltip.source-tile { border-left-color: #aacc00; }
+
+    /* ── CANAL DE TRANSMISIÓN ── */
+    #comm-panel {
+      border: 1px solid var(--border);
+      border-left: 2px solid #1a3a5a;
+      padding: 7px 9px;
+      background: #030810;
+      flex-shrink: 0;
+    }
+    #comm-label {
+      font-size: 8px; letter-spacing: 3px;
+      color: var(--text-d); text-transform: uppercase;
+      margin-bottom: 6px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    #comm-dot {
+      width: 5px; height: 5px; border-radius: 50%;
+      background: var(--cyan-d);
+      box-shadow: 0 0 5px var(--cyan);
+      animation: commPulse 2s infinite;
+    }
+    @keyframes commPulse {
+      0%,100% { opacity: 1; } 50% { opacity: 0.3; }
+    }
+    .comm-msg {
+      display: flex; gap: 7px; align-items: baseline;
+      padding: 4px 0;
+      border-bottom: 1px solid var(--border);
+      animation: commIn 0.3s ease;
+    }
+    .comm-msg:last-child { border-bottom: none; }
+    @keyframes commIn {
+      from { opacity: 0; transform: translateX(-4px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    .comm-speaker {
+      font-size: 8px; letter-spacing: 2px;
+      flex-shrink: 0; margin-top: 1px;
+    }
+    .comm-speaker.kira  { color: var(--cyan-d); }
+    .comm-speaker.nexus { color: #8844ff; }
+    .comm-speaker.sys   { color: var(--text-d); }
+    .comm-text { font-size: 9px; color: var(--text); line-height: 1.6; }
+
     /* ── STATUS BAR ── */
     #status-bar {
       padding: 3px 12px;
@@ -1629,10 +1697,24 @@
           <div id="event-log"></div>
         </div>
 
+        <!-- ── CANAL DE TRANSMISIÓN ── -->
+        <div id="comm-panel">
+          <div id="comm-label">
+            <div id="comm-dot"></div>
+            TRANSMISIÓN
+          </div>
+          <div id="comm-messages">
+            <!-- mensajes inyectados dinámicamente -->
+          </div>
+        </div>
+
       </div>
 
     </div>
   </div>
+
+  <!-- ── HOVER TOOLTIP ── -->
+  <div id="hover-tooltip"></div>
 
   <!-- ── EDITOR INFERIOR (ancho completo) ── -->
   <div id="editor-bottom">

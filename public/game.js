@@ -76,6 +76,7 @@ ws.onmessage = (event) => {
   lastTickTime  = performance.now()
   updatePanel(snap)
   updateScriptError(snap.scriptError)
+  updateComms(snap)
   scheduleTourIfNeeded()
 }
 
@@ -89,8 +90,84 @@ btnPause.addEventListener("click", () => {
 })
 
 // ─── CANVAS ───────────────────────────────────────────────
-const canvas = document.getElementById("gameCanvas")
-const ctx    = canvas.getContext("2d")
+const canvas      = document.getElementById("gameCanvas")
+const ctx         = canvas.getContext("2d")
+const hoverTip    = document.getElementById("hover-tooltip")
+
+// ─── HOVER TILE ────────────────────────────────────────────
+let hoverTile = null
+
+canvas.addEventListener("mousemove", e => {
+  if (!currSnapshot) return
+  const rect   = canvas.getBoundingClientRect()
+  const scaleX = canvas.width  / rect.width
+  const scaleY = canvas.height / rect.height
+  const px     = (e.clientX - rect.left) * scaleX
+  const py     = (e.clientY - rect.top)  * scaleY
+  const tx     = Math.floor(px / CELL)
+  const ty     = Math.floor(py / CELL)
+  const { mapWidth, mapHeight, tiles, entities } = currSnapshot
+  if (tx < 0 || tx >= mapWidth || ty < 0 || ty >= mapHeight) {
+    hoverTile = null; hoverTip.style.display = "none"; return
+  }
+  hoverTile = { x: tx, y: ty }
+
+  // Encontrar entidad en esa posición
+  const entity = entities.find(en =>
+    Math.round(en.x) === tx && Math.round(en.y) === ty
+  )
+  const isWall = tiles[ty]?.[tx] === "#"
+
+  // Construir contenido del tooltip
+  let html = ""
+  let cls  = ""
+  if (isWall) {
+    cls  = "wall-tile"
+    html = `<div class="ht-type">TERRENO</div>
+            <div class="ht-name">◼ Muro</div>
+            <div class="ht-stat">Inaccesible</div>`
+  } else if (entity) {
+    const typeLabels = {
+      "worker":       ["UNIDAD", "◈ Worker",      ""],
+      "ai-worker":    ["UNIDAD IA", "⬟ Worker IA", "enemy-tile"],
+      "base":         ["BASE",   "◈ Base",         ""],
+      "ai-base":      ["BASE IA","⬟ Base IA",      "enemy-tile"],
+      "source":       ["RECURSO","⬡ Fuente",       "source-tile"],
+      "extension":    ["EXTENSIÓN","◈ Extensión",  ""],
+      "ai-extension": ["EXT IA","⬟ Extensión IA", "enemy-tile"],
+    }
+    const [typeLabel, name, tileClass] = typeLabels[entity.type] || ["ENTIDAD", entity.type, ""]
+    cls  = tileClass
+    html = `<div class="ht-type">${typeLabel}</div>
+            <div class="ht-name">${name}</div>`
+    if (entity.energy !== undefined)
+      html += `<div class="ht-stat">Energía <span>${entity.energy}${entity.maxEnergy ? " / " + entity.maxEnergy : ""}</span></div>`
+    if (entity.state)
+      html += `<div class="ht-stat">Estado <span>${entity.state}</span></div>`
+    html += `<div class="ht-stat">Pos <span>(${tx}, ${ty})</span></div>`
+  } else {
+    html = `<div class="ht-type">SUELO</div>
+            <div class="ht-name">· Tile libre</div>
+            <div class="ht-stat">Pos <span>(${tx}, ${ty})</span></div>`
+  }
+
+  hoverTip.className      = cls
+  hoverTip.innerHTML      = html
+  hoverTip.style.display  = "block"
+  // Posición: desplazado del cursor
+  const tipW = 160, tipH = 70
+  let tx2 = e.clientX + 14
+  let ty2 = e.clientY + 14
+  if (tx2 + tipW > window.innerWidth)  tx2 = e.clientX - tipW - 8
+  if (ty2 + tipH > window.innerHeight) ty2 = e.clientY - tipH - 8
+  hoverTip.style.left = tx2 + "px"
+  hoverTip.style.top  = ty2 + "px"
+})
+
+canvas.addEventListener("mouseleave", () => {
+  hoverTile = null
+  hoverTip.style.display = "none"
+})
 
 // ─── LOOP PRINCIPAL 60FPS ─────────────────────────────────
 function loop() {
@@ -118,6 +195,28 @@ function renderFrame() {
   for (let y = 0; y < mapHeight; y++) {
     for (let x = 0; x < mapWidth; x++) {
       drawTile(x, y, tiles[y][x] === "#" ? "wall" : "floor")
+    }
+  }
+
+  // 2. Hover highlight
+  if (hoverTile) {
+    const { x: hx, y: hy } = hoverTile
+    if (hx >= 0 && hx < mapWidth && hy >= 0 && hy < mapHeight) {
+      const isWall = tiles[hy]?.[hx] === "#"
+      ctx.save()
+      if (isWall) {
+        ctx.fillStyle   = "rgba(150,150,180,0.08)"
+        ctx.strokeStyle = "rgba(150,150,200,0.25)"
+      } else {
+        ctx.fillStyle   = "rgba(0,170,255,0.10)"
+        ctx.strokeStyle = "rgba(0,170,255,0.40)"
+        ctx.shadowColor = "#00aaff"
+        ctx.shadowBlur  = 10
+      }
+      ctx.lineWidth = 1
+      ctx.fillRect(hx * CELL, hy * CELL, CELL, CELL)
+      ctx.strokeRect(hx * CELL + 0.5, hy * CELL + 0.5, CELL - 1, CELL - 1)
+      ctx.restore()
     }
   }
 
@@ -843,6 +942,154 @@ document.addEventListener("mouseup", () => {
   document.body.style.cursor    = ""
   document.body.style.userSelect = ""
 })
+
+// ═══════════════════════════════════════════════════════════
+//  SISTEMA DE TRANSMISIONES — Kira y NEXUS comentan el juego
+// ═══════════════════════════════════════════════════════════
+
+const commMessages  = document.getElementById("comm-messages")
+const MAX_COMM_MSGS = 3  // máximo visible en el panel
+
+// Mensajes indexados por evento y misión (null = cualquier misión)
+const COMM_SCRIPTS = [
+  // ── Inicio de partida ──────────────────────────────────
+  { event: "start",        mission: null, speaker: "SYS",
+    msg: "Conexión establecida. Red activa." },
+  { event: "start",        mission: 1,    speaker: "KIRA",
+    msg: "Tu código corre cada 300ms. Workers esperando." },
+  { event: "start",        mission: 1,    speaker: "NEXUS",
+    msg: "Detecté 3 fuentes de energía. El tiempo es crítico." },
+
+  // ── Primer harvest detectado ───────────────────────────
+  { event: "harvesting",   mission: 1,    speaker: "KIRA",
+    msg: "¡Funcionó! Un worker está recolectando." },
+  { event: "harvesting",   mission: null, speaker: "SYS",
+    msg: "Script activo — workers en modo harvest." },
+
+  // ── Hitos de energía del jugador ──────────────────────
+  { event: "energy_25",    mission: 1,    speaker: "KIRA",
+    msg: "Base al 25%. El for...in funciona bien." },
+  { event: "energy_25",    mission: null, speaker: "SYS",
+    msg: "Base al 25% de capacidad." },
+  { event: "energy_50",    mission: 1,    speaker: "NEXUS",
+    msg: "50%. La IA también acumula. No te detengas." },
+  { event: "energy_50",    mission: null, speaker: "NEXUS",
+    msg: "Mitad del objetivo. La IA compite." },
+  { event: "energy_75",    mission: 1,    speaker: "KIRA",
+    msg: "¡75%! Casi lo logramos. Sigue así." },
+  { event: "energy_75",    mission: null, speaker: "KIRA",
+    msg: "75% — victoria al alcance." },
+
+  // ── Amenaza IA ────────────────────────────────────────
+  { event: "ai_threat",    mission: 1,    speaker: "NEXUS",
+    msg: "⚠ La IA supera el 80%. Acelera la recolección." },
+  { event: "ai_threat",    mission: null, speaker: "NEXUS",
+    msg: "⚠ IA en 80%. Optimiza tu script." },
+  { event: "ai_critical",  mission: null, speaker: "KIRA",
+    msg: "¡ALERTA! La IA está a punto de ganar." },
+
+  // ── Worker spawneado ──────────────────────────────────
+  { event: "new_worker",   mission: 1,    speaker: "NEXUS",
+    msg: "Nueva unidad en campo. El ejército crece." },
+
+  // ── Modo sandbox ──────────────────────────────────────
+  { event: "start",        mission: -1,   speaker: "SYS",
+    msg: "MODO LIBRE — Sin IA. Experimenta sin presión." },
+]
+
+// Estado interno del sistema de comms
+const commState = {
+  shownEvents: new Set(),
+  lastWorkerCount: -1,
+  lastEnergy: -1,
+  lastAiEnergy: -1,
+  harvestingDetected: false,
+  started: false
+}
+
+function pushComm(speaker, msg) {
+  const el = document.createElement("div")
+  el.className = "comm-msg"
+  el.innerHTML = `<span class="comm-speaker ${speaker.toLowerCase()}">${speaker}</span>
+                  <span class="comm-text">${msg}</span>`
+  commMessages.appendChild(el)
+  // Limitar a MAX_COMM_MSGS — quitar el más antiguo
+  while (commMessages.children.length > MAX_COMM_MSGS) {
+    commMessages.removeChild(commMessages.firstChild)
+  }
+  // Scroll al último
+  commMessages.scrollTop = commMessages.scrollHeight
+}
+
+function fireComm(event) {
+  if (commState.shownEvents.has(event)) return
+  commState.shownEvents.add(event)
+
+  const missionId = typeof currentMissionId !== "undefined" ? currentMissionId : null
+  const isSandbox = typeof currentGameMode !== "undefined" && currentGameMode === "sandbox"
+  const effectiveMission = isSandbox ? -1 : missionId
+
+  // Buscar el script más específico para este evento y misión
+  const match =
+    COMM_SCRIPTS.find(s => s.event === event && s.mission === effectiveMission) ||
+    COMM_SCRIPTS.find(s => s.event === event && s.mission === null)
+
+  if (match) pushComm(match.speaker, match.msg)
+}
+
+function updateComms(snap) {
+  const { entities, tick } = snap
+  const playerBase  = entities.find(e => e.type === "base")
+  const aiBase      = entities.find(e => e.type === "ai-base")
+  const workers     = entities.filter(e => e.type === "worker")
+
+  // Evento de inicio (solo una vez)
+  if (!commState.started) {
+    commState.started = true
+    fireComm("start")
+  }
+
+  // Primer harvest
+  if (!commState.harvestingDetected) {
+    const harvesting = workers.some(w => w.state === "harvesting")
+    if (harvesting) {
+      commState.harvestingDetected = true
+      fireComm("harvesting")
+    }
+  }
+
+  // Hitos de energía del jugador
+  if (playerBase && playerBase.maxEnergy) {
+    const pct = playerBase.energy / playerBase.maxEnergy * 100
+    if (pct >= 25 && !commState.shownEvents.has("energy_25")) fireComm("energy_25")
+    if (pct >= 50 && !commState.shownEvents.has("energy_50")) fireComm("energy_50")
+    if (pct >= 75 && !commState.shownEvents.has("energy_75")) fireComm("energy_75")
+  }
+
+  // Amenaza IA
+  if (aiBase && aiBase.maxEnergy) {
+    const aiPct = aiBase.energy / aiBase.maxEnergy * 100
+    if (aiPct >= 80 && !commState.shownEvents.has("ai_threat"))   fireComm("ai_threat")
+    if (aiPct >= 95 && !commState.shownEvents.has("ai_critical")) fireComm("ai_critical")
+  }
+
+  // Nuevo worker
+  if (workers.length > commState.lastWorkerCount && commState.lastWorkerCount >= 0) {
+    fireComm("new_worker")
+  }
+  commState.lastWorkerCount = workers.length
+}
+
+// Resetear comms al iniciar nueva partida
+function resetComms() {
+  commState.shownEvents.clear()
+  commState.lastWorkerCount  = -1
+  commState.lastEnergy       = -1
+  commState.lastAiEnergy     = -1
+  commState.harvestingDetected = false
+  commState.started = false
+  commMessages.innerHTML = ""
+}
 
 // ═══════════════════════════════════════════════════════════
 //  MENÚ PRINCIPAL — Red neuronal animada + selección de modo
@@ -1836,6 +2083,7 @@ function hideMissionPanel() {
 }
 
 function launchMission(id) {
+  resetComms()
   document.getElementById("mission-screen").style.display = "none"
   const m = MISSIONS[id]
   const code = m.code || MISSIONS[1].code
@@ -1845,8 +2093,9 @@ function launchMission(id) {
   if (id === 1) tourPendingForMission = true
 
   const difficulty = getMissionDifficulty(id)
-  currentMode     = "campaign"
-  currentGameMode = "campaign"
+  currentMode      = "campaign"
+  currentGameMode  = "campaign"
+  currentMissionId = id
   setSandboxUI(false)
   fetch("/api/reset", {
     method: "POST",
@@ -1864,8 +2113,9 @@ function startMission(id) {
 }
 
 // ── Seleccionar modo ──────────────────────────────────────
-let currentMode     = null
-let currentGameMode = "vs-ia"  // modo activo del servidor (vs-ia | sandbox | campaign)
+let currentMode      = null
+let currentGameMode  = "vs-ia"  // modo activo del servidor (vs-ia | sandbox | campaign)
+let currentMissionId = null
 
 function selectMode(mode) {
   currentMode = mode
@@ -1905,6 +2155,7 @@ function openDifficultyModal() {
 }
 
 function launchVsIA(difficulty) {
+  resetComms()
   currentGameMode = "vs-ia"
   setSandboxUI(false)
   fetch("/api/reset", {
@@ -1915,6 +2166,7 @@ function launchVsIA(difficulty) {
 }
 
 function launchSandbox() {
+  resetComms()
   currentGameMode = "sandbox"
   setSandboxUI(true)
   fetch("/api/reset", {
