@@ -400,6 +400,22 @@ function renderFrame() {
     drawHarvestBeam({ ...e, ix, iy }, sourceEntities)
   }
 
+  // 3.7 Calcular qué sources están siendo cosechados ahora mismo
+  // (worker harvesting + parado en tile adyacente al source)
+  const harvestedSources = new Set()
+  for (const e of entities) {
+    if ((e.type !== "worker" && e.type !== "ai-worker") || e.state !== "harvesting") continue
+    if (e.targetX === undefined) continue
+    const prev = prevEntities[e.id]
+    const ix = prev ? lerp(prev.x, e.x, t) : e.x
+    const iy = prev ? lerp(prev.y, e.y, t) : e.y
+    if (Math.abs(ix - e.targetX) > 1.2 || Math.abs(iy - e.targetY) > 1.2) continue
+    for (const src of sourceEntities) {
+      const d = Math.abs(src.x - e.targetX) + Math.abs(src.y - e.targetY)
+      if (d <= 1) harvestedSources.add(`${src.x},${src.y}`)
+    }
+  }
+
   // 4. Entidades con interpolación
   const drawOrder = ["source", "extension", "ai-extension", "ai-base", "base", "ai-worker", "worker"]
   for (const type of drawOrder) {
@@ -408,7 +424,8 @@ function renderFrame() {
       const prev = prevEntities[e.id]
       const ix   = prev ? lerp(prev.x, e.x, t) : e.x
       const iy   = prev ? lerp(prev.y, e.y, t) : e.y
-      drawEntity({ ...e, ix, iy })
+      const isHarvested = type === "source" && harvestedSources.has(`${e.x},${e.y}`)
+      drawEntity({ ...e, ix, iy, isHarvested })
     }
   }
 
@@ -779,9 +796,11 @@ function drawBase(px, py, cx, cy, isAI) {
 
 // ─── SOURCE — 3 capas estilo Screeps ──────────────────────
 function drawSource(px, py, cx, cy, e) {
-  const energy = e.source ? e.source.energy / e.source.max : 1
-  const pulse  = 0.5 + 0.5 * Math.sin(animFrame * 0.07 + cx * 0.15)
-  const r      = CELL * 0.36
+  const energy     = e.source ? e.source.energy / e.source.max : 1
+  const isHarvested = !!e.isHarvested
+  const pulse      = 0.5 + 0.5 * Math.sin(animFrame * 0.07 + cx * 0.15)
+  const activePulse = isHarvested ? (0.5 + 0.5 * Math.sin(animFrame * 0.20)) : 0
+  const r          = CELL * 0.36
 
   // Agotado: hueco oscuro, sin ruido visual
   if (energy <= 0) {
@@ -794,18 +813,41 @@ function drawSource(px, py, cx, cy, e) {
     return
   }
 
-  // Capa 1 — halo exterior grande (aura difusa)
+  // Capa 0 — halo extra cuando está siendo cosechado
+  if (isHarvested) {
+    const harvestR = r * (2.8 + 0.6 * activePulse)
+    const hh = ctx.createRadialGradient(cx, cy, r * 0.5, cx, cy, harvestR)
+    hh.addColorStop(0, `rgba(255,200,0,${0.22 * activePulse})`)
+    hh.addColorStop(1, "rgba(255,180,0,0)")
+    ctx.shadowBlur = 0
+    ctx.fillStyle  = hh
+    ctx.beginPath()
+    ctx.arc(cx, cy, harvestR, 0, Math.PI * 2)
+    ctx.fill()
+
+    // Anillo pulsante de actividad
+    ctx.strokeStyle = `rgba(255,220,60,${0.35 * activePulse})`
+    ctx.lineWidth   = 1.5
+    ctx.shadowColor = "#ffdd00"
+    ctx.shadowBlur  = 8 * activePulse
+    ctx.beginPath()
+    ctx.arc(cx, cy, r * (1.4 + 0.3 * activePulse), 0, Math.PI * 2)
+    ctx.stroke()
+    ctx.shadowBlur = 0
+  }
+
+  // Capa 1 — halo exterior base
   const haloR = r * (1.8 + 0.4 * pulse)
   const halo  = ctx.createRadialGradient(cx, cy, r * 0.4, cx, cy, haloR)
-  halo.addColorStop(0,   `rgba(220,160,0,${0.18 * energy})`)
-  halo.addColorStop(1,   "rgba(220,160,0,0)")
+  halo.addColorStop(0, `rgba(220,160,0,${(0.18 + 0.12 * activePulse) * energy})`)
+  halo.addColorStop(1, "rgba(220,160,0,0)")
   ctx.shadowBlur = 0
   ctx.fillStyle  = halo
   ctx.beginPath()
   ctx.arc(cx, cy, haloR, 0, Math.PI * 2)
   ctx.fill()
 
-  // Capa 2 — núcleo con gradiente off-center (la "fuente de luz")
+  // Capa 2 — núcleo con gradiente off-center
   const core = ctx.createRadialGradient(
     cx - r * 0.22, cy - r * 0.22, 0,
     cx, cy, r
@@ -816,21 +858,21 @@ function drawSource(px, py, cx, cy, e) {
   core.addColorStop(1,    `rgba(80,40,0,${0.60 * energy})`)
 
   ctx.shadowColor = "#ffcc00"
-  ctx.shadowBlur  = 4 + pulse * 6 * energy
+  ctx.shadowBlur  = (4 + pulse * 6 + activePulse * 8) * energy
   ctx.fillStyle   = core
   ctx.beginPath()
   ctx.arc(cx, cy, r, 0, Math.PI * 2)
   ctx.fill()
 
-  // Borde nítido sin blur
+  // Borde nítido
   ctx.shadowBlur  = 0
   ctx.strokeStyle = `rgba(255,220,60,${0.55 + energy * 0.35})`
-  ctx.lineWidth   = 1
+  ctx.lineWidth   = isHarvested ? 1.5 : 1
   ctx.beginPath()
   ctx.arc(cx, cy, r, 0, Math.PI * 2)
   ctx.stroke()
 
-  // Capa 3 — punto central brillante (chispa)
+  // Capa 3 — chispa central
   ctx.shadowColor = "#fff8aa"
   ctx.shadowBlur  = 3 + pulse * 4
   ctx.fillStyle   = `rgba(255,252,220,${0.7 + 0.3 * pulse * energy})`
@@ -933,7 +975,7 @@ function drawWorker(px, py, cx, cy, e, isAI) {
   ctx.restore()
 }
 
-// ─── HARVEST BEAM — trompa de energía hacia el source ─────
+// ─── HARVEST BEAM — cadena de oruga (estilo carrito-tanque) ─
 // Llamado desde renderFrame con acceso a todas las entidades
 function drawHarvestBeam(e, sourceEntities) {
   if (e.state !== "harvesting") return
@@ -941,7 +983,7 @@ function drawHarvestBeam(e, sourceEntities) {
 
   // Verificar que el worker esté cerca de su target (harvesting activo)
   const dx = e.ix - e.targetX, dy = e.iy - e.targetY
-  if (Math.abs(dx) > 1.2 || Math.abs(dy) > 1.2) return  // todavía moviéndose
+  if (Math.abs(dx) > 1.2 || Math.abs(dy) > 1.2) return
 
   // Buscar source adyacente a la posición de cosecha
   let nearestSource = null
@@ -952,30 +994,65 @@ function drawHarvestBeam(e, sourceEntities) {
   }
   if (!nearestSource) return
 
-  const isAI  = e.type === "ai-worker"
-  const pulse = 0.4 + 0.6 * Math.abs(Math.sin(animFrame * 0.12 + e.ix))
   const energy = e.energy ? e.energy.current / e.energy.capacity : 0
   if (energy >= 1) return  // lleno — no hay flujo
 
+  const isAI = e.type === "ai-worker"
   const wx = (e.ix + 0.5) * CELL
   const wy = (e.iy + 0.5) * CELL
   const sx = (nearestSource.x + 0.5) * CELL
   const sy = (nearestSource.y + 0.5) * CELL
 
+  const len  = Math.hypot(wx - sx, wy - sy)
+  const ux   = (wx - sx) / len   // vector unitario source → worker
+  const uy   = (wy - sy) / len
+
   ctx.save()
-  ctx.shadowBlur  = 4
-  ctx.shadowColor = isAI ? "#ff6600" : "#ffcc00"
-  ctx.strokeStyle = isAI
-    ? `rgba(255,140,0,${0.4 * pulse})`
-    : `rgba(255,220,60,${0.45 * pulse})`
-  ctx.lineWidth   = 1.5
-  ctx.setLineDash([2, 3])
-  ctx.lineDashOffset = -(animFrame * 0.8)  // flujo animado hacia el worker
+
+  // Riel de fondo — tubo grueso y oscuro
+  ctx.strokeStyle = isAI ? "rgba(80,20,0,0.7)" : "rgba(0,40,80,0.7)"
+  ctx.lineWidth   = 5
+  ctx.shadowBlur  = 0
   ctx.beginPath()
   ctx.moveTo(sx, sy)
   ctx.lineTo(wx, wy)
   ctx.stroke()
-  ctx.setLineDash([])
+
+  // Cadena animada — segmentos que avanzan source → worker
+  const SEG_LEN  = 5   // longitud de cada eslabón
+  const GAP      = 3   // espacio entre eslabones
+  const STEP     = SEG_LEN + GAP
+  const offset   = (animFrame * 1.4) % STEP  // velocidad del flujo
+  const glowColor = isAI ? "#ff7700" : "#ffdd00"
+  const segColor  = isAI ? `rgba(255,140,30,0.90)` : `rgba(255,220,60,0.90)`
+
+  ctx.shadowColor = glowColor
+  ctx.shadowBlur  = 6
+  ctx.strokeStyle = segColor
+  ctx.lineWidth   = 3
+  ctx.lineCap     = "round"
+
+  let d = offset
+  while (d < len - 2) {
+    const x1 = sx + ux * d
+    const y1 = sy + uy * d
+    const x2 = sx + ux * Math.min(d + SEG_LEN, len)
+    const y2 = sy + uy * Math.min(d + SEG_LEN, len)
+    ctx.beginPath()
+    ctx.moveTo(x1, y1)
+    ctx.lineTo(x2, y2)
+    ctx.stroke()
+    d += STEP
+  }
+
+  // Destello en el punto de contacto con el worker
+  const pulse = 0.6 + 0.4 * Math.sin(animFrame * 0.18)
+  ctx.shadowBlur  = 10 * pulse
+  ctx.fillStyle   = isAI ? `rgba(255,160,40,${0.8 * pulse})` : `rgba(255,230,80,${0.8 * pulse})`
+  ctx.beginPath()
+  ctx.arc(wx, wy, 3 * pulse, 0, Math.PI * 2)
+  ctx.fill()
+
   ctx.restore()
 }
 
