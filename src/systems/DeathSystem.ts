@@ -30,5 +30,6 @@ export class DeathSystem {
     gameState.structures.delete(entityId)
     gameState.sources.delete(entityId)
     gameState.aiWorkers.delete(entityId)
+    gameState.workerMemory.delete(entityId)
   }
 }

@@ -63,6 +63,10 @@ export class GameState {
   // Se reinicia solo cuando se llama a resetGame(), no entre ticks
   public playerMemory: Record<string, unknown> = {}
 
+  // Memoria por worker — accesible como w.memory en el script del jugador
+  // Persiste entre ticks, se borra cuando el worker muere/desaparece
+  public workerMemory: Map<number, Record<string, unknown>> = new Map()
+
   // say() — mensajes que los workers muestran como burbuja (duran 3 ticks)
   public workerSays: Map<EntityId, { msg: string; until: number }> = new Map()
 

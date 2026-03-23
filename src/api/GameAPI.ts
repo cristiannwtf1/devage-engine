@@ -20,6 +20,17 @@ export class WorkerProxy {
   get y()     { return this.gs.positions.get(this.id)?.y ?? 0 }
   get state() { return this.gs.behaviors.get(this.id)?.state ?? "idle" }
 
+  // ── memory — estado persistente por worker entre ticks ─
+  get memory(): Record<string, unknown> {
+    if (!this.gs.workerMemory.has(this.id)) {
+      this.gs.workerMemory.set(this.id, {})
+    }
+    return this.gs.workerMemory.get(this.id)!
+  }
+  set memory(value: Record<string, unknown>) {
+    this.gs.workerMemory.set(this.id, value)
+  }
+
   // ── pos — posición como objeto ────────────────────────
   get pos() {
     const p = this.gs.positions.get(this.id)
@@ -59,16 +70,42 @@ export class WorkerProxy {
   }
 
   // ── harvest — recolectar de una fuente ────────────────
+  // Screeps: range 1 — workers se ubican en tile adyacente, no encima del source
   harvest(sourceId: number): number {
     if (!this.gs.sources.has(sourceId)) return RC.ERR_INVALID_TARGET
     if (this.store.isFull())            return RC.ERR_FULL
 
-    const pos = this.gs.positions.get(sourceId)
-    if (!pos) return RC.ERR_INVALID_TARGET
+    const sourcePos = this.gs.positions.get(sourceId)
+    if (!sourcePos) return RC.ERR_INVALID_TARGET
 
-    const beh = this.gs.behaviors.get(this.id)
-    if (beh) beh.state = "harvesting"
-    this.moveTo(pos.x, pos.y)
+    // Crear behavior si el worker arrancó en "idle" sin componente
+    let beh = this.gs.behaviors.get(this.id)
+    if (!beh) { beh = { state: "idle" }; this.gs.behaviors.set(this.id, beh) }
+    beh.state = "harvesting"
+
+    // Encontrar el tile adyacente al source más cercano al worker y no reclamado
+    // Esto evita que todos los workers se apilen en el mismo tile
+    const taken = new Set<string>()
+    for (const [wId, target] of this.gs.targets) {
+      if (wId === this.id) continue
+      taken.add(`${target.targetX},${target.targetY}`)
+    }
+
+    const wPos    = this.gs.positions.get(this.id)
+    const offsets = [{ x: 1, y: 0 }, { x: -1, y: 0 }, { x: 0, y: 1 }, { x: 0, y: -1 }]
+    let bestX = sourcePos.x, bestY = sourcePos.y  // fallback: source mismo
+    let bestDist = Infinity
+
+    for (const off of offsets) {
+      const ax = sourcePos.x + off.x
+      const ay = sourcePos.y + off.y
+      if (!this.gs.worldMap.isWalkable(ax, ay)) continue
+      if (taken.has(`${ax},${ay}`)) continue
+      const d = wPos ? Math.abs(ax - wPos.x) + Math.abs(ay - wPos.y) : 0
+      if (d < bestDist) { bestDist = d; bestX = ax; bestY = ay }
+    }
+
+    this.moveTo(bestX, bestY)
     return RC.OK
   }
 
@@ -79,8 +116,10 @@ export class WorkerProxy {
     const pos = this.gs.positions.get(targetId)
     if (!pos) return RC.ERR_INVALID_TARGET
 
-    const beh = this.gs.behaviors.get(this.id)
-    if (beh) beh.state = "returning"
+    // Crear behavior si el worker arrancó en "idle" sin componente
+    let beh = this.gs.behaviors.get(this.id)
+    if (!beh) { beh = { state: "idle" }; this.gs.behaviors.set(this.id, beh) }
+    beh.state = "returning"
     this.moveTo(pos.x, pos.y)
     return RC.OK
   }
@@ -107,12 +146,13 @@ export function buildGameAPI(gs: GameState) {
     workers[id] = new WorkerProxy(gs, id)
   }
 
-  // Sources
+  // Sources — solo los del jugador (no expone el source de la IA)
   const sources: Record<number, {
     id: number; x: number; y: number; pos: { x: number; y: number };
     energy: number; maxEnergy: number
   }> = {}
   for (const [id, src] of gs.sources) {
+    if (!gs.playerSourceIds.has(id)) continue
     const pos = gs.positions.get(id)
     if (pos) sources[id] = {
       id, x: pos.x, y: pos.y,
@@ -134,6 +174,14 @@ export function buildGameAPI(gs: GameState) {
     capacity: baseStorage.capacity,
   } : null
 
+  // getObjectById — lookup universal por ID
+  function getObjectById(id: number) {
+    if (workers[id])  return workers[id]
+    if (sources[id])  return sources[id]
+    if (base && base.id === id) return base
+    return null
+  }
+
   return {
     // Constantes de resultado
     OK:                    RC.OK,
@@ -142,10 +190,11 @@ export function buildGameAPI(gs: GameState) {
     ERR_FULL:              RC.ERR_FULL,
     ERR_INVALID_TARGET:    RC.ERR_INVALID_TARGET,
 
-    tick:    gs.tick,
+    tick:          gs.tick,
     workers,
     sources,
     base,
-    memory:  gs.playerMemory,
+    memory:        gs.playerMemory,
+    getObjectById,
   }
 }
