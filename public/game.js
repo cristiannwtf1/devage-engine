@@ -100,6 +100,30 @@ let lastTickTime  = 0
 let animFrame     = 0
 let canvasSized   = false
 
+// ─── ZOOM + PAN ────────────────────────────────────────────
+let zoom = 1.0
+let panX = 0, panY = 0
+const ZOOM_MIN = 0.4, ZOOM_MAX = 5.0
+let isPanning = false
+let panDragOriginX = 0, panDragOriginY = 0
+
+function resetView() {
+  zoom = 1.0; panX = 0; panY = 0
+}
+
+// Convierte posición de pantalla → tile del mapa
+function screenToTile(screenX, screenY) {
+  const rect   = canvas.getBoundingClientRect()
+  const scaleX = canvas.width  / rect.width
+  const scaleY = canvas.height / rect.height
+  const cx = (screenX - rect.left) * scaleX
+  const cy = (screenY - rect.top)  * scaleY
+  return {
+    tx: Math.floor((cx - panX) / (CELL * zoom)),
+    ty: Math.floor((cy - panY) / (CELL * zoom))
+  }
+}
+
 // ─── WEBSOCKET ────────────────────────────────────────────
 const ws        = new WebSocket(`ws://${location.host}`)
 const statusBar = document.getElementById("status-bar")
@@ -141,13 +165,16 @@ let hoverTile = null
 
 canvas.addEventListener("mousemove", e => {
   if (!currSnapshot) return
-  const rect   = canvas.getBoundingClientRect()
-  const scaleX = canvas.width  / rect.width
-  const scaleY = canvas.height / rect.height
-  const px     = (e.clientX - rect.left) * scaleX
-  const py     = (e.clientY - rect.top)  * scaleY
-  const tx     = Math.floor(px / CELL)
-  const ty     = Math.floor(py / CELL)
+  const { tx, ty } = screenToTile(e.clientX, e.clientY)
+
+  // Pan con botón derecho o medio presionado
+  if (isPanning) {
+    const rect   = canvas.getBoundingClientRect()
+    const scaleX = canvas.width / rect.width
+    const scaleY = canvas.height / rect.height
+    panX = e.clientX * scaleX - panDragOriginX
+    panY = e.clientY * scaleY - panDragOriginY
+  }
   const { mapWidth, mapHeight, tiles, entities } = currSnapshot
   if (tx < 0 || tx >= mapWidth || ty < 0 || ty >= mapHeight) {
     hoverTile = null; hoverTip.style.display = "none"; return
@@ -215,6 +242,37 @@ canvas.addEventListener("mouseleave", () => {
   hoverTip.style.display = "none"
 })
 
+// ─── ZOOM + PAN — EVENTOS ──────────────────────────────────
+canvas.addEventListener("wheel", e => {
+  e.preventDefault()
+  const rect   = canvas.getBoundingClientRect()
+  const scaleX = canvas.width  / rect.width
+  const scaleY = canvas.height / rect.height
+  const cx = (e.clientX - rect.left) * scaleX
+  const cy = (e.clientY - rect.top)  * scaleY
+  const factor  = e.deltaY < 0 ? 1.15 : 1 / 1.15
+  const newZoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, zoom * factor))
+  panX = cx - (cx - panX) * (newZoom / zoom)
+  panY = cy - (cy - panY) * (newZoom / zoom)
+  zoom = newZoom
+}, { passive: false })
+
+canvas.addEventListener("mousedown", e => {
+  if (e.button === 1 || e.button === 2) {
+    isPanning = true
+    const rect   = canvas.getBoundingClientRect()
+    const scaleX = canvas.width  / rect.width
+    const scaleY = canvas.height / rect.height
+    panDragOriginX = e.clientX * scaleX - panX
+    panDragOriginY = e.clientY * scaleY - panY
+    e.preventDefault()
+  }
+})
+
+canvas.addEventListener("mouseup",    e => { if (e.button === 1 || e.button === 2) isPanning = false })
+canvas.addEventListener("contextmenu", e => e.preventDefault())
+canvas.addEventListener("dblclick",    () => resetView())
+
 // ─── LOOP PRINCIPAL 60FPS ─────────────────────────────────
 function loop() {
   if (currSnapshot) renderFrame()
@@ -236,6 +294,13 @@ function renderFrame() {
   }
 
   const t = Math.min(1, (performance.now() - lastTickTime) / TICK_MS)
+
+  // Limpiar antes de transformar
+  ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+  // Aplicar zoom + pan
+  ctx.save()
+  ctx.setTransform(zoom, 0, 0, zoom, panX, panY)
 
   // 1. Tiles
   for (let y = 0; y < mapHeight; y++) {
@@ -303,11 +368,25 @@ function renderFrame() {
     }
   }
 
-  // 5. Viñeta sutil
+  // Restaurar transformación antes de viñeta y overlay
+  ctx.restore()
+
+  // 5. Viñeta sutil (sin zoom — siempre cubre el canvas)
   drawVignette()
 
   // 6. Pantalla de victoria
   if (snap.winner) drawVictoryScreen(snap.winner, snap.winTick)
+
+  // 7. Indicador de zoom (esquina inferior derecha)
+  if (zoom !== 1.0) {
+    ctx.save()
+    ctx.font = "11px 'Share Tech Mono', monospace"
+    ctx.fillStyle = "rgba(0,170,255,0.5)"
+    ctx.textAlign = "right"
+    ctx.textBaseline = "bottom"
+    ctx.fillText(`ZOOM ${zoom.toFixed(1)}×  [doble click para reset]`, canvas.width - 10, canvas.height - 8)
+    ctx.restore()
+  }
 
   document.getElementById("tick").textContent = snap.tick
   animFrame++
@@ -2228,6 +2307,7 @@ function launchMission(id) {
   selectedMission  = id
   setSandboxUI(false)
   freshGameMinTick = Date.now() // marcar reset — ignorar victorias hasta tick fresco
+  resetView()
   fetch("/api/reset", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
