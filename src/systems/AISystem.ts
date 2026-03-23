@@ -17,12 +17,13 @@ const DIFFICULTY_CONFIGS: Record<AiDifficulty, {
   spawnCost: number
   spawnDelay: number     // ticks entre spawns — más alto = más lento
   buildThreshold: number // % de base llena antes de construir extensión
+  startDelay: number     // ticks que la IA espera antes de actuar (ventaja inicial al jugador)
 }> = {
-  tutorial: { maxWorkers: 2,  spawnCost: 20, spawnDelay: 20, buildThreshold: 0.95 },
-  easy:     { maxWorkers: 5,  spawnCost: 20, spawnDelay: 10, buildThreshold: 0.80 },
-  medium:   { maxWorkers: 8,  spawnCost: 20, spawnDelay:  6, buildThreshold: 0.65 },
-  hard:     { maxWorkers: 10, spawnCost: 20, spawnDelay:  4, buildThreshold: 0.50 },
-  expert:   { maxWorkers: 12, spawnCost: 20, spawnDelay:  3, buildThreshold: 0.40 },
+  tutorial: { maxWorkers: 2,  spawnCost: 20, spawnDelay: 20, buildThreshold: 0.95, startDelay: 40 },
+  easy:     { maxWorkers: 5,  spawnCost: 20, spawnDelay: 10, buildThreshold: 0.80, startDelay: 20 },
+  medium:   { maxWorkers: 8,  spawnCost: 20, spawnDelay:  6, buildThreshold: 0.65, startDelay:  0 },
+  hard:     { maxWorkers: 10, spawnCost: 20, spawnDelay:  4, buildThreshold: 0.50, startDelay:  0 },
+  expert:   { maxWorkers: 12, spawnCost: 20, spawnDelay:  3, buildThreshold: 0.40, startDelay:  0 },
 }
 
 export class AISystem {
@@ -43,6 +44,15 @@ export class AISystem {
 
   public update(gs: GameState): void {
     if (gs.aiBaseId === null) return
+
+    // Ventaja inicial al jugador: activar workers IA al llegar al tick del delay
+    if (gs.tick === this.cfg.startDelay && this.cfg.startDelay > 0) {
+      for (const id of gs.aiWorkers) {
+        const b = gs.behaviors.get(id)
+        if (b && b.state === "idle") b.state = "harvesting"
+      }
+    }
+    if (gs.tick < this.cfg.startDelay) return
 
     const aiBaseStorage  = gs.energyStorages.get(gs.aiBaseId)
     const aiBasePosition = gs.positions.get(gs.aiBaseId)

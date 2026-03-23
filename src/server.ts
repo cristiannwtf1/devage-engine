@@ -77,14 +77,14 @@ function buildWorldM1(gs: GameState): void {
   gs.energyStorages.set(aiBaseId, { current: 0, capacity: 500 })
   gs.aiBaseId = aiBaseId
 
-  // Workers iniciales IA — harvesting
+  // Workers iniciales IA — idle (AISystem los activa en gs.tick === startDelay)
   for (let i = 0; i < 2; i++) {
     const w: EntityId = gs.createEntity()
     gs.entities.add(w)
     gs.positions.set(w, { x: 35 - i, y: 11 })
     gs.healths.set(w, { current: 20, max: 20 })
     gs.energyStorages.set(w, { current: 0, capacity: 10 })
-    gs.behaviors.set(w, { state: "harvesting" })
+    gs.behaviors.set(w, { state: "idle" })
     gs.aiWorkers.add(w)
   }
 }
@@ -167,7 +167,7 @@ function buildWorldM2(gs: GameState): void {
   gs.energyStorages.set(aiBaseId, { current: 0, capacity: 500 })
   gs.aiBaseId = aiBaseId
 
-  // Workers iniciales IA — harvesting (distribuidos)
+  // Workers iniciales IA — idle (AISystem los activa en gs.tick === startDelay)
   const aiSpawns = [{ x: 35, y: 11 }, { x: 35, y: 10 }, { x: 35, y: 12 }]
   for (const pos of aiSpawns) {
     const w: EntityId = gs.createEntity()
@@ -175,7 +175,7 @@ function buildWorldM2(gs: GameState): void {
     gs.positions.set(w, pos)
     gs.healths.set(w, { current: 20, max: 20 })
     gs.energyStorages.set(w, { current: 0, capacity: 10 })
-    gs.behaviors.set(w, { state: "harvesting" })
+    gs.behaviors.set(w, { state: "idle" })
     gs.aiWorkers.add(w)
   }
 }
