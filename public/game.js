@@ -567,68 +567,156 @@ function terrainHash(x, y) {
   return s - Math.floor(s)   // 0.0 → 1.0
 }
 
+// ─── GRASS PATCH — parche orgánico de musgo en el piso ────
+function drawGrassPatch(px, py, h) {
+  // Usar el hash para determinar posición, tamaño y rotación del parche
+  const ox  = 2 + ((h * 173) | 0) % (CELL - 8)
+  const oy  = 2 + ((h * 311) | 0) % (CELL - 8)
+  const rw  = 2 + ((h * 97)  | 0) % 4   // radio ancho 2-5
+  const rh  = 1 + ((h * 53)  | 0) % 3   // radio alto  1-3
+  const rot = h * Math.PI
+  const a   = 0.18 + h * 0.14           // alpha 0.18-0.32
+
+  ctx.save()
+  ctx.fillStyle = `rgba(15,55,25,${a})`
+  ctx.beginPath()
+  ctx.ellipse(px + ox + rw, py + oy + rh, rw, rh, rot, 0, Math.PI * 2)
+  ctx.fill()
+
+  // Segundo blob cercano (50% de los parches tienen doble mancha)
+  if (h > 0.07) {
+    const ox2 = ox + rw * 2 + 1
+    if (ox2 + rw < CELL - 1) {
+      ctx.fillStyle = `rgba(10,45,20,${a * 0.7})`
+      ctx.beginPath()
+      ctx.ellipse(px + ox2 + rw, py + oy + rh, rw * 0.7, rh, rot + 0.8, 0, Math.PI * 2)
+      ctx.fill()
+    }
+  }
+  ctx.restore()
+}
+
 // ─── TILE ─────────────────────────────────────────────────
 function drawTile(x, y, type, tiles) {
   const px = x * CELL, py = y * CELL
   ctx.shadowBlur = 0
+
+  // ── Vecinos (compartidos por floor y wall) ──────────────
+  const top = tiles?.[y - 1]?.[x]     === "#"
+  const bot = tiles?.[y + 1]?.[x]     === "#"
+  const lft = tiles?.[y]?.[x - 1]     === "#"
+  const rgt = tiles?.[y]?.[x + 1]     === "#"
+  const tl  = tiles?.[y - 1]?.[x - 1] === "#"
+  const tr  = tiles?.[y - 1]?.[x + 1] === "#"
+  const bl  = tiles?.[y + 1]?.[x - 1] === "#"
+  const br  = tiles?.[y + 1]?.[x + 1] === "#"
 
   if (type === "floor") {
     // Base del piso — azul-oscuro profundo
     ctx.fillStyle = "#060f1e"
     ctx.fillRect(px, py, CELL, CELL)
 
-    // Sombra proyectada desde muro superior (eje Y-1)
-    if (tiles && tiles[y - 1]?.[x] === "#") {
+    // ── Esquinas cóncavas: donde dos muros se unen en L ──
+    // Da la ilusión de que los muros se curvan al unirse
+    const CR = 5  // radio cóncavo
+    ctx.fillStyle = "#0e1628"  // color del muro nivel 1
+    if (top && lft && !tl) {
+      ctx.beginPath()
+      ctx.moveTo(px, py)
+      ctx.lineTo(px + CR, py)
+      ctx.arc(px, py, CR, 0, Math.PI * 0.5)
+      ctx.closePath(); ctx.fill()
+    }
+    if (top && rgt && !tr) {
+      ctx.beginPath()
+      ctx.moveTo(px + CELL, py)
+      ctx.lineTo(px + CELL - CR, py)
+      ctx.arc(px + CELL, py, CR, Math.PI * 0.5, Math.PI)
+      ctx.closePath(); ctx.fill()
+    }
+    if (bot && lft && !bl) {
+      ctx.beginPath()
+      ctx.moveTo(px, py + CELL)
+      ctx.lineTo(px, py + CELL - CR)
+      ctx.arc(px, py + CELL, CR, -Math.PI * 0.5, 0)
+      ctx.closePath(); ctx.fill()
+    }
+    if (bot && rgt && !br) {
+      ctx.beginPath()
+      ctx.moveTo(px + CELL, py + CELL)
+      ctx.lineTo(px + CELL - CR, py + CELL)
+      ctx.arc(px + CELL, py + CELL, CR, Math.PI, Math.PI * 1.5)
+      ctx.closePath(); ctx.fill()
+    }
+
+    // ── Sombra proyectada desde muro superior ──────────────
+    if (top) {
       const gs = ctx.createLinearGradient(px, py, px, py + 7)
       gs.addColorStop(0, "rgba(0,0,0,0.60)")
       gs.addColorStop(1, "rgba(0,0,0,0)")
       ctx.fillStyle = gs
       ctx.fillRect(px, py, CELL, 7)
     }
-    // Sombra proyectada desde muro a la izquierda (eje X-1)
-    if (tiles && tiles[y]?.[x - 1] === "#") {
+    // ── Sombra proyectada desde muro izquierdo ─────────────
+    if (lft) {
       const gs = ctx.createLinearGradient(px, py, px + 5, py)
       gs.addColorStop(0, "rgba(0,0,0,0.30)")
       gs.addColorStop(1, "rgba(0,0,0,0)")
       ctx.fillStyle = gs
       ctx.fillRect(px, py, 5, CELL)
     }
+
+    // ── Parche de musgo/pasto (determinista por posición) ──
+    const hg = terrainHash(x * 3 + 7, y * 5 + 13)
+    if (hg < 0.15) drawGrassPatch(px, py, hg / 0.15)
+
     return
   }
 
-  // Wall — terreno con 4 niveles de altura según hash
-  const h = terrainHash(x, y)
+  // ── WALL — esquinas curvas según vecinos ────────────────
+  const h     = terrainHash(x, y)
   const level = h < 0.20 ? 0 : h < 0.55 ? 1 : h < 0.85 ? 2 : 3
 
-  // Colores base — más ricos que antes (azul-pizarra oscuro)
+  // Radio base por nivel de altura del muro
+  const Rbase = [4, 5, 6, 8][level]
+
+  // Radio por esquina: grande si expuesta, pequeño si semi, 0 si interior
+  const rTL = (!top && !lft) ? Rbase : (!top || !lft) ? 2 : 0
+  const rTR = (!top && !rgt) ? Rbase : (!top || !rgt) ? 2 : 0
+  const rBR = (!bot && !rgt) ? Rbase : (!bot || !rgt) ? 2 : 0
+  const rBL = (!bot && !lft) ? Rbase : (!bot || !lft) ? 2 : 0
+
+  // Fondo del muro con esquinas curvas
   const wallColors = ["#0c1220", "#0f1628", "#111b30", "#131e36"]
   ctx.fillStyle = wallColors[level]
-  ctx.fillRect(px, py, CELL, CELL)
+  ctx.beginPath()
+  ctx.roundRect(px, py, CELL, CELL, [rTL, rTR, rBR, rBL])
+  ctx.fill()
 
-  // ── Bevel: highlight arriba + izquierda (luz viene de arriba-izquierda) ──
+  // ── Bevel: highlight arriba + izquierda ────────────────
   const hlAlpha = [0.07, 0.11, 0.16, 0.22][level]
   ctx.fillStyle = `rgba(80,130,220,${hlAlpha})`
-  ctx.fillRect(px,     py,     CELL, 2)  // borde top
-  ctx.fillRect(px,     py + 2, 2, CELL - 2)  // borde left
+  // Solo pintar highlight en bordes expuestos al piso
+  if (!top) ctx.fillRect(px + rTL, py,     CELL - rTL - rTR, 2)
+  if (!lft) ctx.fillRect(px,       py + rTL, 2, CELL - rTL - rBL)
 
-  // ── Bevel: sombra abajo + derecha ──
+  // ── Bevel: sombra abajo + derecha ─────────────────────
   const shAlpha = [0.28, 0.38, 0.48, 0.58][level]
   ctx.fillStyle = `rgba(0,0,0,${shAlpha})`
-  ctx.fillRect(px,           py + CELL - 2, CELL, 2)  // borde bottom
-  ctx.fillRect(px + CELL - 2, py,           2, CELL)  // borde right
+  if (!bot) ctx.fillRect(px + rBL, py + CELL - 2, CELL - rBL - rBR, 2)
+  if (!rgt) ctx.fillRect(px + CELL - 2, py + rTR,  2, CELL - rTR - rBR)
 
-  // Detalle de pico — solo en muros de nivel 3
-  if (level === 3) {
+  // Detalle pico — solo muros altos con exposición superior
+  if (level === 3 && !top) {
     const cx2 = px + CELL / 2
-    ctx.fillStyle = "rgba(60,110,200,0.18)"
+    ctx.fillStyle = "rgba(60,110,200,0.15)"
     ctx.beginPath()
     ctx.moveTo(cx2, py + 4)
     ctx.lineTo(cx2 - 3, py + 10)
     ctx.lineTo(cx2 + 3, py + 10)
     ctx.closePath()
     ctx.fill()
-    // Brillo tenue en el centro del muro alto
-    ctx.fillStyle = "rgba(80,140,255,0.06)"
+    ctx.fillStyle = "rgba(80,140,255,0.05)"
     ctx.fillRect(px + 4, py + 4, CELL - 8, CELL - 8)
   }
 }
