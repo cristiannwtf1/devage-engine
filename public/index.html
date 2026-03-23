@@ -410,48 +410,82 @@
     #hover-tooltip.wall-tile   { border-left-color: var(--border2); }
     #hover-tooltip.source-tile { border-left-color: #aacc00; }
 
-    /* ── CANAL DE TRANSMISIÓN ── */
-    #comm-panel {
-      border: 1px solid var(--border);
-      border-left: 2px solid #1a3a5a;
-      padding: 7px 9px;
-      background: #030810;
-      flex-shrink: 0;
+    /* ── DIÁLOGOS FLOTANTES ── */
+    #comm-dialogue {
+      position: fixed;
+      left: 16px;
+      bottom: 234px;   /* justo encima del editor (220px) + status (14px) */
+      width: 300px;
+      z-index: 45;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
     }
-    #comm-label {
-      font-size: 8px; letter-spacing: 3px;
-      color: var(--text-d); text-transform: uppercase;
-      margin-bottom: 6px;
-      display: flex; align-items: center; gap: 6px;
+
+    .comm-bubble {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      background: rgba(3,6,18,0.96);
+      border: 1px solid var(--border2);
+      border-left: 3px solid transparent;
+      padding: 10px 12px 10px 10px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.6);
+      animation: bubbleIn 0.35s cubic-bezier(0.2,0.8,0.3,1) both;
     }
-    #comm-dot {
-      width: 5px; height: 5px; border-radius: 50%;
-      background: var(--cyan-d);
-      box-shadow: 0 0 5px var(--cyan);
-      animation: commPulse 2s infinite;
+    .comm-bubble.dying {
+      animation: bubbleOut 0.4s ease forwards;
     }
-    @keyframes commPulse {
-      0%,100% { opacity: 1; } 50% { opacity: 0.3; }
+    .comm-bubble.kira  { border-left-color: var(--cyan-d); }
+    .comm-bubble.nexus { border-left-color: #7744cc; }
+    .comm-bubble.sys   { border-left-color: var(--border2); }
+
+    @keyframes bubbleIn {
+      from { opacity: 0; transform: translateY(10px) scale(0.97); }
+      to   { opacity: 1; transform: translateY(0)   scale(1);    }
     }
-    .comm-msg {
-      display: flex; gap: 7px; align-items: baseline;
-      padding: 4px 0;
-      border-bottom: 1px solid var(--border);
-      animation: commIn 0.3s ease;
+    @keyframes bubbleOut {
+      from { opacity: 1; transform: translateY(0); }
+      to   { opacity: 0; transform: translateY(-6px); }
     }
-    .comm-msg:last-child { border-bottom: none; }
-    @keyframes commIn {
-      from { opacity: 0; transform: translateX(-4px); }
-      to   { opacity: 1; transform: translateX(0); }
+
+    .comm-avatar {
+      width: 30px; height: 30px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: bold; flex-shrink: 0;
+      letter-spacing: 0;
     }
-    .comm-speaker {
-      font-size: 8px; letter-spacing: 2px;
-      flex-shrink: 0; margin-top: 1px;
+    .comm-avatar.kira  {
+      background: rgba(0,80,160,0.35);
+      border: 1px solid var(--cyan-d);
+      color: var(--cyan);
+      text-shadow: 0 0 8px rgba(0,170,255,0.6);
     }
-    .comm-speaker.kira  { color: var(--cyan-d); }
-    .comm-speaker.nexus { color: #8844ff; }
-    .comm-speaker.sys   { color: var(--text-d); }
-    .comm-text { font-size: 9px; color: var(--text); line-height: 1.6; }
+    .comm-avatar.nexus {
+      background: rgba(60,0,140,0.35);
+      border: 1px solid #7744cc;
+      color: #bb88ff;
+      text-shadow: 0 0 8px rgba(120,60,255,0.6);
+    }
+    .comm-avatar.sys {
+      background: rgba(10,20,40,0.5);
+      border: 1px solid var(--border2);
+      color: var(--text-d);
+      font-size: 10px;
+    }
+
+    .comm-body { display: flex; flex-direction: column; gap: 3px; flex: 1; }
+    .comm-bubble-speaker {
+      font-size: 8px; letter-spacing: 3px; text-transform: uppercase;
+    }
+    .comm-bubble-speaker.kira  { color: var(--cyan-d); }
+    .comm-bubble-speaker.nexus { color: #9966ff; }
+    .comm-bubble-speaker.sys   { color: var(--text-d); }
+    .comm-bubble-text {
+      font-size: 10px; color: #aabbdd;
+      line-height: 1.65; letter-spacing: 0.3px;
+    }
 
     /* ── STATUS BAR ── */
     #status-bar {
@@ -1697,21 +1731,16 @@
           <div id="event-log"></div>
         </div>
 
-        <!-- ── CANAL DE TRANSMISIÓN ── -->
-        <div id="comm-panel">
-          <div id="comm-label">
-            <div id="comm-dot"></div>
-            TRANSMISIÓN
-          </div>
-          <div id="comm-messages">
-            <!-- mensajes inyectados dinámicamente -->
-          </div>
-        </div>
+        <!-- comm-messages: log oculto, sólo para el JS -->
+        <div id="comm-messages" style="display:none"></div>
 
       </div>
 
     </div>
   </div>
+
+  <!-- ── DIÁLOGOS FLOTANTES ── -->
+  <div id="comm-dialogue"></div>
 
   <!-- ── HOVER TOOLTIP ── -->
   <div id="hover-tooltip"></div>

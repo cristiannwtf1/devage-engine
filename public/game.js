@@ -948,7 +948,6 @@ document.addEventListener("mouseup", () => {
 // ═══════════════════════════════════════════════════════════
 
 const commMessages  = document.getElementById("comm-messages")
-const MAX_COMM_MSGS = 3  // máximo visible en el panel
 
 // Mensajes indexados por evento y misión (null = cualquier misión)
 const COMM_SCRIPTS = [
@@ -1007,18 +1006,46 @@ const commState = {
   started: false
 }
 
+// ─── COLA DE DIÁLOGOS FLOTANTES ───────────────────────────
+const commDialogue = document.getElementById("comm-dialogue")
+const BUBBLE_DURATION = 4200   // ms visible
+const BUBBLE_FADEOUT  = 400    // ms de fade-out (debe coincidir con CSS)
+const BUBBLE_GAP      = 300    // ms entre mensajes consecutivos
+const commQueue       = []
+let   commBusy        = false
+
+const AVATAR = { KIRA: "K", NEXUS: "N", SYS: "◈" }
+
 function pushComm(speaker, msg) {
-  const el = document.createElement("div")
-  el.className = "comm-msg"
-  el.innerHTML = `<span class="comm-speaker ${speaker.toLowerCase()}">${speaker}</span>
-                  <span class="comm-text">${msg}</span>`
-  commMessages.appendChild(el)
-  // Limitar a MAX_COMM_MSGS — quitar el más antiguo
-  while (commMessages.children.length > MAX_COMM_MSGS) {
-    commMessages.removeChild(commMessages.firstChild)
-  }
-  // Scroll al último
-  commMessages.scrollTop = commMessages.scrollHeight
+  commQueue.push({ speaker, msg })
+  if (!commBusy) drainCommQueue()
+}
+
+function drainCommQueue() {
+  if (commQueue.length === 0) { commBusy = false; return }
+  commBusy = true
+  const { speaker, msg } = commQueue.shift()
+  const cls = speaker.toLowerCase()
+
+  const bubble = document.createElement("div")
+  bubble.className = `comm-bubble ${cls}`
+  bubble.innerHTML =
+    `<div class="comm-avatar ${cls}">${AVATAR[speaker] || "?"}</div>
+     <div class="comm-body">
+       <div class="comm-bubble-speaker ${cls}">${speaker}</div>
+       <div class="comm-bubble-text">${msg}</div>
+     </div>`
+
+  commDialogue.appendChild(bubble)
+
+  // Fade-out y limpieza
+  setTimeout(() => {
+    bubble.classList.add("dying")
+    setTimeout(() => {
+      bubble.remove()
+      setTimeout(drainCommQueue, BUBBLE_GAP)
+    }, BUBBLE_FADEOUT)
+  }, BUBBLE_DURATION)
 }
 
 function fireComm(event) {
@@ -1083,12 +1110,15 @@ function updateComms(snap) {
 // Resetear comms al iniciar nueva partida
 function resetComms() {
   commState.shownEvents.clear()
-  commState.lastWorkerCount  = -1
-  commState.lastEnergy       = -1
-  commState.lastAiEnergy     = -1
+  commState.lastWorkerCount    = -1
+  commState.lastEnergy         = -1
+  commState.lastAiEnergy       = -1
   commState.harvestingDetected = false
-  commState.started = false
-  commMessages.innerHTML = ""
+  commState.started            = false
+  commMessages.innerHTML       = ""
+  commDialogue.innerHTML       = ""
+  commQueue.length             = 0
+  commBusy                     = false
 }
 
 // ═══════════════════════════════════════════════════════════
