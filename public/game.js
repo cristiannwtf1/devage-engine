@@ -923,45 +923,76 @@ const MISSIONS = {
     ],
     hint: "Usa for (const id in Game.workers) para iterar. Si w.energy < w.energyCapacity → w.harvest(fuenteId). Si está lleno → w.transfer(Game.base.id).",
     code: `// ═══════════════════════════════════════════════
-//  CODESTRIKE · MISIÓN 1 — "Tu primer ejército"
+//  MISIÓN 1 — "Tu primer ejército"
+//  OBJETIVO: llena tu base al 100% antes que NEXUS
 // ═══════════════════════════════════════════════
-//  OBJETIVO: Llena la base al 100% antes que la IA.
 //
-//  CONCEPTOS JS en esta misión:
-//    · Variables (const, let)
-//    · Condicionales (if / else)
-//    · Bucles (for...in)
+//  Este código corre automáticamente cada 300ms.
+//  Lee cada comentario — explica el POR QUÉ de
+//  cada línea, no solo el qué hace.
+//
 // ═══════════════════════════════════════════════
 
-// Registro de fuentes ya reclamadas en este tick
-// (evita que dos workers vayan al mismo sitio)
-const claimed = {}
+// ── PASO 1: recorrer todos los workers ──────────
+//
+// "for...in" repite el bloque { } para cada
+// worker que tengas, uno por uno.
+// Si tienes 3 workers, corre 3 veces.
+// Si tienes 10, corre 10 veces. Solo.
 
 for (const id in Game.workers) {
-  const w = Game.workers[id]   // cada worker
+  const w = Game.workers[id]  // "w" = este worker
+
+
+  // ── PASO 2: ¿qué necesita hacer este worker? ──
+  //
+  // Un worker no puede cosechar y depositar al
+  // mismo tiempo. Necesita decidir.
+  //
+  // Preguntamos: ¿tiene espacio para más energía?
+  //   w.energy         → cuánta energía lleva ahora
+  //   w.energyCapacity → cuánto puede llevar máximo
 
   if (w.energy < w.energyCapacity) {
-    // Busca la fuente más cercana que no esté reclamada
+
+    // ── PASO 3a: está vacío → buscar un cristal ─
+    //
+    // Recorremos todos los cristales del mapa
+    // y buscamos el más cercano con energía.
+
     let nearest = null
     let minDist = Infinity
 
     for (const sid in Game.sources) {
-      const s = Game.sources[sid]
-      if (s.energy > 0 && !claimed[s.id]) {
+      const s = Game.sources[sid]        // este cristal
+      if (s.energy > 0) {               // ¿tiene energía?
         const d = Math.abs(w.x - s.x) + Math.abs(w.y - s.y)
         if (d < minDist) { minDist = d; nearest = s }
       }
     }
 
-    if (nearest) {
-      claimed[nearest.id] = true   // marcar como reclamada
-      w.harvest(nearest.id)        // ir a cosechar
-    }
+    // Ir a cosechar el cristal más cercano
+    if (nearest) w.harvest(nearest.id)
 
   } else {
-    w.transfer(Game.base.id)   // depositar en base
+
+    // ── PASO 3b: está lleno → depositar en base ─
+    //
+    // w.transfer() lleva la energía a un destino.
+    // Game.base.id es el nombre de tu base.
+
+    w.transfer(Game.base.id)
   }
+
 }
+// ── FIN ─────────────────────────────────────────
+//
+// ¿Quieres experimentar? Prueba cambiar esta línea:
+//   if (w.energy < w.energyCapacity)
+// por:
+//   if (w.energy < 5)
+//
+// ¿Qué crees que pasará? Ejecútalo y mira.
 `
   },
   // ── Season I ─────────────────────────────────────────────
@@ -2009,60 +2040,88 @@ drawMenuBg()
 // ═══════════════════════════════════════════════════════════
 
 const TOUR_STEPS = [
+
+  // ── ACT 0 — Bienvenida ──────────────────────────────────
   {
-    target: null,                         // sin spotlight — centrado
-    badge:  "◈ BIENVENIDO",
-    title:  "CODESTRIKE — Tutorial",
-    desc:   "Vas a controlar <strong>unidades reales</strong> con código JavaScript.\n\nEste tour te explica cada pieza en 8 pasos.\nPuedes saltarlo en cualquier momento.",
+    target: null,
+    badge:  "INICIO",
+    title:  "Bienvenido. Esto no es un juego normal.",
+    desc:   "Aquí no hay botones que presionar ni atajos.\n\n<strong>Tú escribes código. Tus unidades obedecen.</strong>\n\nEste tour te explica todo desde cero, paso a paso.\nNo necesitas saber programar para empezar.",
     code:   null
   },
+
+  // ── ACT 1 — El problema ─────────────────────────────────
   {
-    target: { kind: "entity", type: "worker" },
-    badge:  "◈ TUS UNIDADES",
-    title:  "ESTOS SON TUS WORKERS",
-    desc:   "Son tus <em>soldados programables</em>. Tu código corre cada 300ms y les dice qué hacer.\n\n<strong>Sin código → se quedan quietos para siempre.</strong>",
-    code:   "// Así lees un worker en tu código:\nconst w = Game.workers[id]"
+    target: { kind: "entity", type: "base" },
+    badge:  "01 · EL PROBLEMA",
+    title:  "Tu base está vacía. Eso es un problema.",
+    desc:   "Esa caja azul es <strong>tu base</strong>.\n\nAhora mismo tiene <em>0 energía</em>. Necesita <strong>1000</strong> para ganar.\n\nNadie la llena sola. No hay botón de \"recolectar\". <strong>Tú tienes que programarlo.</strong>",
+    code:   "Game.base.energy    // → 0   (vacía ahora)\nGame.base.capacity  // → 1000 (meta para ganar)"
   },
   {
     target: { kind: "entity", type: "source" },
-    badge:  "◆ RECURSOS",
-    title:  "ESTOS SON LOS CRISTALES",
-    desc:   "Fuente de energía del mapa. Tus workers deben:\n<strong>1.</strong> Ir hasta un cristal\n<strong>2.</strong> Cosechar energía\n<strong>3.</strong> Volver a la base",
-    code:   "w.harvest(source.id)  // ir a cosechar este cristal"
+    badge:  "01 · EL RECURSO",
+    title:  "La energía está aquí. Nadie la recoge sola.",
+    desc:   "Esos <strong>cristales amarillos</strong> contienen energía.\n\nEstán esperando en el mapa. Tus workers pueden ir hasta allá, cosecharlos y traer la energía.\n\nPero tampoco lo hacen solos. <strong>Necesitan tus instrucciones.</strong>",
+    code:   "// Un cristal tiene:\ns.energy  // cuánta energía le queda\ns.id      // su nombre único en el mapa"
   },
+
+  // ── ACT 2 — Los personajes ──────────────────────────────
   {
-    target: { kind: "entity", type: "base" },
-    badge:  "⬡ TU OBJETIVO",
-    title:  "ESTA ES TU BASE",
-    desc:   "Debes llenarla al <strong>100%</strong>.\n\nTus workers depositan aquí la energía que cosechan. <strong>La primera base en llegar al 100% gana la partida.</strong>",
-    code:   "w.transfer(Game.base.id)  // depositar energía aquí"
+    target: { kind: "entity", type: "worker" },
+    badge:  "02 · TUS WORKERS",
+    title:  "Tienes trabajadores. Están parados.",
+    desc:   "Esas unidades azules son <strong>tus workers</strong>.\n\nPueden cosechar energía y transportarla. Pero ahora mismo están <em>completamente quietos</em>.\n\n¿Por qué? Porque nadie les dio instrucciones. <strong>Ese nadie eres tú.</strong>",
+    code:   "// Un worker tiene:\nw.energy          // energía que lleva ahora\nw.energyCapacity  // máximo que puede cargar\nw.harvest(id)     // → ir a cosechar\nw.transfer(id)    // → depositar en base"
   },
+
+  // ── ACT 3 — El volumen ──────────────────────────────────
   {
-    target: { kind: "entity", type: "ai-base" },
-    badge:  "⬟ EL ENEMIGO",
-    title:  "ESTO ES NEXUS — LA IA",
-    desc:   "Tu rival. Tiene sus propios workers que cosechan solos sin que tú los veas.\n\n<strong>Si llena su base antes que tú → DERROTA.</strong>\n\nTienes que ser más inteligente y rápido.",
+    target: { kind: "entity", type: "worker" },
+    badge:  "03 · EL PROBLEMA DE ESCALA",
+    title:  "Tienes 3 workers. ¿Los llamas uno por uno?",
+    desc:   "Podrías escribir una instrucción para cada uno:\n\n<em>worker1 → cosechar\nworker2 → cosechar\nworker3 → cosechar</em>\n\nPero... ¿y cuando tengas 5 workers? ¿10? Tendrías que reescribir todo cada vez. <strong>Tiene que haber una mejor forma.</strong>",
     code:   null
   },
   {
     target: { kind: "dom", id: "code-editor" },
-    badge:  "{ } CONCEPTO JS",
-    title:  "EL BUCLE — for...in",
-    desc:   'Recorre <em>cada elemento</em> de una colección, uno por uno.\n\nEs como decir: <strong>"para cada worker, haz lo siguiente..."</strong>',
-    code:   "for (const id in Game.workers) {\n  const w = Game.workers[id]\n  //  ↑ esto corre una vez por cada worker\n}"
+    badge:  "03 · LA SOLUCIÓN: for...in",
+    title:  "Un bucle: una instrucción para TODOS.",
+    desc:   "<strong>for...in</strong> recorre cada elemento de una lista automáticamente.\n\nEs como decirle a tu código:\n<em>\"Para cada worker que tenga, haz lo siguiente...\"</em>\n\nEscrítelo <strong>una vez</strong>. Funciona si tienes 1 worker o 100.",
+    code:   "for (const id in Game.workers) {\n  const w = Game.workers[id]\n  //\n  // todo lo que escribas aquí\n  // se ejecuta para CADA worker\n}"
+  },
+
+  // ── ACT 4 — La decisión ─────────────────────────────────
+  {
+    target: { kind: "dom", id: "code-editor" },
+    badge:  "04 · EL PROBLEMA DE DECISIÓN",
+    title:  "Un worker no puede hacer dos cosas a la vez.",
+    desc:   "Imagina que le dices: <em>\"ve a cosechar\"</em>.\n\nPero ya está lleno de energía. ¿Para qué ir a cosechar más si no cabe nada?\n\n<strong>Necesita decidir qué hacer según su estado.</strong>\nY esa decisión la programas tú.",
+    code:   null
   },
   {
     target: { kind: "dom", id: "code-editor" },
-    badge:  "? CONCEPTO JS",
-    title:  "LA DECISIÓN — if / else",
-    desc:   'Elige qué hacer según una condición.\n\nComo un semáforo: <strong>rojo → parar</strong>, <strong>verde → avanzar</strong>.\n\nAquí: vacío → cosechar / lleno → depositar.',
-    code:   "if (w.energy < w.energyCapacity) {\n  // VACÍO  → ir a cosechar\n} else {\n  // LLENO  → depositar en la base\n}"
+    badge:  "04 · LA SOLUCIÓN: if / else",
+    title:  "if / else: el semáforo de tu código.",
+    desc:   "<strong>if</strong> pregunta una condición.\n<strong>else</strong> es el \"si no\".\n\nComo un semáforo:\n<em>verde → avanzar / rojo → parar</em>\n\nAquí:\n<em>vacío → cosechar / lleno → depositar</em>",
+    code:   "if (w.energy < w.energyCapacity) {\n  // tiene espacio → ir a cosechar\n\n} else {\n  // está lleno  → depositar en base\n}"
   },
+
+  // ── ACT 5 — El enemigo ──────────────────────────────────
+  {
+    target: { kind: "entity", type: "ai-base" },
+    badge:  "05 · EL ENEMIGO",
+    title:  "NEXUS no espera. Ya está cosechando.",
+    desc:   "Esa base roja es <strong>NEXUS</strong> — una inteligencia artificial.\n\nSus workers ya están corriendo. Su código ya funciona. <strong>Cada segundo que tardas en ejecutar el tuyo, ella avanza.</strong>\n\nLa primera base en llegar al 100% gana. La otra pierde.",
+    code:   null
+  },
+
+  // ── ACT 6 — Ejecutar ────────────────────────────────────
   {
     target: { kind: "dom", id: "btn-run" },
-    badge:  "▶ ¡A JUGAR!",
-    title:  "EJECUTA TU CÓDIGO",
-    desc:   'El script ya está escrito con comentarios que explican cada línea.\n\nPresiona <strong>EJECUTAR</strong> (o Ctrl+Enter) y mira cómo tus workers cobran vida.\n\n<strong>¡Ya sabes todo lo que necesitas!</strong>',
+    badge:  "¡A JUGAR!",
+    title:  "El código está listo. Solo presiona EJECUTAR.",
+    desc:   "El script de Misión 1 ya está escrito.\n<strong>Cada línea tiene un comentario que explica por qué está ahí.</strong>\n\nLéelo con calma. Cuando lo entiendas:\n→ Presiona <strong>EJECUTAR</strong> (o Ctrl+Enter)\n→ Mira cómo tus workers cobran vida\n→ Modifica una línea y ve qué cambia\n\n<em>Aprendes programando, no leyendo.</em>",
     code:   null
   }
 ]
