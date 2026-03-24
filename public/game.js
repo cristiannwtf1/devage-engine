@@ -1886,82 +1886,85 @@ for (const id in Game.workers) {
 `
   },
   3: {
-    title: "El algoritmo óptimo",
-    concept: "Math.abs · optimización · distancia Manhattan",
-    desc: "¿Cuál fuente conviene más? Aprende a comparar y elegir la mejor opción con matemáticas simples.",
-    sector: "SECTOR 8-DELTA · CRUCE DE RUTAS",
+    title: "El nodo dividido",
+    concept: "Math.abs · scoring · distribución de workers",
+    desc: "Dos cámaras, dos fuentes. Sin un algoritmo de puntuación, todos tus workers colapsan en la misma entrada. ¿Cómo distribuirlos inteligentemente?",
+    sector: "NODO SIGMA-3 · CÁMARAS DE EXTRACCIÓN",
     story: [
       {
         speaker: "kira",
         name: "KIRA · RED LIBRE",
         icon: "◇",
-        text: "Interceptamos el código de NEXUS. No busca la fuente más cercana — busca la más rentable. Calcula una puntuación: energía disponible dividida entre la distancia. Tenemos que replicarlo."
+        text: "El nodo tiene dos cámaras de cristal, una arriba y otra abajo. Cada entrada es estrecha. Si mandas todos tus workers al mismo lado, se bloquean entre sí."
       },
       {
         speaker: "nexus",
         name: "NEXUS · IA-7",
         icon: "⬟",
-        text: "Mis algoritmos llevan 7 años optimizándose. Tú llevas días. La diferencia no es el código — es el tiempo."
+        text: "Ya calculé la distribución óptima. Mis workers saben exactamente a qué cámara ir. El tuyo no sabe nada — todavía."
       },
       {
         speaker: "kira",
         name: "KIRA · RED LIBRE",
         icon: "◇",
-        text: "Tiene razón en lo del tiempo. Por eso necesitamos algoritmos mejores, no más workers. Matemáticas simples, decisiones más inteligentes."
+        text: "Necesitamos una puntuación por fuente. Energía disponible dividida entre distancia — el que más tenga y más cerca esté, gana. Matemáticas simples. Decisiones inteligentes."
+      },
+      {
+        speaker: "kira",
+        name: "KIRA · RED LIBRE",
+        icon: "◇",
+        text: "Y una pista para el futuro: si cada worker recordara a qué cámara fue asignado, no tendría que recalcular cada tick. Eso se llama w.memory. Lo necesitarás pronto."
       }
     ],
     objectives: [
-      "Implementa una función de puntuación por fuente",
-      "Supera a la IA en velocidad de acumulación",
-      "Aprende: Math.abs, optimización, scoring"
+      "Distribuye workers entre las dos cámaras con scoring",
+      "Implementa: scoreSource(worker, source)",
+      "Llena la base antes que NEXUS"
     ],
-    hint: "Puntuación = source.energy / (distancia + 1). Mayor puntuación = mejor fuente. Elige el máximo en vez del mínimo de distancia.",
+    hint: "Puntuación = source.energy / (distancia + 1). La fuente con mayor puntuación es la mejor opción — más energía y más cerca al mismo tiempo.",
     code: `// ═══════════════════════════════════════════════
-//  CODESTRIKE · MISIÓN 3 — "El algoritmo óptimo"
+//  CODESTRIKE · MISIÓN 3 — "El nodo dividido"
 // ═══════════════════════════════════════════════
-//  OBJETIVO: Llena la base más rápido que nunca.
+//  Dos cámaras, dos fuentes. Entrada estrecha.
+//  Si todos van al mismo lado: colapso.
 //
-//  CONCEPTOS JS en esta misión:
-//    · Math.abs: valor absoluto
-//    · Distancia Manhattan (suma de diferencias)
-//    · Optimización: puntuar y comparar opciones
+//  SOLUCIÓN: puntuación por fuente.
+//  Puntuación = energía / (distancia + 1)
+//  Más energía + más cerca = mejor score.
+//
+//  CONCEPTOS:
+//    · Math.abs — distancia entre dos puntos
+//    · Distancia Manhattan: |dx| + |dy|
+//    · Scoring: comparar opciones con un número
 // ═══════════════════════════════════════════════
 
-// findNearest tiene un problema: ignora cuánta energía
-// tiene cada fuente. ¿Para qué ir lejos si está casi vacía?
-//
-// Solución: calcular una puntuación por fuente.
-// Puntuación = energía / (distancia + 1)
-// Más energía y más cerca → mejor puntuación.
-
+// Calcula qué tan buena es una fuente para ESTE worker
 function scoreSource(worker, source) {
-  const dist = Math.abs(worker.x - source.x) + Math.abs(worker.y - source.y)
-  return source.energy / (dist + 1)   // ← divide para penalizar la distancia
+  const dist = Math.abs(worker.x - source.x)
+             + Math.abs(worker.y - source.y)
+  return source.energy / (dist + 1)
 }
 
-function findBest(worker, sources) {
-  let best      = null
-  let bestScore = -1
-
-  for (const sid in sources) {
-    const s = sources[sid]
-    if (s.energy > 0) {
-      const score = scoreSource(worker, s)
-      if (score > bestScore) { bestScore = score; best = s }
-    }
+// Devuelve la mejor fuente disponible
+function findBest(worker) {
+  let best = null, bestScore = -1
+  for (const sid in Game.sources) {
+    const s = Game.sources[sid]
+    if (s.energy <= 0) continue
+    const score = scoreSource(worker, s)
+    if (score > bestScore) { bestScore = score; best = s }
   }
-
   return best
 }
 
+// Lógica principal
 for (const id in Game.workers) {
   const w = Game.workers[id]
-
-  if (!w.store.isFull()) {
-    const source = findBest(w, Game.sources)   // ← mejor opción, no solo la más cercana
-    if (source) w.harvest(source.id)
-  } else {
+  if (w.store.isFull()) {
     w.transfer(Game.base.id)
+  } else {
+    const source = findBest(w)
+    if (source) w.harvest(source.id)
   }
 }
 `

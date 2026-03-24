@@ -8,15 +8,33 @@ export class WorldMap {
   // Matriz 2D que guarda el tipo de tile en cada posición
   private tiles: TileType[][] = []
 
-  constructor(width: number, height: number) {
+  constructor(width: number, height: number, flat: boolean = false) {
     this.width = width
     this.height = height
 
-    this.generate()
+    if (flat) {
+      this.generateFlat()
+    } else {
+      this.generateCave()
+    }
   }
 
-  // Generación procedural básica
-  private generate(): void {
+  // Mapa plano — solo muros en el borde, todo interior es suelo
+  // Usado para mapas de misión con layout manual
+  private generateFlat(): void {
+    this.tiles = []
+    for (let y = 0; y < this.height; y++) {
+      const row: TileType[] = []
+      for (let x = 0; x < this.width; x++) {
+        const isBorder = x === 0 || y === 0 || x === this.width - 1 || y === this.height - 1
+        row.push(isBorder ? TileType.Wall : TileType.Floor)
+      }
+      this.tiles.push(row)
+    }
+  }
+
+  // Generación procedural — muros orgánicos tipo cueva (para mapas avanzados)
+  private generateCave(): void {
     // ── Paso 1: ruido inicial (38% muros internos) ────────
     this.tiles = []
     for (let y = 0; y < this.height; y++) {
@@ -31,9 +49,7 @@ export class WorldMap {
       this.tiles.push(row)
     }
 
-    // ── Paso 2: autómata celular — 3 iteraciones ─────────
-    // Regla: si ≥5 vecinos son muro → muro, si no → suelo
-    // Resultado: muros orgánicos tipo cueva (estilo Screeps)
+    // ── Paso 2: autómata celular — 5 iteraciones ─────────
     for (let step = 0; step < 5; step++) {
       const next: TileType[][] = this.tiles.map(row => [...row])
       for (let y = 1; y < this.height - 1; y++) {

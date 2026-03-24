@@ -1,6 +1,7 @@
 import { GameState } from "../core/GameState"
 
-const MAX_EXTENSIONS = 5
+// Extensions deshabilitadas en M1 — se activan en M2 (como RCL 2 en Screeps)
+const MAX_EXTENSIONS = 0
 
 export class ConstructionSystem {
 

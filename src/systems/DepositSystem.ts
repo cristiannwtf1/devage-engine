@@ -30,7 +30,8 @@ export class DepositSystem {
         const space = baseStorage.capacity - baseStorage.current
         baseStorage.current += Math.min(storage.current, space)
         storage.current = 0
-        behavior.state = "harvesting"
+        // AI workers ciclan solas — jugador va a idle para que su código lo reasigne
+        behavior.state = gameState.aiWorkers.has(entityId) ? "harvesting" : "idle"
         gameState.targets.delete(entityId)
         gameState.paths.delete(entityId)
       }
