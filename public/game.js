@@ -2266,9 +2266,42 @@ function showMenu() {
 
 // ── Mundo → misiones ─────────────────────────────────────
 const WORLDS = {
-  1: { name: "La Colonia", season: "Season I",   color: "#00aaff", missions: [1,2,3,4,5,6] },
-  2: { name: "La Expansión", season: "Season II", color: "#44ccaa", missions: [7,8,9,10,11,12] },
-  3: { name: "La Guerra",  season: "Season III", color: "#ff5544", missions: [13,14,15,16,17] }
+  1: {
+    name: "La Sangre de NEXUS", season: "Season I",
+    faction: "⬟ NEXUS", factionKey: "nexus",
+    color: "#ff6622", glow: "#ff440088",
+    bg:   ["#060102", "#1a0408", "#2d0c10"],
+    phases: [
+      { label: "CREACIÓN",  color: "#ff6622", missions: [1,2]   },
+      { label: "GUERRA",    color: "#ff3300", missions: [3,4]   },
+      { label: "CONQUISTA", color: "#cc2200", missions: [5,6]   },
+    ],
+    missions: [1,2,3,4,5,6]
+  },
+  2: {
+    name: "Las Ruinas de los Forjadores", season: "Season II",
+    faction: "◈ FORJADORES", factionKey: "forjadores",
+    color: "#ffbb44", glow: "#cc880066",
+    bg:   ["#060501", "#120c03", "#1e1408"],
+    phases: [
+      { label: "DESCUBRIMIENTO", color: "#ffbb44", missions: [7,8]    },
+      { label: "ALIANZA",        color: "#ff8800", missions: [9,10,11] },
+      { label: "CONQUISTA",      color: "#cc6600", missions: [12]      },
+    ],
+    missions: [7,8,9,10,11,12]
+  },
+  3: {
+    name: "La Gran Red", season: "Season III",
+    faction: "⬡ CONVERGENCIA", factionKey: "convergencia",
+    color: "#bb44ff", glow: "#8800cc66",
+    bg:   ["#040108", "#0c0420", "#180c38"],
+    phases: [
+      { label: "CONVERGENCIA", color: "#bb44ff", missions: [13,14] },
+      { label: "ESCALADA",     color: "#8833dd", missions: [15,16] },
+      { label: "DECISIÓN",     color: "#6600bb", missions: [17]    },
+    ],
+    missions: [13,14,15,16,17]
+  }
 }
 
 let selectedMission = null
@@ -2320,9 +2353,11 @@ function drawWorldCanvas(wid) {
   const canvas = document.getElementById(`wcanvas-${wid}`)
   if (!canvas) return
   const w = canvas.offsetWidth, h = canvas.offsetHeight
+  if (w === 0 || h === 0) return
   canvas.width = w; canvas.height = h
 
-  const snap = currSnapshot
+  const world = WORLDS[wid]
+  const snap  = currSnapshot
   if (!snap || !snap.entities) return
 
   const ctx2 = canvas.getContext("2d")
@@ -2330,6 +2365,7 @@ function drawWorldCanvas(wid) {
   const scale = Math.min(w * 0.9 / gW, h * 0.9 / gH)
   const ox = (w - gW * scale) / 2, oy = (h - gH * scale) / 2
   const now = Date.now()
+  const col = world.color
 
   ctx2.clearRect(0, 0, w, h)
   for (const e of snap.entities) {
@@ -2339,97 +2375,401 @@ function drawWorldCanvas(wid) {
 
     if (e.type === "worker") {
       const pulse = 0.5 + 0.5 * Math.sin(now * 0.005 + e.id)
-      ctx2.globalAlpha = 0.5 * pulse
+      ctx2.globalAlpha = 0.55 * pulse
       ctx2.beginPath(); ctx2.arc(cx, cy, r, 0, Math.PI * 2)
-      ctx2.fillStyle = "#00aaff"; ctx2.shadowColor = "#00aaff"; ctx2.shadowBlur = 4
+      ctx2.fillStyle = col; ctx2.shadowColor = col; ctx2.shadowBlur = 5
       ctx2.fill()
     } else if (e.type === "ai-worker") {
       const pulse = 0.5 + 0.5 * Math.sin(now * 0.005 + e.id)
-      ctx2.globalAlpha = 0.45 * pulse
+      ctx2.globalAlpha = 0.4 * pulse
       ctx2.beginPath(); ctx2.arc(cx, cy, r, 0, Math.PI * 2)
-      ctx2.fillStyle = "#ff7700"; ctx2.shadowColor = "#ff7700"; ctx2.shadowBlur = 4
+      ctx2.fillStyle = "#884422"; ctx2.shadowColor = "#884422"; ctx2.shadowBlur = 4
       ctx2.fill()
     } else if (e.type === "source") {
       const pulse = 0.3 + 0.7 * Math.sin(now * 0.004 + e.x)
-      ctx2.globalAlpha = 0.35 * pulse
+      ctx2.globalAlpha = 0.32 * pulse
       ctx2.beginPath(); ctx2.arc(cx, cy, r * 0.7, 0, Math.PI * 2)
       ctx2.fillStyle = "#ffcc00"; ctx2.fill()
     }
     ctx2.shadowBlur = 0; ctx2.globalAlpha = 1
   }
-  // Redibujar ~every 200ms while world view is open
   if (document.getElementById("world-view").style.display !== "none") {
     setTimeout(() => drawWorldCanvas(wid), 180)
   }
 }
 
+// ── Season map canvas ─────────────────────────────────────
+let smapWid = null
+let smapHoverId = null
+let smapAnimId = null
+
 function openSeasonView(wid) {
   selectedWorld = wid
-  const world = WORLDS[wid]
+  smapWid       = wid
+  smapHoverId   = null
+  selectedMission = null
 
+  const world = WORLDS[wid]
   document.getElementById("world-view").style.display  = "none"
   document.getElementById("season-view").style.display = "flex"
 
-  const titleEl = document.getElementById("season-view-title")
-  titleEl.textContent = world.season + " — " + world.name
-  titleEl.style.color = world.color
+  const seasonEl  = document.getElementById("season-view-season")
+  const titleEl   = document.getElementById("season-view-title")
+  const factLabel = document.getElementById("season-view-faction-label")
+  seasonEl.textContent  = world.season
+  seasonEl.style.color  = world.color
+  titleEl.textContent   = world.name
+  titleEl.style.color   = world.color
+  factLabel.textContent = world.faction
+  factLabel.style.color = world.color
 
-  buildMissionGrid(wid)
+  setupSeasonMapPreview(world)
+  startSeasonMapLoop()
 }
 
-function buildMissionGrid(wid) {
-  const progress  = getMissionProgress()
-  const world     = WORLDS[wid]
-  const grid      = document.getElementById("season-mission-grid")
-  grid.innerHTML  = ""
-  selectedMission = null
+function getSeasonMapNodePositions(world, cw, ch) {
+  // Position mission nodes in a horizontal flow through the canvas
+  const allMissions = world.missions
+  const count  = allMissions.length
+  const padX   = 80, padY = 40
+  const usableW = cw - padX * 2
+  const centerY = ch / 2
 
-  document.getElementById("detail-title").textContent   = "—"
-  document.getElementById("detail-concept").textContent = ""
-  document.getElementById("detail-desc").textContent    = ""
-  document.getElementById("btn-start-mission").disabled = true
-  document.getElementById("btn-start-mission").textContent = "Selecciona una misión"
+  // Group by phase to calculate phase boundaries
+  let phaseRanges = []
+  let mIdx = 0
+  for (const phase of world.phases) {
+    const startI = mIdx
+    mIdx += phase.missions.length
+    const endI = mIdx - 1
+    phaseRanges.push({ startI, endI, phase })
+  }
 
-  world.missions.forEach((mid, idx) => {
-    const m       = MISSIONS[mid]
-    const stars    = progress[mid] || 0
-    const unlocked = mid === world.missions[0] || progress[mid - 1] > 0
+  return allMissions.map((mid, i) => {
+    const x = padX + usableW * (i / Math.max(count - 1, 1))
+    // Stagger y slightly for visual rhythm
+    const stagger = [0, -18, 14, -12, 16, -8, 10, -14, 8][i % 9]
+    const y = centerY + stagger
 
-    const node = document.createElement("div")
-    node.className = `smnode ${unlocked ? "" : "locked"}`
-    node.style.animationDelay = `${idx * 0.06}s`
-    node.innerHTML = `
-      <div class="smn-num">${String(mid).padStart(2,"0")}</div>
-      <div class="smn-name">${m.title}</div>
-      <div class="smn-concept">${m.concept}</div>
-      <div class="smn-stars">
-        ${"★★★".split("").map((s,i) => `<span class="smstar ${i < stars ? "earned" : ""}">${s}</span>`).join("")}
-      </div>`
+    // Find phase for this mission
+    let phaseLabel = "", phaseColor = world.color
+    for (const { startI, endI, phase } of phaseRanges) {
+      if (i >= startI && i <= endI) { phaseLabel = phase.label; phaseColor = phase.color; break }
+    }
+    const isBoss = (i === count - 1) // last mission = boss/finale
 
-    if (unlocked) node.onclick = () => selectMissionInGrid(mid, node)
-    grid.appendChild(node)
+    return { mid, x, y, phaseLabel, phaseColor, isBoss }
   })
 }
 
-function selectMissionInGrid(id, nodeEl) {
-  selectedMission = id
-  const m = MISSIONS[id]
+function drawSeasonMap() {
+  const canvas = document.getElementById("season-map-canvas")
+  if (!canvas || !smapWid) return
+  const world = WORLDS[smapWid]
+  const progress = getMissionProgress()
 
-  document.querySelectorAll(".smnode").forEach(n => n.classList.remove("active"))
-  nodeEl.classList.add("active")
+  const cw = canvas.offsetWidth, ch = canvas.offsetHeight
+  if (cw === 0 || ch === 0) return
+  if (canvas.width !== cw || canvas.height !== ch) {
+    canvas.width = cw; canvas.height = ch
+  }
 
-  document.getElementById("detail-title").textContent   = m.title
-  document.getElementById("detail-concept").textContent = m.concept
-  document.getElementById("detail-desc").textContent    = m.desc
-  const btn = document.getElementById("btn-start-mission")
-  btn.disabled    = false
-  btn.textContent = `▶ Iniciar misión ${id}`
+  const ctx2 = canvas.getContext("2d")
+  const now  = Date.now()
+  const nodes = getSeasonMapNodePositions(world, cw, ch)
+
+  ctx2.clearRect(0, 0, cw, ch)
+
+  // ── Background gradient ──
+  const bg = ctx2.createLinearGradient(0, 0, cw, ch)
+  bg.addColorStop(0,   world.bg[0])
+  bg.addColorStop(0.5, world.bg[1])
+  bg.addColorStop(1,   world.bg[2])
+  ctx2.fillStyle = bg
+  ctx2.fillRect(0, 0, cw, ch)
+
+  // ── Phase zone dividers ──
+  let mIdx = 0
+  for (const phase of world.phases) {
+    const firstI = mIdx
+    const lastI  = mIdx + phase.missions.length - 1
+    mIdx += phase.missions.length
+
+    const x0 = nodes[firstI].x - 50
+    const x1 = nodes[lastI].x  + 50
+    const phaseX = (nodes[firstI].x + nodes[lastI].x) / 2
+
+    // Phase label at top
+    ctx2.save()
+    ctx2.globalAlpha = 0.35
+    ctx2.fillStyle   = phase.color
+    ctx2.font        = "bold 8px 'Share Tech Mono', monospace"
+    ctx2.letterSpacing = "4px"
+    ctx2.textAlign   = "center"
+    ctx2.fillText(phase.label, phaseX, 24)
+
+    // Subtle zone highlight
+    const zoneGrad = ctx2.createLinearGradient(x0, 0, x1, 0)
+    zoneGrad.addColorStop(0, "transparent")
+    zoneGrad.addColorStop(0.2, phase.color + "06")
+    zoneGrad.addColorStop(0.8, phase.color + "06")
+    zoneGrad.addColorStop(1, "transparent")
+    ctx2.globalAlpha = 1
+    ctx2.fillStyle   = zoneGrad
+    ctx2.fillRect(x0, 30, x1 - x0, ch - 30)
+    ctx2.restore()
+
+    // Divider line at right edge (except last phase)
+    if (lastI < nodes.length - 1) {
+      const divX = (nodes[lastI].x + nodes[lastI + 1].x) / 2
+      ctx2.save()
+      ctx2.globalAlpha = 0.12
+      ctx2.strokeStyle = phase.color
+      ctx2.lineWidth   = 1
+      ctx2.setLineDash([4, 6])
+      ctx2.beginPath()
+      ctx2.moveTo(divX, 32); ctx2.lineTo(divX, ch - 20)
+      ctx2.stroke()
+      ctx2.setLineDash([])
+      ctx2.restore()
+    }
+  }
+
+  // ── Connection lines ──
+  for (let i = 0; i < nodes.length - 1; i++) {
+    const a = nodes[i], b = nodes[i + 1]
+    const aStars   = progress[a.mid] || 0
+    const bStars   = progress[b.mid] || 0
+    const unlocked = aStars > 0 && bStars > 0
+    const partial  = aStars > 0
+
+    ctx2.save()
+    ctx2.globalAlpha = unlocked ? 0.7 : partial ? 0.3 : 0.1
+    ctx2.strokeStyle = a.phaseColor
+    ctx2.lineWidth   = unlocked ? 2 : 1.5
+    // Animated dash offset for active connection
+    const dashOff = partial ? ((now * 0.04) % 16) : 0
+    ctx2.setLineDash(unlocked ? [] : [6, 6])
+    ctx2.lineDashOffset = -dashOff
+
+    ctx2.beginPath()
+    ctx2.moveTo(a.x, a.y); ctx2.lineTo(b.x, b.y)
+    ctx2.stroke()
+    ctx2.setLineDash([])
+    ctx2.restore()
+  }
+
+  // ── Mission nodes ──
+  for (let i = 0; i < nodes.length; i++) {
+    const n    = nodes[i]
+    const stars = progress[n.mid] || 0
+    const isFirstOfWorld = i === 0
+    const prevStars = i > 0 ? (progress[nodes[i-1].mid] || 0) : 1
+    const unlocked = isFirstOfWorld || prevStars > 0
+    const isHovered = smapHoverId === n.mid
+    const isSelected = selectedMission === n.mid
+    const r = n.isBoss ? 24 : 18
+    const t = now * 0.001
+
+    ctx2.save()
+
+    if (!unlocked) {
+      // Locked — dim gray
+      ctx2.globalAlpha = 0.22
+      ctx2.beginPath(); ctx2.arc(n.x, n.y, r, 0, Math.PI * 2)
+      ctx2.fillStyle = "#222"
+      ctx2.fill()
+      ctx2.strokeStyle = "#444"; ctx2.lineWidth = 1
+      ctx2.stroke()
+      // Lock icon
+      ctx2.globalAlpha = 0.25
+      ctx2.fillStyle   = "#666"
+      ctx2.font        = `${r * 0.6}px monospace`
+      ctx2.textAlign   = "center"
+      ctx2.textBaseline = "middle"
+      ctx2.fillText("⬡", n.x, n.y)
+      ctx2.restore()
+      continue
+    }
+
+    // Glow for hovered/selected or boss
+    if (isHovered || isSelected || n.isBoss) {
+      const glowR = r + 14 + Math.sin(t * 2) * 4
+      const glowG = ctx2.createRadialGradient(n.x, n.y, r, n.x, n.y, glowR)
+      glowG.addColorStop(0, n.phaseColor + "50")
+      glowG.addColorStop(1, "transparent")
+      ctx2.globalAlpha = isHovered || isSelected ? 0.9 : 0.5
+      ctx2.fillStyle = glowG
+      ctx2.beginPath(); ctx2.arc(n.x, n.y, glowR, 0, Math.PI * 2)
+      ctx2.fill()
+    }
+
+    // Outer ring — pulsing for active (next to complete)
+    const isActive = unlocked && stars === 0
+    if (isActive) {
+      const pulse = 0.4 + 0.6 * Math.sin(t * 3)
+      ctx2.globalAlpha = pulse * 0.6
+      ctx2.beginPath(); ctx2.arc(n.x, n.y, r + 6, 0, Math.PI * 2)
+      ctx2.strokeStyle = n.phaseColor
+      ctx2.lineWidth   = 1.5
+      ctx2.stroke()
+    }
+
+    // Node fill
+    ctx2.globalAlpha = 1
+    ctx2.beginPath(); ctx2.arc(n.x, n.y, r, 0, Math.PI * 2)
+    if (stars > 0) {
+      // Completed — filled with faction color
+      const fill = ctx2.createRadialGradient(n.x - r*0.3, n.y - r*0.3, 0, n.x, n.y, r)
+      fill.addColorStop(0, n.phaseColor + "cc")
+      fill.addColorStop(1, n.phaseColor + "55")
+      ctx2.fillStyle = fill
+    } else {
+      // Unlocked but not completed — dark with border
+      ctx2.fillStyle = "#040a14"
+    }
+    ctx2.fill()
+
+    // Node border
+    ctx2.strokeStyle = isSelected ? "#fff" : n.phaseColor
+    ctx2.lineWidth   = isSelected ? 2 : (n.isBoss ? 2 : 1.5)
+    ctx2.globalAlpha = isHovered || isSelected ? 1 : stars > 0 ? 0.9 : 0.7
+    ctx2.stroke()
+
+    // Mission number
+    ctx2.fillStyle    = stars > 0 ? "#000" : n.phaseColor
+    ctx2.font         = `bold ${r * 0.55}px 'Share Tech Mono', monospace`
+    ctx2.textAlign    = "center"
+    ctx2.textBaseline = "middle"
+    ctx2.globalAlpha  = stars > 0 ? 0.9 : 0.8
+    ctx2.fillText(String(n.mid).padStart(2, "0"), n.x, n.y)
+
+    // Stars below node
+    if (stars > 0) {
+      const starY = n.y + r + 12
+      const starSize = 9
+      for (let s = 0; s < 3; s++) {
+        ctx2.fillStyle   = s < stars ? "#ffcc00" : "#1a2a3a"
+        ctx2.globalAlpha = s < stars ? 0.9 : 0.4
+        ctx2.font        = `${starSize}px monospace`
+        ctx2.textAlign   = "center"
+        ctx2.textBaseline = "middle"
+        ctx2.fillText("★", n.x + (s - 1) * 12, starY)
+      }
+    }
+
+    // Boss crown marker
+    if (n.isBoss) {
+      ctx2.globalAlpha = 0.6
+      ctx2.fillStyle   = n.phaseColor
+      ctx2.font        = "10px monospace"
+      ctx2.textAlign   = "center"
+      ctx2.textBaseline = "middle"
+      ctx2.fillText("◆", n.x, n.y - r - 10)
+    }
+
+    ctx2.restore()
+  }
 }
 
-document.getElementById("btn-start-mission").addEventListener("click", () => {
-  if (!selectedMission) return
-  startMission(selectedMission)
-})
+function startSeasonMapLoop() {
+  if (smapAnimId) cancelAnimationFrame(smapAnimId)
+  function loop() {
+    if (document.getElementById("season-view").style.display === "none") { smapAnimId = null; return }
+    drawSeasonMap()
+    smapAnimId = requestAnimationFrame(loop)
+  }
+  loop()
+}
+
+function setupSeasonMapPreview(world) {
+  const preview = document.getElementById("season-node-preview")
+  const canvas  = document.getElementById("season-map-canvas")
+  const btn     = document.getElementById("btn-snp-launch")
+
+  // Reset preview
+  preview.classList.remove("visible")
+  selectedMission = null
+  btn.disabled = true
+  btn.style.color       = world.color
+  btn.style.borderColor = world.color
+
+  function onNodeClick(mid) {
+    const m = MISSIONS[mid]
+    if (!m) return
+    selectedMission = mid
+
+    document.getElementById("snp-num").textContent     = `MISIÓN ${String(mid).padStart(2,"0")}`
+    document.getElementById("snp-num").style.color     = world.color
+    document.getElementById("snp-title").textContent   = m.title
+    document.getElementById("snp-title").style.color   = world.color
+    document.getElementById("snp-concept").textContent = "// " + m.concept
+
+    const stars = getMissionProgress()[mid] || 0
+    document.getElementById("snp-stars").innerHTML = [0,1,2].map(i =>
+      `<span class="snp-star ${i < stars ? "earned" : ""}">★</span>`
+    ).join("")
+
+    // Phase label
+    let phaseLabel = "", phaseColor = world.color
+    for (const ph of world.phases) {
+      if (ph.missions.includes(mid)) { phaseLabel = ph.label; phaseColor = ph.color; break }
+    }
+    const phEl = document.getElementById("snp-phase")
+    phEl.textContent    = phaseLabel
+    phEl.style.color    = phaseColor
+    phEl.style.borderColor = phaseColor
+
+    document.getElementById("snp-desc").textContent = m.desc || ""
+
+    btn.disabled = false
+    preview.classList.add("visible")
+  }
+
+  // Mouse events on canvas
+  canvas.onmousemove = (e) => {
+    const rect  = canvas.getBoundingClientRect()
+    const mx    = (e.clientX - rect.left) * (canvas.width  / rect.width)
+    const my    = (e.clientY - rect.top)  * (canvas.height / rect.height)
+    const nodes = getSeasonMapNodePositions(world, canvas.width, canvas.height)
+    const progress = getMissionProgress()
+
+    let hitId = null
+    for (let i = 0; i < nodes.length; i++) {
+      const n = nodes[i]
+      const r = n.isBoss ? 24 : 18
+      const prevStars = i > 0 ? (progress[nodes[i-1].mid] || 0) : 1
+      const unlocked  = i === 0 || prevStars > 0
+      if (!unlocked) continue
+      if (Math.hypot(mx - n.x, my - n.y) <= r + 8) { hitId = n.mid; break }
+    }
+    smapHoverId = hitId
+    canvas.style.cursor = hitId ? "pointer" : "default"
+  }
+
+  canvas.onmouseleave = () => { smapHoverId = null; canvas.style.cursor = "default" }
+
+  canvas.onclick = (e) => {
+    const rect  = canvas.getBoundingClientRect()
+    const mx    = (e.clientX - rect.left) * (canvas.width  / rect.width)
+    const my    = (e.clientY - rect.top)  * (canvas.height / rect.height)
+    const nodes = getSeasonMapNodePositions(world, canvas.width, canvas.height)
+    const progress = getMissionProgress()
+
+    for (let i = 0; i < nodes.length; i++) {
+      const n = nodes[i]
+      const r = n.isBoss ? 24 : 18
+      const prevStars = i > 0 ? (progress[nodes[i-1].mid] || 0) : 1
+      const unlocked  = i === 0 || prevStars > 0
+      if (!unlocked) continue
+      if (Math.hypot(mx - n.x, my - n.y) <= r + 8) { onNodeClick(n.mid); return }
+    }
+  }
+
+  btn.onclick = () => {
+    if (selectedMission) startMission(selectedMission)
+  }
+}
 
 document.getElementById("btn-back-menu").addEventListener("click", () => {
   document.getElementById("mission-screen").style.display = "none"

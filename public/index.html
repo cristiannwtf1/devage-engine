@@ -551,10 +551,7 @@
     .world-card:hover:not(.locked) { flex: 1.4; }
     .world-card.locked { cursor: not-allowed; }
 
-    /* Gradientes únicos por mundo */
-    #wcard-1 .world-bg { background: linear-gradient(180deg, #010810 0%, #001535 55%, #002d6a 100%); }
-    #wcard-2 .world-bg { background: linear-gradient(180deg, #020408 0%, #050e20 55%, #0a1840 100%); }
-    #wcard-3 .world-bg { background: linear-gradient(180deg, #040206 0%, #120408 55%, #240810 100%); }
+    /* Gradientes por mundo — colores de facción (ver sección MAPA DE CAMPAÑA) */
 
     .world-bg {
       position: absolute; inset: 0;
@@ -580,24 +577,17 @@
       font-size: 9px; letter-spacing: 4px; text-transform: uppercase;
       opacity: 0.4;
     }
-    #wcard-1 .world-season { color: #00aaff; }
-    #wcard-2 .world-season { color: #44ccaa; }
-    #wcard-3 .world-season { color: #ff5544; }
+    /* world-season/icon/name colors → overridden by MAPA DE CAMPAÑA section */
 
     .world-icon-big {
       font-size: 36px; line-height: 1;
       text-shadow: 0 0 20px currentColor;
     }
-    #wcard-1 .world-icon-big { color: #0077cc; }
-    #wcard-2 .world-icon-big { color: #228866; }
-    #wcard-3 .world-icon-big { color: #882222; }
+    /* icon-big/name colors → overridden by MAPA DE CAMPAÑA section */
 
     .world-name {
       font-size: 20px; font-weight: bold; letter-spacing: 4px;
     }
-    #wcard-1 .world-name { color: #00aaff; text-shadow: 0 0 20px rgba(0,170,255,0.4); }
-    #wcard-2 .world-name { color: #44ccaa; text-shadow: 0 0 20px rgba(68,204,170,0.3); }
-    #wcard-3 .world-name { color: #ff5544; text-shadow: 0 0 20px rgba(255,85,68,0.4); }
 
     .world-tagline { font-size: 10px; color: rgba(255,255,255,0.35); letter-spacing: 2px; }
     .world-desc    { font-size: 10px; color: rgba(255,255,255,0.45); line-height: 1.7; max-width: 280px; margin-top: 4px; }
@@ -676,6 +666,66 @@
 
     .smstar { font-size: 10px; color: #0d2040; }
     .smstar.earned { color: #ffcc00; }
+
+    /* ── MAPA DE CAMPAÑA POR FACCIONES ── */
+
+    /* World cards — colores por facción */
+    #wcard-1 .world-bg { background: linear-gradient(160deg, #060102 0%, #1a0408 55%, #2d0c10 100%); }
+    #wcard-2 .world-bg { background: linear-gradient(160deg, #060501 0%, #120c03 55%, #1e1408 100%); }
+    #wcard-3 .world-bg { background: linear-gradient(160deg, #040108 0%, #0c0420 55%, #180c38 100%); }
+
+    #wcard-1 .world-season { color: #ff6622; }
+    #wcard-2 .world-season { color: #ffbb44; }
+    #wcard-3 .world-season { color: #bb44ff; }
+
+    #wcard-1 .world-icon-big { color: #ff4400; }
+    #wcard-2 .world-icon-big { color: #cc8800; }
+    #wcard-3 .world-icon-big { color: #9922cc; }
+
+    #wcard-1 .world-name { color: #ff6622; text-shadow: 0 0 20px rgba(255,80,20,0.5); }
+    #wcard-2 .world-name { color: #ffbb44; text-shadow: 0 0 20px rgba(255,180,50,0.4); }
+    #wcard-3 .world-name { color: #bb44ff; text-shadow: 0 0 20px rgba(180,50,255,0.45); }
+
+    /* Season map canvas view */
+    #season-map-wrap {
+      flex: 1; position: relative; overflow: hidden;
+      display: flex; flex-direction: row; gap: 0;
+    }
+    #season-map-canvas {
+      flex: 1; display: block; min-width: 0;
+    }
+    #season-node-preview {
+      width: 260px; flex-shrink: 0;
+      background: rgba(4,6,12,0.96);
+      border-left: 1px solid #0c1830;
+      display: flex; flex-direction: column; justify-content: center;
+      padding: 28px 24px; gap: 12px;
+      opacity: 0; transition: opacity 0.2s;
+      pointer-events: none;
+    }
+    #season-node-preview.visible { opacity: 1; pointer-events: auto; }
+    #snp-num     { font-size: 9px; letter-spacing: 4px; color: var(--text-d); }
+    #snp-title   { font-size: 18px; letter-spacing: 2px; line-height: 1.2; }
+    #snp-concept { font-size: 9px; letter-spacing: 2px; color: var(--text-d); margin-top: -4px; }
+    #snp-stars   { display: flex; gap: 3px; }
+    .snp-star    { font-size: 14px; color: #0d2040; }
+    .snp-star.earned { color: #ffcc00; text-shadow: 0 0 8px rgba(255,200,0,0.5); }
+    #snp-desc    { font-size: 10px; color: var(--text); line-height: 1.7; }
+    #snp-phase   { font-size: 8px; letter-spacing: 3px; border: 1px solid; padding: 3px 8px; display: inline-block; width: fit-content; opacity: 0.7; }
+    #btn-snp-launch {
+      background: transparent; border: 1px solid currentColor;
+      font-family: inherit; font-size: 10px; letter-spacing: 3px;
+      padding: 9px 16px; cursor: pointer; text-transform: uppercase;
+      transition: all 0.15s; margin-top: 4px;
+    }
+    #btn-snp-launch:hover:not(:disabled) { background: rgba(255,255,255,0.06); }
+    #btn-snp-launch:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    /* Season view header */
+    #season-view-header { gap: 20px; }
+    #season-view-info   { flex: 1; }
+    #season-view-season { font-size: 8px; letter-spacing: 4px; display: block; opacity: 0.5; }
+    #season-view-faction-label { font-size: 10px; letter-spacing: 2px; opacity: 0.6; }
 
     /* ── MENÚ PRINCIPAL v3 — TERMINAL ── */
     #menu-screen {
@@ -1519,10 +1569,10 @@
         <canvas class="world-canvas" id="wcanvas-1"></canvas>
         <div class="world-content">
           <div class="world-season">Season I</div>
-          <div class="world-icon-big">◈</div>
-          <div class="world-name">La Colonia</div>
-          <div class="world-tagline">Los fundamentos · JavaScript desde cero</div>
-          <div class="world-desc">Construye tu primera base, cosecha energía, escribe tus primeros bucles. Sin experiencia previa necesaria.</div>
+          <div class="world-icon-big">⬟</div>
+          <div class="world-name">La Sangre de NEXUS</div>
+          <div class="world-tagline">Territorio NEXUS · Fundamentos de programación</div>
+          <div class="world-desc">El nodo 7-Gamma cae bajo control de NEXUS. Kira te recluta. Aprende a programar mientras liberas el sector nodo a nodo.</div>
           <div class="world-missions-row">
             <span>6 misiones</span>
             <div class="world-stars-row" id="wstars-1"></div>
@@ -1534,15 +1584,15 @@
         <div class="world-bg"></div>
         <canvas class="world-canvas" id="wcanvas-2"></canvas>
         <div class="world-lock-overlay">
-          <div class="world-lock-icon">⬡</div>
+          <div class="world-lock-icon">◈</div>
           <div class="world-lock-text">Completa Season I</div>
         </div>
         <div class="world-content">
           <div class="world-season">Season II</div>
-          <div class="world-icon-big">⬡</div>
-          <div class="world-name">La Expansión</div>
-          <div class="world-tagline">Funciones · Algoritmos · Construcción</div>
-          <div class="world-desc">Tu código crece en sofisticación. Closures, optimización de rutas, economía avanzada.</div>
+          <div class="world-icon-big">◈</div>
+          <div class="world-name">Las Ruinas de los Forjadores</div>
+          <div class="world-tagline">Código ancestral · Funciones y algoritmos</div>
+          <div class="world-desc">Más allá del territorio NEXUS yacen estructuras antiquísimas. Los Forjadores despiertan — y Kira no es quien creías.</div>
           <div class="world-missions-row"><span>6 misiones</span></div>
         </div>
       </div>
@@ -1551,33 +1601,42 @@
         <div class="world-bg"></div>
         <canvas class="world-canvas" id="wcanvas-3"></canvas>
         <div class="world-lock-overlay">
-          <div class="world-lock-icon">⬟</div>
+          <div class="world-lock-icon">⬡</div>
           <div class="world-lock-text">Completa Season II</div>
         </div>
         <div class="world-content">
           <div class="world-season">Season III</div>
-          <div class="world-icon-big">⬟</div>
-          <div class="world-name">La Guerra</div>
-          <div class="world-tagline">Combate · Defensa · Dominio total</div>
-          <div class="world-desc">Ataque, defensa, IA adaptativa. Solo el mejor algoritmo sobrevive la guerra total.</div>
+          <div class="world-icon-big">⬡</div>
+          <div class="world-name">La Gran Red</div>
+          <div class="world-tagline">Tres facciones · Combate · Una decisión</div>
+          <div class="world-desc">NEXUS mutó con código Forjador. Red Libre enfrenta dos frentes. El destino de Kira está en tus manos.</div>
           <div class="world-missions-row"><span>5 misiones</span></div>
         </div>
       </div>
 
     </div>
 
-    <!-- Vista: misiones de la season seleccionada -->
+    <!-- Vista: mapa de misiones de la season seleccionada -->
     <div id="season-view" style="display:none">
       <div id="season-view-header">
         <button class="ms-btn" id="btn-back-worlds">← Mundos</button>
-        <span id="season-view-title"></span>
+        <div id="season-view-info">
+          <span id="season-view-season"></span>
+          <span id="season-view-title"></span>
+        </div>
+        <span id="season-view-faction-label"></span>
       </div>
-      <div id="season-mission-grid"></div>
-      <div id="mission-detail">
-        <div id="detail-title">—</div>
-        <div id="detail-concept"></div>
-        <div id="detail-desc"></div>
-        <button id="btn-start-mission" disabled>Selecciona una misión</button>
+      <div id="season-map-wrap">
+        <canvas id="season-map-canvas"></canvas>
+        <div id="season-node-preview">
+          <div id="snp-num">MISIÓN 01</div>
+          <div id="snp-title">—</div>
+          <div id="snp-concept"></div>
+          <div id="snp-stars"></div>
+          <div id="snp-phase"></div>
+          <div id="snp-desc"></div>
+          <button id="btn-snp-launch" disabled>▶ INICIAR</button>
+        </div>
       </div>
     </div>
 
