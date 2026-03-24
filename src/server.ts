@@ -180,13 +180,115 @@ function buildWorldM2(gs: GameState): void {
   }
 }
 
+// ─── M3: Dos cámaras por lado + pilares centrales ─────────
+//
+//  Cada lado tiene 2 sources encerrados en cámaras con entrada estrecha.
+//  Sin w.memory, todos los workers van a la cámara más cercana → colapso.
+//  Con w.memory, cada worker "reclama" su cámara y opera de forma autónoma.
+//
+//  Player: base(3,11)  SrcA(8,5)  SrcB(8,17)
+//  AI:     base(36,11) SrcA(31,5) SrcB(31,17)
+//
+//  Layout vertical (mapa 40x22):
+//   y=3-7:   cámara superior  (src en y=5)
+//   y=9-13:  corredor central (base ↔ base)
+//   y=15-19: cámara inferior  (src en y=17)
+//   Pilares decorativos en x=18-21 (centro del mapa)
+//
+function buildWallsM3(gs: GameState): void {
+  const W = TileType.Wall
+  const row = (y: number, x1: number, x2: number) => {
+    for (let x = x1; x <= x2; x++) gs.worldMap.setTile(x, y, W)
+  }
+  const col = (x: number, y1: number, y2: number) => {
+    for (let y = y1; y <= y2; y++) gs.worldMap.setTile(x, y, W)
+  }
+
+  // ── Cámara superior jugador — source(8,5) ─────────────
+  row(3,  5, 12); row(7,  5, 12)  // techo y suelo
+  col(5,  3,  7)                   // pared izquierda
+  col(12, 3,  6)                   // pared derecha (entrada en y=6-7)
+
+  // ── Cámara inferior jugador — source(8,17) ────────────
+  row(15, 5, 12); row(19, 5, 12)
+  col(5,  15, 19)
+  col(12, 15, 18)                  // entrada en y=15
+
+  // ── Cámara superior IA — source(31,5) ─────────────────
+  row(3,  27, 34); row(7,  27, 34)
+  col(34, 3,  7)
+  col(27, 3,  6)                   // entrada en y=6-7
+
+  // ── Cámara inferior IA — source(31,17) ────────────────
+  row(15, 27, 34); row(19, 27, 34)
+  col(34, 15, 19)
+  col(27, 15, 18)                  // entrada en y=15
+
+  // ── Pilares decorativos centrales (x=18-21, separación visual) ──
+  col(18, 2,  8);  col(21, 2,  8)   // pilares superiores
+  col(18, 14, 20); col(21, 14, 20)  // pilares inferiores
+  // Piedras sueltas en el corredor central
+  row(10, 18, 21); row(12, 18, 21)
+}
+
+function buildWorldM3(gs: GameState): void {
+  buildWallsM3(gs)
+  gs.maxPlayerWorkers = 4
+
+  const addSource = (x: number, y: number, isPlayer: boolean) => {
+    const id: EntityId = gs.createEntity()
+    gs.entities.add(id)
+    gs.positions.set(id, { x, y })
+    gs.sources.set(id, { energy: 100, maxEnergy: 100, regenRate: 3, regenCooldown: 20, currentCooldown: 0 })
+    if (isPlayer) gs.playerSourceIds.add(id)
+  }
+  addSource(8,  5,  true)
+  addSource(8,  17, true)
+  addSource(31, 5,  false)
+  addSource(31, 17, false)
+
+  // Base jugador
+  const baseId: EntityId = gs.createEntity()
+  gs.entities.add(baseId)
+  gs.positions.set(baseId, { x: 3, y: 11 })
+  gs.energyStorages.set(baseId, { current: 0, capacity: 500 })
+  gs.baseId = baseId
+
+  // 2 workers iniciales jugador — idle
+  for (let i = 0; i < 2; i++) {
+    const w: EntityId = gs.createEntity()
+    gs.entities.add(w)
+    gs.positions.set(w, { x: 4 + i, y: 11 })
+    gs.healths.set(w, { current: 100, max: 100 })
+    gs.workers.set(w, { isWorker: true })
+    gs.energyStorages.set(w, { current: 0, capacity: 10 })
+    gs.behaviors.set(w, { state: "idle" })
+  }
+
+  // Base IA
+  const aiBaseId: EntityId = gs.createEntity()
+  gs.entities.add(aiBaseId)
+  gs.positions.set(aiBaseId, { x: 36, y: 11 })
+  gs.energyStorages.set(aiBaseId, { current: 0, capacity: 500 })
+  gs.aiBaseId = aiBaseId
+
+  // Workers iniciales IA
+  for (let i = 0; i < 2; i++) {
+    const w: EntityId = gs.createEntity()
+    gs.entities.add(w)
+    gs.positions.set(w, { x: 35 - i, y: 11 })
+    gs.healths.set(w, { current: 20, max: 20 })
+    gs.energyStorages.set(w, { current: 0, capacity: 10 })
+    gs.behaviors.set(w, { state: "idle" })
+    gs.aiWorkers.add(w)
+  }
+}
+
 // ─── Dispatcher ───────────────────────────────────────────
 function buildWorld(gs: GameState, missionId: number = 1): void {
-  if (missionId === 2) {
-    buildWorldM2(gs)
-  } else {
-    buildWorldM1(gs)
-  }
+  if      (missionId === 2) buildWorldM2(gs)
+  else if (missionId === 3) buildWorldM3(gs)
+  else                      buildWorldM1(gs)
 }
 
 // ─── SCRIPT POR DEFECTO DEL JUGADOR ──────────────────────
