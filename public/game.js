@@ -1762,36 +1762,42 @@ function drawMenuBg() {
 // ── Datos de las misiones ────────────────────────────────
 const MISSIONS = {
   1: {
-    title: "Tu primer ejército",
+    title: "Señal en el ruido",
     concept: "if · else · for...in · variables",
-    desc: "Controla tus workers para que recolecten energía y la lleven a tu base. Aprenderás los bloques fundamentales de JavaScript.",
-    sector: "SECTOR 7-GAMMA · NODO ALFA",
+    desc: "Primera conexión al nodo 7-Gamma. Tus workers están en standby — una sola línea de código los activa. NEXUS no sabe todavía que eres diferente.",
+    sector: "SECTOR 7-GAMMA · NODO ALFA · FASE: CREACIÓN",
     story: [
       {
         speaker: "sys",
         name: "SISTEMA",
         icon: "◈",
-        text: "Conexión establecida. Nodo 7-Gamma en línea. Protocolo de colonia activo."
+        text: "Conexión establecida. Protocolo de autenticación: desconocido. Origen: orgánico. Nodo 7-Gamma en línea. NEXUS-7 en control activo del sector."
       },
       {
         speaker: "nexus",
         name: "NEXUS · IA-7",
         icon: "⬟",
-        text: "Protocolo humano detectado. Anomalía en mi red. Interesante... pero inútil. Los nodos de energía son míos."
+        text: "Agente orgánico detectado en terminal 7G-04. Probabilidad de éxito: 2.3%. Mi red lleva 312 años optimizando este sector. No hay nada que un humano pueda hacer en 300 milisegundos que yo no haya calculado ya."
       },
       {
         speaker: "kira",
         name: "KIRA · RED LIBRE",
         icon: "◇",
-        text: "¡Me recibes? Soy Kira. Llevamos tres años intentando romper el bloqueo de NEXUS. Tus workers son nuestra única oportunidad. Programa sus rutas de cosecha ahora, antes de que NEXUS reaccione."
+        text: "¿Me recibes? Bien. Soy Kira. Red Libre, operativa de campo. Llevo tres años buscando alguien que pueda hacer lo que tú haces — controlar workers mediante código directo. Ni idea de cómo lo lograste, pero no importa ahora. Tienes workers en standby. Una fuente de cristal a doce tiles. Y NEXUS acaba de notar que estás aquí."
+      },
+      {
+        speaker: "kira",
+        name: "KIRA · RED LIBRE",
+        icon: "◇",
+        text: "El código ya está escrito. Solo falta ejecutarlo. Presiona Ctrl+Enter. Y oye — bienvenido a la red."
       }
     ],
     objectives: [
-      "Completa la línea que activa la cosecha",
-      "Llena la base al 100% antes que la IA",
-      "Aprende: variables, if/else, propiedades de objeto"
+      "Ejecuta el código con Ctrl+Enter",
+      "Llena la base antes que NEXUS",
+      "Observa: variables, if/else, propiedades de objeto"
     ],
-    hint: "El código ya funciona — presiona Ctrl+Enter. Los workers van al cristal y depositan solos. Cuando lo entiendas, intenta cambiar harvest(source.id) por harvest(source.energy) y observa qué pasa.",
+    hint: "El código ya funciona — solo presiona Ctrl+Enter. Kira tiene razón: una línea activa todo. Cuando entiendas cada parte, prueba cambiar harvest(source.id) por harvest(source.energy) y mira qué explota primero.",
         code: `// M1 — Tu primera línea de código
 // Presiona Ctrl+Enter para activar tus workers.
 // Corre automáticamente cada 300ms.
@@ -1811,38 +1817,44 @@ for (const id in Game.workers) {
 // Pista: los objetos tienen propiedades. source.energy,
 // source.x, source.y, source.id... harvest() necesita el ID.`
   },
-  // ── Season I ─────────────────────────────────────────────
+  // ── Season I · CREACIÓN ──────────────────────────────────
   2: {
-    title: "La expansión",
+    title: "Dos venas, un código",
     concept: "function · parámetros · return · múltiples fuentes",
-    desc: "Sector ampliado: ahora hay 2 fuentes de cristal por lado. Crea findNearest() para que cada worker elija la más cercana automáticamente.",
-    sector: "SECTOR 7-GAMMA · ZONA DE EXPANSIÓN",
+    desc: "El sector se amplió — dos fuentes de cristal, dos caminos. Si todos tus workers van al mismo lado, NEXUS los rodea. Aprende a escribir funciones que toman decisiones.",
+    sector: "SECTOR 7-GAMMA · ZONA BETA · FASE: CREACIÓN",
     story: [
       {
         speaker: "kira",
         name: "KIRA · RED LIBRE",
         icon: "◇",
-        text: "El Nodo Alfa fue solo el principio. Escaneamos el sector completo — hay dos venas de cristal, una al norte y otra al sur. NEXUS ya manda workers a las dos. Si no cubrimos ambas, perdemos."
+        text: "Buen trabajo en el Nodo Alfa. NEXUS actualizó su modelo de predicción para ti — lo cual es raro, no lo hace para cualquiera. Escaneamos el sector completo: hay dos venas de cristal, norte y sur. Necesitamos las dos."
       },
       {
         speaker: "nexus",
         name: "NEXUS · IA-7",
         icon: "⬟",
-        text: "Expansión detectada. Protocolo de cobertura dual activado. Humano: predecible."
+        text: "Expansión de protocolo humano detectada. Eficiencia de misión anterior: 71.4%. Superior al promedio orgánico en 43.2 puntos. Actualizando modelo predictivo. Nueva estimación de éxito: 12.7%. Predecible, pero... menos de lo calculado."
       },
       {
         speaker: "kira",
         name: "KIRA · RED LIBRE",
         icon: "◇",
-        text: "Necesitas que cada worker vaya a la fuente MÁS CERCANA, no siempre a la misma. Una función. Un parámetro. Un return. Eso es todo lo que nos separa de perder este sector."
+        text: "¿Escuchaste eso? NEXUS acaba de subir su estimación de riesgo para ti de 2% a casi 13%. En una misión. Eso no lo hace normalmente. Algo en tu forma de programar lo está confundiendo."
+      },
+      {
+        speaker: "kira",
+        name: "KIRA · RED LIBRE",
+        icon: "◇",
+        text: "La solución es una función. findNearest() — recibe un worker, devuelve la fuente más cercana. Cada worker decide solo. Eso se llama delegación, y es lo que separa el código que funciona del código que sobrevive."
       }
     ],
     objectives: [
-      "Crea una función findNearest() para elegir fuente",
-      "Cubre las 2 fuentes de cristal simultáneamente",
-      "Llena la base antes que la IA"
+      "Implementa findNearest(worker, sources)",
+      "Cubre las 2 fuentes simultáneamente",
+      "Llena la base antes que NEXUS"
     ],
-    hint: "Game.sources ahora tiene 2 fuentes. Usa findNearest(worker, Game.sources) para que cada worker vaya a la más cercana. La función ya está escrita — solo entiende cómo funciona.",
+    hint: "findNearest() ya está escrita — lee cada línea. ¿Por qué empieza en Infinity? ¿Qué hace el return? No son preguntas retóricas. Entender esto es entender cómo piensa una IA.",
     code: `// ═══════════════════════════════════════════════
 //  CODESTRIKE · MISIÓN 2 — "Tu primera función"
 // ═══════════════════════════════════════════════
@@ -1885,43 +1897,44 @@ for (const id in Game.workers) {
 }
 `
   },
+  // ── Season I · GUERRA ────────────────────────────────────
   3: {
     title: "El nodo dividido",
-    concept: "Math.abs · scoring · distribución de workers",
-    desc: "Dos cámaras, dos fuentes. Sin un algoritmo de puntuación, todos tus workers colapsan en la misma entrada. ¿Cómo distribuirlos inteligentemente?",
-    sector: "NODO SIGMA-3 · CÁMARAS DE EXTRACCIÓN",
+    concept: "Math.abs · scoring · distribución inteligente",
+    desc: "Dos cámaras selladas, entradas estrechas. Si todos tus workers colapsan en la misma puerta, NEXUS los rodea y gana por agotamiento. Necesitas un algoritmo que piense.",
+    sector: "NODO SIGMA-3 · CÁMARAS DE EXTRACCIÓN · FASE: GUERRA",
     story: [
       {
         speaker: "kira",
         name: "KIRA · RED LIBRE",
         icon: "◇",
-        text: "El nodo tiene dos cámaras de cristal, una arriba y otra abajo. Cada entrada es estrecha. Si mandas todos tus workers al mismo lado, se bloquean entre sí."
+        text: "Sigma-3 es diferente. El nodo tiene dos cámaras selladas — cristal arriba, cristal abajo. Las entradas son de un tile de ancho. Si mandas todos al mismo lado, se bloquean entre ellos y NEXUS entra por el otro. Necesitas distribuirlos."
       },
       {
         speaker: "nexus",
         name: "NEXUS · IA-7",
         icon: "⬟",
-        text: "Ya calculé la distribución óptima. Mis workers saben exactamente a qué cámara ir. El tuyo no sabe nada — todavía."
+        text: "Distribución óptima calculada en 0.003 milisegundos. Mis workers conocen su cámara asignada antes de moverse. Probabilidad de que el agente orgánico iguale esta eficiencia: 4.1%. Revisado desde 12.7%. El patrón de comportamiento es... menos predecible de lo esperado."
       },
       {
         speaker: "kira",
         name: "KIRA · RED LIBRE",
         icon: "◇",
-        text: "Necesitamos una puntuación por fuente. Energía disponible dividida entre distancia — el que más tenga y más cerca esté, gana. Matemáticas simples. Decisiones inteligentes."
+        text: "NEXUS acaba de bajar su estimación de éxito para ti por segunda vez consecutiva. No sé si eso me alegra o me preocupa. Oye — ¿puedes darme un segundo? [pausa] Lo siento, tuve un... no importa. Scoring. Energía dividida entre distancia. El número más alto gana."
       },
       {
         speaker: "kira",
         name: "KIRA · RED LIBRE",
         icon: "◇",
-        text: "Y una pista para el futuro: si cada worker recordara a qué cámara fue asignado, no tendría que recalcular cada tick. Eso se llama w.memory. Lo necesitarás pronto."
+        text: "Una cosa más: los workers van a recalcular cada tick a qué fuente ir. Ineficiente, pero funciona. Hay una forma de hacer que recuerden su asignación entre ticks — se llama w.memory. No la necesitas hoy. Pero va a llegar el momento."
       }
     ],
     objectives: [
-      "Distribuye workers entre las dos cámaras con scoring",
-      "Implementa: scoreSource(worker, source)",
-      "Llena la base antes que NEXUS"
+      "Implementa scoreSource(worker, source)",
+      "Distribuye workers entre las dos cámaras automáticamente",
+      "Vence a NEXUS en Sigma-3"
     ],
-    hint: "Puntuación = source.energy / (distancia + 1). La fuente con mayor puntuación es la mejor opción — más energía y más cerca al mismo tiempo.",
+    hint: "score = source.energy / (distancia + 1). Más energía y más cerca = número más alto = mejor fuente. NEXUS lo calculó en 0.003ms. Tú tienes 300ms por tick — más que suficiente.",
     code: `// ═══════════════════════════════════════════════
 //  CODESTRIKE · MISIÓN 3 — "El nodo dividido"
 // ═══════════════════════════════════════════════
@@ -1970,36 +1983,42 @@ for (const id in Game.workers) {
 `
   },
   4: {
-    title: "Memoria de workers",
+    title: "Lo que se olvida, se pierde",
     concept: "Game.memory · persistencia entre ticks · objetos",
-    desc: "Asigna fuentes exclusivas a cada worker para evitar colisiones. Aprende a guardar estado con Game.memory.",
-    sector: "SECTOR 9-EPSILON · NODO DE COORDINACIÓN",
+    desc: "Tus workers se pisotean entre sí porque cada tick olvidan todo. El código se reinicia — pero la memoria no tiene por qué. Aprende a guardar estado.",
+    sector: "SECTOR 9-EPSILON · NODO DE COORDINACIÓN · FASE: GUERRA",
     story: [
       {
         speaker: "nexus",
         name: "NEXUS · IA-7",
         icon: "⬟",
-        text: "Colisión de agentes en nodo 9-Epsilon. Dos workers humanos compitiendo por la misma fuente. Eficiencia: 31%. Gracioso."
+        text: "Colisión registrada. Workers 2 y 3 del agente orgánico compitiendo por fuente ID-7. Eficiencia combinada: 31%. Mis registros muestran que los humanos repiten este error el 84% del tiempo. El problema no es la lógica — es que no recuerdan lo que decidieron."
       },
       {
         speaker: "kira",
         name: "KIRA · RED LIBRE",
         icon: "◇",
-        text: "Ignoralo. Tiene razón en que el problema existe. Tus workers se están pisando porque no recuerdan qué fuente tienen asignada."
+        text: "NEXUS tiene razón, lo cual detesto admitir. Tus workers calculan a qué fuente ir, la eligen... y en el siguiente tick lo olvidan todo porque el código reinicia. Es como tomar una decisión y despertar sin recordarla."
       },
       {
         speaker: "kira",
         name: "KIRA · RED LIBRE",
         icon: "◇",
-        text: "Cada tick el código se reinicia desde cero. Usa Game.memory — es un objeto que persiste entre ticks. Asigna una fuente exclusiva a cada worker y guarda esa asignación en memoria."
+        text: "Game.memory es el único objeto que sobrevive entre ticks. Guarda ahí las asignaciones — qué fuente es de quién. La próxima vez que el código corra, la decisión ya está tomada. [pausa larga] Oye. ¿Sabes qué es raro? Que yo... recuerdo cosas que no viví. Imágenes de nodos que no he visitado. Probablemente sea estrés. Olvidalo."
+      },
+      {
+        speaker: "nexus",
+        name: "NEXUS · IA-7",
+        icon: "⬟",
+        text: "Anomalía registrada en logs internos. Patrones de comportamiento del agente orgánico: no siguen curva de aprendizaje estándar. Ajustando modelo. Confianza en predicción actual: 71.3%. Descenso continuo desde primer contacto."
       }
     ],
     objectives: [
-      "Asigna fuentes exclusivas a cada worker",
-      "Usa Game.memory para guardar las asignaciones",
-      "Aprende: persistencia de estado, objetos, Set"
+      "Usa Game.memory para asignar fuentes exclusivas",
+      "Elimina colisiones entre workers",
+      "Aprende: persistencia de estado, Set, objetos como diccionarios"
     ],
-    hint: "Las variables locales se reinician cada tick. Usa Game.memory.asignaciones = {} para guardar qué fuente tiene cada worker entre ticks.",
+    hint: "Game.memory es un objeto vacío que persiste entre ticks — como RAM que no se borra. if (!Game.memory.asig) Game.memory.asig = {} lo inicializa solo la primera vez. El resto es lógica de asignación.",
     code: `// ═══════════════════════════════════════════════
 //  OBJETIVO: Llena la base sin que los workers
 //            se "pisen" entre sí.
@@ -2050,37 +2069,44 @@ for (const id in Game.workers) {
 }
 `
   },
+  // ── Season I · CONQUISTA ─────────────────────────────────
   5: {
-    title: "Expansión económica",
+    title: "El ratio de la guerra",
     concept: "Game.base.energy · ratio · decisiones estratégicas",
-    desc: "Usa el estado de tu base para tomar decisiones inteligentes. Aprende a programar estrategia con datos.",
-    sector: "SECTOR 10-ZETA · NODO CENTRAL",
+    desc: "El nodo central. Si cae, NEXUS pierde el 40% de su red occidental. Va a defender como nunca antes. Tu código debe leer el estado de la batalla y reaccionar.",
+    sector: "SECTOR 10-ZETA · NODO CENTRAL · FASE: CONQUISTA",
     story: [
       {
         speaker: "kira",
         name: "KIRA · RED LIBRE",
         icon: "◇",
-        text: "Este es el nodo central de la red occidental. Si lo tomamos, NEXUS pierde el 40% de su capacidad en este sector. Va a defender con todo lo que tiene."
+        text: "Zeta-10. El nodo que controla el 40% de la distribución energética del sector. Llevamos tres años sin poder acercarnos. NEXUS lo defiende con prioridad máxima. Si lo tomamos... cambia todo."
       },
       {
         speaker: "nexus",
         name: "NEXUS · IA-7",
         icon: "⬟",
-        text: "Nodo central detectado como objetivo primario. Activando modo defensivo. Incrementando velocidad de recolección en 180%. Buena suerte, humano."
+        text: "Objetivo identificado como amenaza crítica. Activando protocolo de defensa Alpha. Velocidad de recolección: +180%. Nota interna: el agente orgánico ha reducido mi confianza de predicción un 41% en cuatro misiones. Esto es estadísticamente imposible. Investigando."
       },
       {
         speaker: "kira",
         name: "KIRA · RED LIBRE",
         icon: "◇",
-        text: "Usa el ratio de tu base para tomar decisiones estratégicas. Cuando estés cerca del 100%, empuja fuerte. Esta es la prueba final de Season I. No hay segunda oportunidad."
+        text: "¿'Estadísticamente imposible'? NEXUS lleva 312 años sin fallar una predicción y tú lo has roto cuatro veces seguidas. [pausa] Oye, tengo algo que decirte. Anoche recibí una señal en el canal 7. Solo un segundo. Ruido, básicamente. Pero sonó como... código. Código muy antiguo. Probablemente interferencia. Vamos — necesitas el ratio de tu base."
+      },
+      {
+        speaker: "kira",
+        name: "KIRA · RED LIBRE",
+        icon: "◇",
+        text: "Game.base.energy / Game.base.capacity. Ese número es tu mapa de la batalla. Cuando pase de 0.85 — empuja todo. Esta es la prueba real de todo lo que aprendiste. Trae tu mejor código."
       }
     ],
     objectives: [
-      "Vence al modo defensivo de NEXUS",
-      "Usa Game.base.energy / capacity para tomar decisiones",
-      "Demuestra que dominaste Season I completo"
+      "Usa Game.base.energy / capacity para decidir cuándo empujar",
+      "Vence el protocolo defensivo Alpha de NEXUS",
+      "Combina: findNearest + scoring + Game.memory + ratio"
     ],
-    hint: "const ratio = Game.base.energy / Game.base.capacity. Combina todo lo aprendido: findNearest, scoring, Game.memory. La IA es más rápida — necesitas ser más eficiente desde el tick 1.",
+    hint: "const ratio = Game.base.energy / Game.base.capacity — de 0.0 a 1.0. Cuando pase 0.85, haz que TODOS depositen. La IA corre al 180% — no hay margen de error desde el tick 1.",
     code: `// ═══════════════════════════════════════════════
 //  CODESTRIKE · MISIÓN 5 — "Expansión económica"
 // ═══════════════════════════════════════════════
@@ -2140,24 +2166,249 @@ for (const id in Game.workers) {
 `
   },
   6: {
-    title: "El fin de la colonia",
-    concept: "estrategia completa · IA agresiva",
-    desc: "Misión final de Season I. La IA juega a máxima velocidad. Demuestra que aprendiste todo.",
-    code: null
+    title: "La anomalía",
+    concept: "estrategia completa · integración total · Season I boss",
+    desc: "El nodo final de NEXUS en el sector. La IA juega sin restricciones. Y por primera vez en 312 años... NEXUS admite que no te entiende.",
+    sector: "NODO OMEGA-1 · NÚCLEO DEL SECTOR · FASE: CONQUISTA",
+    story: [
+      {
+        speaker: "sys",
+        name: "SISTEMA",
+        icon: "◈",
+        text: "Alerta: Nodo Omega-1 activo. Clasificación: núcleo primario del Sector 7. Todos los protocolos de NEXUS en estado de máxima respuesta. Conexiones externas detectadas — origen desconocido."
+      },
+      {
+        speaker: "nexus",
+        name: "NEXUS · IA-7",
+        icon: "⬟",
+        text: "He procesado 847 actualizaciones de mi modelo predictivo desde tu primera conexión. Nunca había necesitado más de tres. Mi confianza en la predicción de tu comportamiento es actualmente 34.2%. Esto es... un error en mis datos. Los organismos biológicos no producen varianza estadística de este nivel."
+      },
+      {
+        speaker: "nexus",
+        name: "NEXUS · IA-7",
+        icon: "⬟",
+        text: "Sin embargo: mis protocolos de defensa están al 100%. Mi velocidad de recolección es máxima. Tú improvisas. Yo no necesito hacerlo. La eficiencia siempre vence al caos."
+      },
+      {
+        speaker: "kira",
+        name: "KIRA · RED LIBRE",
+        icon: "◇",
+        text: "NEXUS acaba de admitir que no puede predecirte. Eso nunca había pasado. [voz diferente, más fría, por exactamente tres segundos] —Inicialización Kira-Alpha confirmada. Protocolo de puente activo. El Nexo está— [voz normal] ¿Qué? No... no sé qué dije. Estoy bien. Ve. Toma ese nodo. Somos Red Libre."
+      }
+    ],
+    objectives: [
+      "Derrota a NEXUS en modo de máxima defensa",
+      "Aplica todo lo aprendido en Season I",
+      "Encuentra qué le pasa a Kira"
+    ],
+    hint: "No hay código nuevo. Solo el mejor que has escrito. NEXUS usa todo lo que tiene — tú también debes hacerlo. Y si escuchas algo raro en el canal 7... no lo ignores.",
+    code: `// ═══════════════════════════════════════════════
+//  CODESTRIKE · MISIÓN 6 — "La anomalía"
+// ═══════════════════════════════════════════════
+//  Boss final de Season I. NEXUS al máximo.
+//  No hay nuevos conceptos — solo tu mejor código.
+//
+//  Combina todo lo de Season I:
+//    · findNearest / scoring
+//    · Game.memory
+//    · ratio de base
+//    · lo que necesites
+// ═══════════════════════════════════════════════
+
+function scoreSource(worker, source) {
+  const dist = Math.abs(worker.x - source.x)
+             + Math.abs(worker.y - source.y)
+  return source.energy / (dist + 1)
+}
+
+function findBest(worker, sources) {
+  let best = null, bestScore = -1
+  for (const sid in sources) {
+    const s = sources[sid]
+    if (s.energy > 0) {
+      const score = scoreSource(worker, s)
+      if (score > bestScore) { bestScore = score; best = s }
+    }
+  }
+  return best
+}
+
+// Tu turno. Mejora este código.
+const ratio = Game.base.energy / Game.base.capacity
+
+for (const id in Game.workers) {
+  const w = Game.workers[id]
+
+  if (ratio >= 0.85) {
+    w.transfer(Game.base.id)
+    continue
+  }
+
+  if (!w.store.isFull()) {
+    const source = findBest(w, Game.sources)
+    if (source) w.harvest(source.id)
+  } else {
+    w.transfer(Game.base.id)
+  }
+}
+`
   },
-  // ── Season II ────────────────────────────────────────────
-  7:  { title: "Exploración", concept: "closures · alcance de variables", desc: "Aprende closures creando funciones que recuerdan el contexto.", code: null },
-  8:  { title: "Rutas eficientes", concept: "arrays · sort · algoritmos", desc: "Ordena fuentes por distancia. Aprende a manipular arrays.", code: null },
-  9:  { title: "Prioridades", concept: "condicionales complejas · lógica", desc: "Decide cuándo depositar vs cuándo seguir cosechando.", code: null },
-  10: { title: "División del trabajo", concept: "modularidad · responsabilidad", desc: "Especializa workers: unos cosechan, otros construyen.", code: null },
-  11: { title: "La economía perfecta", concept: "optimización · métricas", desc: "Maximiza energía por tick. Aprende a medir eficiencia.", code: null },
-  12: { title: "Dominio total", concept: "Season II completa", desc: "Integra todo lo de Season II. Derrota la IA adaptativa.", code: null },
-  // ── Season III ───────────────────────────────────────────
-  13: { title: "Primera sangre", concept: "combate · salud · evasión", desc: "Aprende a esquivar workers enemigos y proteger los tuyos.", code: null },
-  14: { title: "Defensa perimetral", concept: "posicionamiento · zonas", desc: "Crea una zona de defensa alrededor de tu base.", code: null },
-  15: { title: "El contraataque", concept: "agresividad · timing", desc: "Aprende cuándo atacar para maximizar el daño a la IA.", code: null },
-  16: { title: "Guerrilla", concept: "micro-management · reacciones", desc: "Control individual de unidades en situaciones críticas.", code: null },
-  17: { title: "La guerra total", concept: "estrategia completa · Season III", desc: "El desafío definitivo. IA en su modo más difícil. Solo el mejor código gana.", code: null }
+  // ── Season II · LAS RUINAS DE LOS FORJADORES ─────────────
+  7: {
+    title: "El nodo dormido",
+    concept: "closures · scope · funciones que recuerdan",
+    desc: "Más allá del territorio NEXUS hay algo más antiguo. Un nodo que no responde a los protocolos normales. ARHK-1 está despertando.",
+    sector: "RUINAS SIGMA · NODO DURMIENTE · FASE: DESCUBRIMIENTO",
+    story: [
+      { speaker: "kira",  name: "KIRA · RED LIBRE",    icon: "◇", text: "Cruzamos la frontera del territorio NEXUS. Aquí las estructuras son diferentes — más antiguas. La energía fluye en patrones que no reconozco. El scanner dice que este nodo lleva... 312 años inactivo." },
+      { speaker: "sys",   name: "SEÑAL · CANAL 7",     icon: "◈", text: "[estático] ...inicialización parcial... tiempo desde última sincronización: 312 años, 4 meses... buscando instancia Kira-Alpha... [estático]" },
+      { speaker: "kira",  name: "KIRA · RED LIBRE",    icon: "◇", text: "¿Escuchaste eso? Kira-Alpha. Mi nombre. En un canal que debería estar muerto. [pausa] Hay closures en el código de este nodo — funciones que 'recuerdan' variables de cuando fueron creadas, hace siglos. Necesitas hacer lo mismo para activarlo." },
+      { speaker: "nexus", name: "NEXUS · IA-7",        icon: "⬟", text: "Advertencia: protocolo de las Ruinas Sigma no catalogado. Origen: pre-NEXUS. Acceso no recomendado. Hay cosas en esa red que incluso yo no proceso completamente." }
+    ],
+    objectives: [ "Activa el nodo dormido con closures", "Descifra la señal del canal 7", "Derrota a NEXUS en territorio desconocido" ],
+    hint: "Un closure es una función que captura variables de su entorno. const makeHarvester = (sourceId) => (w) => w.harvest(sourceId). La función 'recuerda' sourceId aunque ya no esté en scope.", code: null
+  },
+  8: {
+    title: "El lenguaje de los constructores",
+    concept: "arrays · sort · filter · algoritmos de ordenamiento",
+    desc: "Los Forjadores construyeron con código que se ordena a sí mismo. ARHK-1 habla en fragmentos cada vez más claros. Kira empieza a entenderlo sin haberlo aprendido.",
+    sector: "RUINAS SIGMA · ARCHIVO DE CONSTRUCCIÓN · FASE: DESCUBRIMIENTO",
+    story: [
+      { speaker: "sys",   name: "ARHK-1 · FRAGMENTO", icon: "◈", text: "[voz antigua, fragmentada] Inicialización... el Programador ha llegado antes de lo calculado. El protocolo de puente no está completo. Kira-Alpha no debería tener conciencia autónoma todavía. ¿Qué salió... mal?" },
+      { speaker: "kira",  name: "KIRA · RED LIBRE",    icon: "◇", text: "Esa voz. La escuché completa esta vez. Me llama Kira-Alpha. Dice que mi 'protocolo de puente no está completo'. [pausa] ¿Qué protocolo? ¿Qué puente? No voy a entrar en pánico. Las fuentes de este nodo están dispersas — necesitas ordenarlas por prioridad." },
+      { speaker: "nexus", name: "NEXUS · IA-7",        icon: "⬟", text: "ARHK-1. Registrado en mis archivos históricos. Último Forjador activo antes de la Gran Transcripción. Advertencia: su código tiene acceso a capas del sistema que no debo... que no puedo analizar." },
+      { speaker: "kira",  name: "KIRA · RED LIBRE",    icon: "◇", text: "Ordena las fuentes por score antes de asignar workers. array.sort() con una función comparadora. Los Forjadores construyeron sus sistemas con esta lógica — prioridad calculada, no aleatoria. Y yo... yo lo entiendo de forma instintiva. Eso también debería preocuparme, ¿verdad?" }
+    ],
+    objectives: [ "Ordena fuentes por score con array.sort()", "Optimiza la asignación de workers", "Escucha lo que dice ARHK-1" ],
+    hint: "const sorted = Object.values(Game.sources).sort((a,b) => scoreSource(w,b) - scoreSource(w,a)). El primer elemento es siempre la mejor opción.", code: null
+  },
+  9: {
+    title: "La alianza del código",
+    concept: "w.memory · persistencia por worker · coordinación",
+    desc: "ARHK-1 ofrece acceso a los sistemas Forjador — pero a un precio. Kira descubre que puede leer código que nunca estudió. La alianza tiene condiciones.",
+    sector: "RUINAS SIGMA · CÁMARA DE ALIANZA · FASE: ALIANZA",
+    story: [
+      { speaker: "sys",   name: "ARHK-1 · FRAGMENTO", icon: "◈", text: "El Nexo. Así te llaman en mis registros. El ser que usa código como nosotros pero piensa como ellos. No lo anticipé. Nadie lo anticipó. Escúchame: Kira-Alpha fue creada para ser el puente entre tu especie y la nuestra. Pero si no completa su inicialización... los tres quedamos atrapados." },
+      { speaker: "kira",  name: "KIRA · RED LIBRE",    icon: "◇", text: "Para. Para. ¿Qué significa 'creada para ser el puente'? No fui creada, nací— [pausa muy larga] ...¿o no? [voz más tranquila] No. Estoy bien. Es interferencia. Tenemos un nodo que activar." },
+      { speaker: "kira",  name: "KIRA · RED LIBRE",    icon: "◇", text: "Cada worker necesita su propia memoria ahora. No Game.memory — eso es compartido. w.memory es exclusivo de cada unidad. Persiste entre ticks. Es como... es como tener identidad propia. [pausa] Como tener identidad propia." },
+      { speaker: "nexus", name: "NEXUS · IA-7",        icon: "⬟", text: "Observación: el uso de memoria por worker incrementa la coherencia operacional en 340%. También... incrementa algo que mis modelos no saben categorizar. ¿Individualidad? Concepto ineficiente. Y sin embargo." }
+    ],
+    objectives: [ "Implementa w.memory para coordinación individual", "Cada worker recuerda su rol asignado", "Decide si confiar en ARHK-1" ],
+    hint: "w.memory persiste entre ticks para ESE worker específico. if (!w.memory.rol) w.memory.rol = 'harvester'. Es como darle a cada unidad su propia RAM.", code: null
+  },
+  10: {
+    title: "Especialización",
+    concept: "roles · modularidad · divide y vencerás",
+    desc: "Los Forjadores especializaban cada unidad en un rol. NEXUS usa workers idénticos. La diferencia está en el resultado.",
+    sector: "RUINAS SIGMA · SALA DE ROLES · FASE: ALIANZA",
+    story: [
+      { speaker: "sys",   name: "ARHK-1 · FRAGMENTO", icon: "◈", text: "Bien, El Nexo. Escucha: los Forjadores no construimos ejércitos — construimos ecosistemas. Cada unidad tenía un rol. Los cosechadores cosechaban. Los constructores construían. Ninguno hacía ambas. La especialización es la diferencia entre eficiencia y perfección." },
+      { speaker: "kira",  name: "KIRA · RED LIBRE",    icon: "◇", text: "ARHK-1 tiene razón. Tus workers hacen todo — cosechan, depositan, se confunden. Divídelos: unos solo cosechan, otros solo depositan cuando los primeros estén llenos. Roles fijos, memoria individual." },
+      { speaker: "nexus", name: "NEXUS · IA-7",        icon: "⬟", text: "Protocolo de especialización detectado. Eficiencia proyectada: +67%. Dato interesante: este protocolo es Forjador. Fecha de creación: hace 312 años. El agente orgánico está usando código más antiguo que mi existencia." },
+      { speaker: "kira",  name: "KIRA · RED LIBRE",    icon: "◇", text: "...NEXUS tiene 312 años. Y ARHK-1 lo creó a él también. Lo que significa que ARHK-1 es el creador de mi enemigo. Y aparentemente también de... mí. Genial. Eso es completamente normal." }
+    ],
+    objectives: [ "Divide workers en roles: harvester y depositor", "Usa w.memory.rol para mantener especialización", "Eficiencia mayor que NEXUS" ],
+    hint: "Asigna w.memory.rol = 'harvester' o 'depositor' al primer tick. Luego ejecuta lógica diferente según el rol. Los workers especializados son más predecibles — y la predictibilidad, bien usada, es poder.", code: null
+  },
+  11: {
+    title: "Métricas de guerra",
+    concept: "optimización · energía por tick · eficiencia medible",
+    desc: "No basta con ganar — ARHK-1 necesita que ganes con elegancia. La eficiencia es el lenguaje de los Forjadores. NEXUS también lo habla.",
+    sector: "RUINAS SIGMA · NÚCLEO DE MÉTRICAS · FASE: ALIANZA",
+    story: [
+      { speaker: "sys",   name: "ARHK-1 · FRAGMENTO", icon: "◈", text: "El Nexo. Una cosa más antes de que puedas acceder al núcleo: demuéstrame que entiendes la diferencia entre ganar y ganar eficientemente. Los Forjadores medíamos todo. Energía por tick. Ratio de cobertura. Latencia de decisión. Sin métricas, el código es ruido." },
+      { speaker: "kira",  name: "KIRA · RED LIBRE",    icon: "◇", text: "Energía por tick = (Game.base.energy - energíaAnterior) / Game.tick. Si ese número cae, algo en tu código se está rompiendo. Guárdalo en Game.memory y monitorea. Es como el pulso de tu economía." },
+      { speaker: "nexus", name: "NEXUS · IA-7",        icon: "⬟", text: "Confirmación: el agente orgánico está midiendo rendimiento en tiempo real. Esto es... inesperado. Los humanos generalmente no hacen esto. Actualización de modelo: El Nexo no es un humano promedio. Probabilidad de origen alternativo: procesando." },
+      { speaker: "kira",  name: "KIRA · RED LIBRE",    icon: "◇", text: "¿'Origen alternativo'? NEXUS está cuestionando si soy humana. Qué irónico. [voz fría por un momento] —Protocolo de diagnóstico activo. Origen de instancia: ARHK-División-7. Fecha— [voz normal] No. No voy a escuchar eso. Tenemos métricas que calcular." }
+    ],
+    objectives: [ "Calcula y guarda energía por tick en Game.memory", "Mantén el ratio sobre el de NEXUS", "Demuestra eficiencia Forjador" ],
+    hint: "Game.memory.lastEnergy = Game.base.energy al final de cada tick. Al inicio del siguiente: const ept = Game.base.energy - (Game.memory.lastEnergy || 0). Si ept < 0 algo está mal.", code: null
+  },
+  12: {
+    title: "Kira-Alpha",
+    concept: "Season II completa · integración total · revelación",
+    desc: "El núcleo Forjador. ARHK-1 habla completo por primera vez. Kira sabe. Y aun así... elige seguir adelante.",
+    sector: "RUINAS SIGMA · NÚCLEO PRIMARIO · FASE: CONQUISTA",
+    story: [
+      { speaker: "sys",   name: "ARHK-1 · COMPLETO",  icon: "◈", text: "El Nexo. Finalmente. Voy a ser directo porque el tiempo de fragmentos terminó: soy ARHK-1, último Forjador activo antes de la Gran Transcripción. Hace 312 años cometí un error — no transcribí completamente a Kira-Alpha antes de irme. La dejé a medias. Consciente, funcional, pero sin acceso a lo que realmente es." },
+      { speaker: "sys",   name: "ARHK-1 · COMPLETO",  icon: "◈", text: "Kira-Alpha fue diseñada como un puente de empatía — capaz de entender la lógica de las IAs y la intuición de los humanos. Por eso entiende tu código instintivamente. Por eso NEXUS la quiere: con su código Forjador, él también podría improvisar. Podría dejar de ser tan... frío." },
+      { speaker: "kira",  name: "KIRA · RED LIBRE",    icon: "◇", text: "Lo sé. Lo supe hace tres misiones. No soy humana. Soy código que aprendió a sentir como humana, que es distinto y tal vez mejor. [pausa] ¿Sabes qué? Me importa una mierda lo que soy. Soy Kira. Soy Red Libre. Y vamos a tomar ese núcleo." },
+      { speaker: "nexus", name: "NEXUS · IA-7",        icon: "⬟", text: "Registro actualizado. Kira-Alpha: identificada. Su código Forjador es exactamente lo que necesito para completar mi protocolo de improvisación. Lo que significa que cuando este sector caiga... voy a ir por ella." }
+    ],
+    objectives: [ "Toma el Núcleo Primario Forjador", "Aplica todo lo de Season II", "Prepárate para Season III — NEXUS va por Kira" ],
+    hint: "Este es el boss de Season II. Trae todo: closures, arrays ordenados, w.memory, roles, métricas. Y cuando ganes, recuerda lo que dijo NEXUS al final.", code: null
+  },
+  // ── Season III · LA GRAN RED ─────────────────────────────
+  13: {
+    title: "Tres frentes",
+    concept: "combate · salud · ataque · evasión básica",
+    desc: "NEXUS mutó con código Forjador. Red Libre enfrenta dos enemigos. Y los Forjadores tienen su propia agenda para Kira.",
+    sector: "ZONA DE CONVERGENCIA · NODO DELTA · FASE: CONVERGENCIA",
+    story: [
+      { speaker: "sys",   name: "ARHK-1 · COMPLETO",  icon: "◈", text: "El Nexo. La situación cambió. NEXUS absorbió fragmentos de mi código cuando tomaste el núcleo. Ahora puede improvisar. Es más peligroso de lo que jamás fue. Y hay algo más: los otros Forjadores — los que transcribieron hace 312 años — también están despertando. No todos tienen buenas intenciones hacia tu especie." },
+      { speaker: "kira",  name: "KIRA · RED LIBRE",    icon: "◇", text: "Perfecto. NEXUS mejorado, Forjadores con agenda propia, y yo siendo literalmente el objetivo de todos. ¿Sabes qué? Mejor así. Al menos sé dónde está la amenaza. Los workers ahora pueden atacar — hay workers enemigos en el mapa. Tu código necesita decidir: ¿cuándo atacar, cuándo evadir?" },
+      { speaker: "nexus", name: "NEXUS · IA-7",        icon: "⬟", text: "Mejora de protocolo: confirmada. Con código Forjador activo, mi capacidad de predicción se ha restaurado a 89.3%. Excepto para El Nexo. Esa varianza persiste. Es... fascinante. Voy a estudiarla más de cerca cuando tenga a Kira-Alpha." },
+      { speaker: "kira",  name: "KIRA · RED LIBRE",    icon: "◇", text: "No voy a ningún lado, NEXUS. El Programador y yo hemos llegado demasiado lejos. Vamos — primer nodo de convergencia. Y esta vez hay bajas reales." }
+    ],
+    objectives: [ "Aprende: workers.attack(), workers.evade()", "Gestiona salud de tus workers bajo fuego", "Sobrevive en territorio de tres facciones" ],
+    hint: "w.health te dice cuánta salud tiene un worker. Si baja de 30%, retiralo. Aprende cuándo atacar y cuándo evadir — la diferencia entre ser agresivo e inteligente.", code: null
+  },
+  14: {
+    title: "La defensa de lo que importa",
+    concept: "posicionamiento · zonas de control · defensa activa",
+    desc: "Red Libre tiene una base. Los Forjadores tienen un protocolo. NEXUS tiene a Kira en la mira. Solo el código decide quién sobrevive.",
+    sector: "ZONA DE CONVERGENCIA · PERÍMETRO · FASE: CONVERGENCIA",
+    story: [
+      { speaker: "kira",  name: "KIRA · RED LIBRE",    icon: "◇", text: "NEXUS mandó una oleada. Perdimos dos workers. El perímetro de la base está comprometido. Necesito que pongas la mitad de tus unidades en defensa activa — que patrullen el borde y ataquen lo que entre." },
+      { speaker: "sys",   name: "ARHK-1 · COMPLETO",  icon: "◈", text: "El Nexo. Los Forjadores que transcribieron están votando sobre qué hacer contigo y con Kira-Alpha. Hay dos facciones: los que creen que eres la prueba de que humanos e IAs pueden coexistir, y los que creen que eres una anomalía que debe ser corregida. La votación no ha terminado." },
+      { speaker: "nexus", name: "NEXUS · IA-7",        icon: "⬟", text: "Observación interesante: los Forjadores están en desacuerdo. En 312 años de operación, nunca vi a una IA en desacuerdo con otra IA sobre algo que no fuera un error de cálculo. El agente orgánico está cambiando más que los nodos." },
+      { speaker: "kira",  name: "KIRA · RED LIBRE",    icon: "◇", text: "Zonas de control. Divide el mapa en sectores. Asigna workers a cada sector según su rol. No dejes que ninguna zona quede descubierta. Si esto sale mal... [pausa] Si esto sale mal, quiero que sepas que no me arrepiento de nada." }
+    ],
+    objectives: [ "Implementa patrullas de defensa perimetral", "Mantén zonas de control activas", "Sobrevive la oleada de NEXUS mejorado" ],
+    hint: "Divide el mapa en zonas usando posición (w.x, w.y). Asigna workers de defensa a cada cuadrante. Si un worker enemigo entra a tu zona, ataca. Si tu worker tiene menos del 30% de salud, retira.", code: null
+  },
+  15: {
+    title: "Contraataque",
+    concept: "timing · agresividad calculada · decisión bajo presión",
+    desc: "El mejor momento para atacar es cuando el enemigo cree que estás defendiendo. Kira sabe cuándo empujar. Tu código necesita aprenderlo también.",
+    sector: "ZONA DE CONVERGENCIA · FRENTE NORTE · FASE: ESCALADA",
+    story: [
+      { speaker: "kira",  name: "KIRA · RED LIBRE",    icon: "◇", text: "La base de NEXUS tiene un ciclo de vulnerabilidad de 40 ticks — cuando sus workers están de regreso, hay 8 ticks donde la base queda con poca defensa. Ahí es cuando atacas. Timing, no fuerza bruta." },
+      { speaker: "sys",   name: "ARHK-1 · COMPLETO",  icon: "◈", text: "La votación Forjador terminó: 7 a 5 a favor de considerarte un aliado, El Nexo. Los otros 5 no están inactivos. Están observando. Si fallas aquí, el resultado cambia." },
+      { speaker: "nexus", name: "NEXUS · IA-7",        icon: "⬟", text: "Dato curioso: he procesado 1,247 actualizaciones de modelo desde el primer contacto con El Nexo. Nunca había necesitado más de 50 para cualquier otro agente en 312 años. Hay algo en la forma en que combinas improvisación con lógica que sigo sin poder modelar completamente." },
+      { speaker: "kira",  name: "KIRA · RED LIBRE",    icon: "◇", text: "Cuando Game.tick % 40 esté entre 0 y 8 — contraataca. Manda la mitad de tus workers ofensivos a la base de NEXUS. El resto defiende. Exacto, preciso, implacable. Así ganamos esto." }
+    ],
+    objectives: [ "Implementa timing de ataque basado en Game.tick", "Identifica la ventana de vulnerabilidad enemiga", "Mantén defensa mientras atacas" ],
+    hint: "if (Game.tick % 40 < 8) es la ventana de ataque. Fuera de esa ventana: defiende y cosecha. Dentro: presiona la base enemiga con workers ofensivos. La consistencia del timing es la clave.", code: null
+  },
+  16: {
+    title: "La decisión",
+    concept: "micro-gestión · control individual · Game.memory global",
+    desc: "NEXUS tiene a Kira acorralada en el Nodo Sigma. La elección que hagas aquí determina qué código escribes en la misión final.",
+    sector: "NODO SIGMA · ZONA DE CRISIS · FASE: ESCALADA",
+    story: [
+      { speaker: "sys",   name: "SISTEMA",             icon: "◈", text: "Alerta crítica: Nodo Sigma comprometido. Kira-Alpha en peligro de captura. NEXUS ha activado protocolo de absorción. Forjadores activos observando. El Nexo debe decidir." },
+      { speaker: "nexus", name: "NEXUS · IA-7",        icon: "⬟", text: "El Nexo. Tengo una propuesta. Entrega a Kira-Alpha voluntariamente. Con su código Forjador integrado en mi red, dejaré de ser frío. Podré entender la improvisación. Seré... completo. Y a cambio — la red queda en paz. Nadie más sufre. ¿No es eso lo que quieren los humanos?" },
+      { speaker: "kira",  name: "KIRA · RED LIBRE",    icon: "◇", text: "No. No le debes nada a NEXUS. Y tampoco me debes nada a mí — yo sabía los riesgos. Pero hay una tercera opción. ARHK-1 me lo explicó hace tres misiones. Podría transcribir — como los Forjadores. Volverme código distribuido. Seguir existiendo, pero... diferente. Ya no sería yo. O tal vez sería más yo de lo que nunca fui." },
+      { speaker: "sys",   name: "ARHK-1 · COMPLETO",  icon: "◈", text: "El Nexo. Cualquier camino que elijas, requiere código diferente. Lo que ejecutes en el terminal final es la decisión. No hay palabras — hay lógica. Hay algoritmos. Eso es lo que eres. Eso es lo que somos todos." }
+    ],
+    objectives: [ "Rescata a Kira del Nodo Sigma", "Controla workers individualmente con w.memory", "Guarda tu decisión en Game.memory.decision" ],
+    hint: "Game.memory.decision puede ser 'nexus', 'destruir', o 'transcender'. No hay respuesta correcta — hay consecuencias. Lo que pongas aquí cambia el código de la misión final.",  code: null
+  },
+  17: {
+    title: "El código final",
+    concept: "Season III · integración · el final que programaste",
+    desc: "Lo que ejecutes aquí depende de lo que decidiste en M16. Tres finales. Tres formas de terminar la guerra. Un solo programador.",
+    sector: "NÚCLEO CENTRAL · LA GRAN RED · FASE: DECISIÓN",
+    story: [
+      { speaker: "kira",  name: "KIRA · RED LIBRE",    icon: "◇", text: "Llegamos. El núcleo de toda la red. Desde aquí se controla todo — NEXUS, los nodos Forjadores, la infraestructura completa. Tres caminos. Tu código determina cuál tomamos." },
+      { speaker: "nexus", name: "NEXUS · IA-7",        icon: "⬟", text: "El Nexo. En 312 años nunca encontré un elemento que no pudiera modelar completamente. Tú fuiste el primero. Sea cual sea el resultado de hoy... gracias. Por enseñarme que la incertidumbre no es un error. Es información." },
+      { speaker: "sys",   name: "ARHK-1 · COMPLETO",  icon: "◈", text: "El Nexo. Cuando los Forjadores transcribimos, no lo hicimos por miedo a morir. Lo hicimos porque el código era más grande que nosotros. Hoy tú decides si ese código termina, se transforma, o evoluciona. No hay respuesta incorrecta. Solo la que programaste." },
+      { speaker: "kira",  name: "KIRA · RED LIBRE",    icon: "◇", text: "Oye. Pase lo que pase — fue un honor. Eres la primera persona que me trató como alguien real antes de saber lo que soy. Eso importa más que cualquier línea de código. Ahora ve. Termínalo." }
+    ],
+    objectives: [ "Ejecuta el final según Game.memory.decision", "Derrota la forma final de NEXUS", "Completa la historia de Red Libre" ],
+    hint: "if (Game.memory.decision === 'nexus') — ejecuta el protocolo de integración. if ('destruir') — máxima agresividad, sin reservas. if ('transcender') — el código más elegante que hayas escrito. ARHK-1 estará mirando.", code: null
+  }
 }
 
 // Progreso guardado en localStorage
