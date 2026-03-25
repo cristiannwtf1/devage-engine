@@ -4,7 +4,6 @@ import { EntityId } from "../ecs/Entity"
 export class SpawnSystem {
 
   private nextEntityId: number = 1000
-  private spawnCost: number = 20
 
   // 🧠 Balance variables
   private spawnCooldown: number = 0
@@ -30,7 +29,8 @@ export class SpawnSystem {
     if (workerCount >= gameState.maxPlayerWorkers) return
 
     // 💰 Energía insuficiente
-    if (baseStorage.current < this.spawnCost) return
+    const spawnCost = gameState.workerSpawnCost
+    if (baseStorage.current < spawnCost) return
 
     // 🚀 Crear nuevo worker
     const newWorkerId: EntityId = this.nextEntityId++
@@ -42,10 +42,10 @@ export class SpawnSystem {
 
     gameState.healths.set(newWorkerId, { current: 20, max: 100 })
     gameState.workers.set(newWorkerId, { isWorker: true })
-    gameState.energyStorages.set(newWorkerId, { current: 0, capacity: 10 })
+    gameState.energyStorages.set(newWorkerId, { current: 0, capacity: gameState.workerCapacity })
     gameState.behaviors.set(newWorkerId, { state: "idle" })
 
-    baseStorage.current -= this.spawnCost
+    baseStorage.current -= spawnCost
 
     // ⏳ Activar cooldown
     this.spawnCooldown = this.spawnDelay

@@ -114,7 +114,7 @@ export class AISystem {
     gs.entities.add(newId)
     gs.positions.set(newId, spawnPos)
     gs.healths.set(newId, { current: 20, max: 20 })
-    gs.energyStorages.set(newId, { current: 0, capacity: 10 })
+    gs.energyStorages.set(newId, { current: 0, capacity: gs.workerCapacity })
     gs.behaviors.set(newId, { state: "harvesting" })
     gs.aiWorkers.add(newId)
 

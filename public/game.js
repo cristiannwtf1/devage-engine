@@ -103,6 +103,8 @@ const FACTION_THEMES = {
     hasGrid:        true,
     gridColor:      "rgba(255,68,0,0.06)",
     hasGrass:       false,
+    hasStoneCrack:  false,
+    hasCrystalVein: false,
     floorVarLight:  "rgba(255,80,0,0.04)",     // panel elevado naranja sutil
     floorVarDark:   "rgba(0,0,0,0.18)",         // panel hundido
     aoStrength:     0.52,                        // AO más fuerte para compensar el suelo más claro
@@ -145,6 +147,8 @@ const FACTION_THEMES = {
     hasGrid:        false,
     gridColor:      "rgba(255,190,60,0.04)",
     hasGrass:       true,
+    hasStoneCrack:  true,        // grietas finas de piedra — desgaste natural
+    hasCrystalVein: false,
     floorVarLight:  "rgba(200,140,60,0.04)",   // piedra cálida levantada
     floorVarDark:   "rgba(0,0,0,0.16)",         // grieta oscura
     aoStrength:     0.50,
@@ -181,14 +185,16 @@ const FACTION_THEMES = {
     scanlineRGBA:   "rgba(8,6,0,0.10)",
   },
   convergencia: {
-    // Suelo violeta profundo — visible contra muros casi negros
-    floorBase:      "#0a0614",   // violeta-negro (era #040108)
+    // Suelo volcánico profundo — obsidiana con vetas de cristal y lava
+    floorBase:      "#0a0614",   // violeta-negro (basalto)
     concaveColor:   "#07040e",
-    hasGrid:        true,
+    hasGrid:        false,       // sin grid industrial — es orgánico/alienígena
     gridColor:      "rgba(180,60,255,0.05)",
     hasGrass:       false,
-    floorVarLight:  "rgba(160,60,255,0.04)",   // panel violeta — dato activo
-    floorVarDark:   "rgba(0,0,0,0.18)",         // panel corrupto
+    hasCrystalVein: true,        // grietas con cristal luminoso + lava interior
+    hasStoneCrack:  false,
+    floorVarLight:  "rgba(160,60,255,0.04)",   // obsidiana iridiscente
+    floorVarDark:   "rgba(0,0,0,0.18)",         // roca muerta
     aoStrength:     0.52,
     // Muros — volumétrico + semi-redondeados (Convergencia híbrida)
     wallEdgeBase:   "#160a30",    // violeta oscuro en el borde
@@ -385,6 +391,60 @@ btnPause.addEventListener("click", () => {
   ws.send(JSON.stringify({ action: paused ? "pause" : "resume" }))
   btnPause.textContent = paused ? "▶ Reanudar" : "⏸ Pausar"
   btnPause.classList.toggle("active", paused)
+})
+
+// ─── CONTROL DE VELOCIDAD ─────────────────────────────────
+let currentSpeed = 1
+
+function setGameSpeed(mult) {
+  currentSpeed = mult
+  fetch("/api/speed", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ multiplier: mult })
+  })
+  document.querySelectorAll(".btn-speed").forEach(b => {
+    b.classList.toggle("active", Number(b.dataset.speed) === mult)
+  })
+}
+
+// Inyectar botones de velocidad junto al botón de pausa
+;(function injectSpeedButtons() {
+  const pauseBtn = document.getElementById("btn-pause")
+  if (!pauseBtn) return
+  const wrap = document.createElement("div")
+  wrap.style.cssText = "display:inline-flex;gap:4px;margin-left:8px;vertical-align:middle"
+  ;[1, 2, 3].forEach(m => {
+    const b = document.createElement("button")
+    b.className   = "btn-speed" + (m === 1 ? " active" : "")
+    b.dataset.speed = String(m)
+    b.textContent = m === 1 ? "▶ 1x" : m === 2 ? "▶▶ 2x" : "▶▶▶ 3x"
+    b.title       = m === 1 ? "Velocidad normal" : m === 2 ? "Doble velocidad" : "Triple velocidad"
+    b.style.cssText = `
+      padding:4px 10px; font-family:'Share Tech Mono',monospace;
+      font-size:0.72rem; letter-spacing:1px; cursor:pointer;
+      border:1px solid #00aaff33; background:transparent; color:#00aaff66;
+      transition:all 0.15s;
+    `
+    b.addEventListener("mouseenter", () => { if (!b.classList.contains("active")) b.style.color="#00aaff99" })
+    b.addEventListener("mouseleave", () => { if (!b.classList.contains("active")) b.style.color="#00aaff66" })
+    b.addEventListener("click", () => setGameSpeed(m))
+    wrap.appendChild(b)
+  })
+  pauseBtn.parentNode.insertBefore(wrap, pauseBtn.nextSibling)
+
+  // Aplicar estilo .active vía JS (evita conflictos con CSS externo)
+  const style = document.createElement("style")
+  style.textContent = `.btn-speed.active{background:#00aaff18!important;color:#00aaff!important;border-color:#00aaff66!important;}`
+  document.head.appendChild(style)
+})()
+
+// Shortcut de teclado: 1 / 2 / 3 cambian velocidad
+document.addEventListener("keydown", e => {
+  if (e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT") return
+  if (e.key === "1") setGameSpeed(1)
+  if (e.key === "2") setGameSpeed(2)
+  if (e.key === "3") setGameSpeed(3)
 })
 
 // ─── CANVAS ───────────────────────────────────────────────
@@ -803,6 +863,77 @@ function drawGrassPatch(px, py, h) {
 }
 
 // ─── TILE ─────────────────────────────────────────────────
+// ─── GRIETA DE PIEDRA — Forjadores ───────────────────────
+// Fisuras finas en roca sedimentaria. Sin glow, colores fríos cálidos.
+function drawStoneCrack(px, py, h) {
+  const x0 = px + 2 + ((h * 113) | 0) % (CELL - 6)
+  const y0 = py + 2 + ((h * 167) | 0) % (CELL - 6)
+  const len = 3 + ((h * 89)  | 0) % 5
+  const ang = h * Math.PI * 2
+  const a   = 0.16 + h * 0.10
+
+  ctx.save()
+  ctx.strokeStyle = `rgba(55,38,16,${a.toFixed(2)})`
+  ctx.lineWidth   = 0.6
+  ctx.beginPath()
+  ctx.moveTo(x0, y0)
+  ctx.lineTo(x0 + Math.cos(ang) * len, y0 + Math.sin(ang) * len)
+  // Bifurcación corta (en algunos tiles)
+  if (h > 0.09) {
+    const mx = x0 + Math.cos(ang) * len * 0.5
+    const my = y0 + Math.sin(ang) * len * 0.5
+    ctx.moveTo(mx, my)
+    ctx.lineTo(mx + Math.cos(ang + 0.75) * len * 0.35,
+               my + Math.sin(ang + 0.75) * len * 0.35)
+  }
+  ctx.stroke()
+  ctx.restore()
+}
+
+// ─── VETA DE CRISTAL — Convergencia ──────────────────────
+// Fisura en obsidiana con cristal luminoso y lava interior.
+// Dos capas: glow exterior violeta + núcleo naranja-rojizo (lava).
+// Sin ctx.shadow para mantener 60fps — usamos doble stroke.
+function drawCrystalVein(px, py, h) {
+  const x0 = px + 1 + ((h * 157) | 0) % (CELL - 4)
+  const y0 = py + 1 + ((h * 211) | 0) % (CELL - 4)
+  const segs = 2 + (((h * 7) | 0) % 2)   // 2-3 segmentos
+  const a    = 0.22 + h * 0.14
+
+  // Construir los puntos de la veta jagged
+  const pts = [{ x: x0, y: y0 }]
+  let cx = x0, cy = y0
+  for (let i = 0; i < segs; i++) {
+    const nx = px + 1 + ((h * (97 + i * 53)) | 0) % (CELL - 3)
+    const ny = py + 1 + ((h * (131 + i * 71)) | 0) % (CELL - 3)
+    // Punto de quiebre intermedio
+    const bx = (cx + nx) / 2 + (((h * (17 + i * 29)) | 0) % 7) - 3
+    const by = (cy + ny) / 2 + (((h * (23 + i * 37)) | 0) % 7) - 3
+    pts.push({ x: bx, y: by }, { x: nx, y: ny })
+    cx = nx; cy = ny
+  }
+
+  ctx.save()
+  // Capa 1 — glow violeta amplio (borde exterior del cristal)
+  ctx.strokeStyle = `rgba(160,50,255,${(a * 0.55).toFixed(2)})`
+  ctx.lineWidth   = 1.8
+  ctx.beginPath()
+  ctx.moveTo(pts[0].x, pts[0].y)
+  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y)
+  ctx.stroke()
+
+  // Capa 2 — núcleo lava naranja-rojizo (interior de la fisura)
+  ctx.strokeStyle = `rgba(255,70,0,${(a * 0.18).toFixed(2)})`
+  ctx.lineWidth   = 0.6
+  ctx.stroke()
+
+  // Capa 3 — filo brillante del cristal (línea fina más clara)
+  ctx.strokeStyle = `rgba(210,140,255,${(a * 0.45).toFixed(2)})`
+  ctx.lineWidth   = 0.5
+  ctx.stroke()
+  ctx.restore()
+}
+
 function drawTile(x, y, type, tiles) {
   const px = x * CELL, py = y * CELL
   ctx.shadowBlur = 0
@@ -927,6 +1058,18 @@ function drawTile(x, y, type, tiles) {
     if (th.hasGrass) {
       const hg = terrainHash(x * 3 + 7, y * 5 + 13)
       if (hg < 0.15) drawGrassPatch(px, py, hg / 0.15)
+    }
+
+    // ── 8. Grietas de piedra (Forjadores) ─────────────────
+    if (th.hasStoneCrack) {
+      const hc = terrainHash(x * 19 + 2, y * 23 + 7)
+      if (hc < 0.22) drawStoneCrack(px, py, hc / 0.22)
+    }
+
+    // ── 9. Vetas de cristal/lava (Convergencia) ───────────
+    if (th.hasCrystalVein) {
+      const hv = terrainHash(x * 29 + 11, y * 31 + 17)
+      if (hv < 0.18) drawCrystalVein(px, py, hv / 0.18)
     }
 
     return

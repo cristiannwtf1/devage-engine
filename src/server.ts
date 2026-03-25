@@ -80,7 +80,7 @@ function buildWorldM1(gs: GameState): void {
     gs.positions.set(w, { x: 4 + i, y: 11 })
     gs.healths.set(w, { current: 100, max: 100 })
     gs.workers.set(w, { isWorker: true })
-    gs.energyStorages.set(w, { current: 0, capacity: 10 })
+    gs.energyStorages.set(w, { current: 0, capacity: gs.workerCapacity })
     gs.behaviors.set(w, { state: "idle" })
   }
 
@@ -97,7 +97,7 @@ function buildWorldM1(gs: GameState): void {
     gs.entities.add(w)
     gs.positions.set(w, { x: 35 - i, y: 11 })
     gs.healths.set(w, { current: 20, max: 20 })
-    gs.energyStorages.set(w, { current: 0, capacity: 10 })
+    gs.energyStorages.set(w, { current: 0, capacity: gs.workerCapacity })
     gs.behaviors.set(w, { state: "idle" })
     gs.aiWorkers.add(w)
   }
@@ -182,7 +182,7 @@ function buildWorldM2(gs: GameState): void {
     gs.positions.set(w, pos)
     gs.healths.set(w, { current: 100, max: 100 })
     gs.workers.set(w, { isWorker: true })
-    gs.energyStorages.set(w, { current: 0, capacity: 10 })
+    gs.energyStorages.set(w, { current: 0, capacity: gs.workerCapacity })
     gs.behaviors.set(w, { state: "idle" })
   }
 
@@ -200,7 +200,7 @@ function buildWorldM2(gs: GameState): void {
     gs.entities.add(w)
     gs.positions.set(w, pos)
     gs.healths.set(w, { current: 20, max: 20 })
-    gs.energyStorages.set(w, { current: 0, capacity: 10 })
+    gs.energyStorages.set(w, { current: 0, capacity: gs.workerCapacity })
     gs.behaviors.set(w, { state: "idle" })
     gs.aiWorkers.add(w)
   }
@@ -281,7 +281,7 @@ function buildWorldM3(gs: GameState): void {
     gs.positions.set(w, { x: 4 + i, y: 11 })
     gs.healths.set(w, { current: 100, max: 100 })
     gs.workers.set(w, { isWorker: true })
-    gs.energyStorages.set(w, { current: 0, capacity: 10 })
+    gs.energyStorages.set(w, { current: 0, capacity: gs.workerCapacity })
     gs.behaviors.set(w, { state: "idle" })
   }
 
@@ -298,7 +298,7 @@ function buildWorldM3(gs: GameState): void {
     gs.entities.add(w)
     gs.positions.set(w, { x: 35 - i, y: 11 })
     gs.healths.set(w, { current: 20, max: 20 })
-    gs.energyStorages.set(w, { current: 0, capacity: 10 })
+    gs.energyStorages.set(w, { current: 0, capacity: gs.workerCapacity })
     gs.behaviors.set(w, { state: "idle" })
     gs.aiWorkers.add(w)
   }
@@ -422,7 +422,7 @@ function buildWorldM4(gs: GameState): void {
     gs.positions.set(w, { x: 4 + i, y: 11 })
     gs.healths.set(w, { current: 100, max: 100 })
     gs.workers.set(w, { isWorker: true })
-    gs.energyStorages.set(w, { current: 0, capacity: 10 })
+    gs.energyStorages.set(w, { current: 0, capacity: gs.workerCapacity })
     gs.behaviors.set(w, { state: "idle" })
   }
 
@@ -437,7 +437,7 @@ function buildWorldM4(gs: GameState): void {
     gs.entities.add(w)
     gs.positions.set(w, { x: 35 - i, y: 11 })
     gs.healths.set(w, { current: 20, max: 20 })
-    gs.energyStorages.set(w, { current: 0, capacity: 10 })
+    gs.energyStorages.set(w, { current: 0, capacity: gs.workerCapacity })
     gs.behaviors.set(w, { state: "idle" })
     gs.aiWorkers.add(w)
   }
@@ -496,7 +496,7 @@ function buildWorldM5(gs: GameState): void {
     gs.positions.set(w, { x: 4 + i, y: 11 })
     gs.healths.set(w, { current: 100, max: 100 })
     gs.workers.set(w, { isWorker: true })
-    gs.energyStorages.set(w, { current: 0, capacity: 10 })
+    gs.energyStorages.set(w, { current: 0, capacity: gs.workerCapacity })
     gs.behaviors.set(w, { state: "idle" })
   }
 
@@ -511,7 +511,7 @@ function buildWorldM5(gs: GameState): void {
     gs.entities.add(w)
     gs.positions.set(w, { x: 35 - i, y: 11 })
     gs.healths.set(w, { current: 20, max: 20 })
-    gs.energyStorages.set(w, { current: 0, capacity: 10 })
+    gs.energyStorages.set(w, { current: 0, capacity: gs.workerCapacity })
     gs.behaviors.set(w, { state: "idle" })
     gs.aiWorkers.add(w)
   }
@@ -596,7 +596,7 @@ function buildWorldM6(gs: GameState): void {
     gs.positions.set(w, { x: 4 + i, y: 11 })
     gs.healths.set(w, { current: 100, max: 100 })
     gs.workers.set(w, { isWorker: true })
-    gs.energyStorages.set(w, { current: 0, capacity: 10 })
+    gs.energyStorages.set(w, { current: 0, capacity: gs.workerCapacity })
     gs.behaviors.set(w, { state: "idle" })
   }
 
@@ -611,7 +611,7 @@ function buildWorldM6(gs: GameState): void {
     gs.entities.add(w)
     gs.positions.set(w, { x: 35 - i, y: 11 })
     gs.healths.set(w, { current: 20, max: 20 })
-    gs.energyStorages.set(w, { current: 0, capacity: 10 })
+    gs.energyStorages.set(w, { current: 0, capacity: gs.workerCapacity })
     gs.behaviors.set(w, { state: "idle" })
     gs.aiWorkers.add(w)
   }
@@ -1108,6 +1108,14 @@ function resetGame(
   broadcast(buildSnapshot(gameState))
   console.log(`🔄 Juego reiniciado — modo: ${mode} | dificultad IA: ${difficulty}`)
 }
+
+// ─── VELOCIDAD DE SIMULACIÓN ──────────────────────────────
+app.post("/api/speed", (req, res) => {
+  const { multiplier } = req.body as { multiplier?: number }
+  const m = typeof multiplier === "number" && [1, 2, 3].includes(multiplier) ? multiplier : 1
+  engine.setSpeed(m)
+  res.json({ ok: true, multiplier: m })
+})
 
 app.post("/api/reset", (req, res) => {
   const { difficulty, mode, missionId } = req.body as { difficulty?: string; mode?: string; missionId?: number }

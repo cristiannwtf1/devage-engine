@@ -138,4 +138,16 @@ export class GameEngine {
         this.paused = false
         console.log("▶️  Juego reanudado")
     }
+
+    // Cambia la velocidad de simulación en caliente (sin reiniciar el juego)
+    // multiplier: 1 = normal (300ms), 2 = x2 (150ms), 3 = x3 (100ms)
+    public setSpeed(multiplier: number): void {
+        const BASE_TICK = 300
+        this.tickRate = Math.max(50, Math.round(BASE_TICK / multiplier))
+        if (this.intervalId !== null) {
+            this.stop()
+            this.start()
+        }
+        console.log(`⚡ Velocidad x${multiplier} — tickRate: ${this.tickRate}ms`)
+    }
 }

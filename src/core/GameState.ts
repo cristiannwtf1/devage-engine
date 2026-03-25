@@ -55,6 +55,19 @@ export class GameState {
   // Límite de workers del jugador — varía por misión (M1=3, M2=6, ...)
   public maxPlayerWorkers: number = 3
 
+  // ── Balance por facción ───────────────────────────────────
+  // Capacidad de carga del worker — define el estilo de juego:
+  //   NEXUS (S1):       10 — ciclos cortos y rápidos (volumen)
+  //   Forjadores (S2):  20 — ciclos largos con más energía (eficiencia)
+  //   Convergencia (S3):12 — ciclos medios, spawn más barato (escala)
+  public workerCapacity: number = 10
+
+  // Costo en energía para spawnear un worker
+  //   NEXUS:       20 — estándar
+  //   Forjadores:  35 — caro pero doble capacidad
+  //   Convergencia:15 — barato para escalar rápido
+  public workerSpawnCost: number = 20
+
   // Script del jugador (JS como string) + último error de ejecución
   public playerScript: string | null = null
   public scriptError:  string | null = null
