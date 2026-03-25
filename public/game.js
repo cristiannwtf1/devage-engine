@@ -93,6 +93,140 @@ function drawParticles() {
 const CELL    = 20
 const TICK_MS = 300   // debe coincidir con tickRate del servidor
 
+// ─── IDENTIDAD VISUAL POR FACCIÓN ─────────────────────────
+// Cada facción define su paleta completa; se consulta en todas las funciones de render
+const FACTION_THEMES = {
+  nexus: {
+    // Suelo — más claro que antes para contrastar con los muros oscuros
+    floorBase:      "#0c1018",   // azul-negro industrial (era #030506)
+    concaveColor:   "#080c12",
+    hasGrid:        true,
+    gridColor:      "rgba(255,68,0,0.06)",
+    hasGrass:       false,
+    floorVarLight:  "rgba(255,80,0,0.04)",     // panel elevado naranja sutil
+    floorVarDark:   "rgba(0,0,0,0.18)",         // panel hundido
+    aoStrength:     0.52,                        // AO más fuerte para compensar el suelo más claro
+    // Muros — volumétrico (profundidad por vecinos) + bordes cortantes NEXUS
+    wallEdgeBase:   "#1e0f08",    // color del tile de borde (más claro, cálido)
+    wallCoreAlpha:  0.82,          // oscurecimiento máximo del núcleo interior (0–1)
+    wallBleedRGB:   "14,5,2",      // tinte del gradiente muro→suelo (warm dark orange)
+    wallRound:      false,
+    wallEdgeGlow:   true,
+    wallEdgeColor:  "#ff3300",
+    wallEdgeBlur:   3,
+    hlRGB:          "255,80,0",
+    shAlphas:       [0.30, 0.42, 0.54, 0.65],
+    peakAccentRGB:  "255,60,0",
+    peakFillRGBA:   "rgba(255,40,0,0.04)",
+    // Sources
+    srcHarvestHalo: [255,120,0],
+    srcHarvestRing: [255,140,30],
+    srcHaloOuter:   [200,80,0],
+    srcCoreHigh:    [255,200,100],
+    srcCoreMid:     [255,80,0],
+    srcCoreLow:     [140,30,0],
+    srcCoreDeep:    [60,10,0],
+    srcShadowColor: "#ff4400",
+    srcEdgeRGB:     [255,120,30],
+    srcSparkRGB:    [255,180,100],
+    // Workers (jugador)
+    workerBg:       "#0a0200",
+    workerColor:    "#331000",
+    workerGlowColor:"#ff4400",
+    workerIcon:     "◈",
+    // Noise canvas
+    particleRGB:    "255,70,0",
+    scanlineRGBA:   "rgba(8,2,0,0.12)",
+  },
+  forjadores: {
+    // Suelo cálido — piedra forjada, más visible que antes
+    floorBase:      "#100e08",   // marrón-oscuro caliente (era #060501)
+    concaveColor:   "#0c0b06",
+    hasGrid:        false,
+    gridColor:      "rgba(255,190,60,0.04)",
+    hasGrass:       true,
+    floorVarLight:  "rgba(200,140,60,0.04)",   // piedra cálida levantada
+    floorVarDark:   "rgba(0,0,0,0.16)",         // grieta oscura
+    aoStrength:     0.50,
+    // Muros — volumétrico + redondeados grandes (piedra Forjadores)
+    wallEdgeBase:   "#1c180a",    // piedra cálida en el borde
+    wallCoreAlpha:  0.80,
+    wallBleedRGB:   "12,9,2",
+    wallRound:      true,
+    wallEdgeGlow:   false,
+    wallEdgeColor:  "#ffaa00",
+    wallEdgeBlur:   2,
+    hlRGB:          "200,140,20",
+    shAlphas:       [0.28, 0.38, 0.48, 0.58],
+    peakAccentRGB:  "200,140,0",
+    peakFillRGBA:   "rgba(180,120,0,0.05)",
+    // Sources
+    srcHarvestHalo: [255,200,0],
+    srcHarvestRing: [255,220,60],
+    srcHaloOuter:   [220,160,0],
+    srcCoreHigh:    [255,248,180],
+    srcCoreMid:     [240,180,20],
+    srcCoreLow:     [180,100,0],
+    srcCoreDeep:    [80,40,0],
+    srcShadowColor: "#ffcc00",
+    srcEdgeRGB:     [255,220,60],
+    srcSparkRGB:    [255,252,220],
+    // Workers
+    workerBg:       "#080600",
+    workerColor:    "#221400",
+    workerGlowColor:"#ffaa00",
+    workerIcon:     "◈",
+    // Noise
+    particleRGB:    "200,130,0",
+    scanlineRGBA:   "rgba(8,6,0,0.10)",
+  },
+  convergencia: {
+    // Suelo violeta profundo — visible contra muros casi negros
+    floorBase:      "#0a0614",   // violeta-negro (era #040108)
+    concaveColor:   "#07040e",
+    hasGrid:        true,
+    gridColor:      "rgba(180,60,255,0.05)",
+    hasGrass:       false,
+    floorVarLight:  "rgba(160,60,255,0.04)",   // panel violeta — dato activo
+    floorVarDark:   "rgba(0,0,0,0.18)",         // panel corrupto
+    aoStrength:     0.52,
+    // Muros — volumétrico + semi-redondeados (Convergencia híbrida)
+    wallEdgeBase:   "#160a30",    // violeta oscuro en el borde
+    wallCoreAlpha:  0.84,
+    wallBleedRGB:   "8,3,18",
+    wallRound:      true,
+    wallEdgeGlow:   true,
+    wallEdgeColor:  "#9900ee",
+    wallEdgeBlur:   3,
+    hlRGB:          "160,60,255",
+    shAlphas:       [0.28, 0.38, 0.50, 0.62],
+    peakAccentRGB:  "140,40,255",
+    peakFillRGBA:   "rgba(120,20,255,0.05)",
+    // Sources (inestables — multicolor)
+    srcHarvestHalo: [180,60,255],
+    srcHarvestRing: [200,100,255],
+    srcHaloOuter:   [140,40,220],
+    srcCoreHigh:    [220,180,255],
+    srcCoreMid:     [160,60,255],
+    srcCoreLow:     [80,20,180],
+    srcCoreDeep:    [30,0,80],
+    srcShadowColor: "#aa22ff",
+    srcEdgeRGB:     [200,80,255],
+    srcSparkRGB:    [230,200,255],
+    // Workers
+    workerBg:       "#030010",
+    workerColor:    "#110030",
+    workerGlowColor:"#aa22ff",
+    workerIcon:     "◈",
+    // Noise
+    particleRGB:    "160,40,255",
+    scanlineRGBA:   "rgba(4,0,10,0.12)",
+  },
+}
+
+// Facción activa — se actualiza cuando arranca una misión
+let currentFaction = "nexus"
+
 // ─── ESTADO DE ANIMACIÓN ──────────────────────────────────
 let currSnapshot  = null
 let prevEntities  = {}   // id → entity del tick anterior
@@ -109,19 +243,20 @@ function buildNoiseCanvas(w, h) {
   noiseCanvas = document.createElement("canvas")
   noiseCanvas.width  = w
   noiseCanvas.height = h
-  const nc = noiseCanvas.getContext("2d")
-  // Micro-partículas azules: textura orgánica sobre el piso
+  const nc  = noiseCanvas.getContext("2d")
+  const th  = FACTION_THEMES[currentFaction] ?? FACTION_THEMES.nexus
+  // Micro-partículas: color según facción
   const count = Math.floor(w * h * 0.06)
   for (let i = 0; i < count; i++) {
     const nx = Math.random() * w | 0
     const ny = Math.random() * h | 0
     const a  = (0.02 + Math.random() * 0.06).toFixed(3)
-    nc.fillStyle = `rgba(0,70,140,${a})`
+    nc.fillStyle = `rgba(${th.particleRGB},${a})`
     nc.fillRect(nx, ny, 1, 1)
   }
-  // Líneas de escáner horizontales muy sutiles (cada 4px)
+  // Líneas de escáner horizontales (cada 4px) — tinte según facción
   for (let sy = 0; sy < h; sy += 4) {
-    nc.fillStyle = "rgba(0,0,8,0.10)"
+    nc.fillStyle = th.scanlineRGBA
     nc.fillRect(0, sy, w, 1)
   }
 }
@@ -129,12 +264,83 @@ function buildNoiseCanvas(w, h) {
 // ─── ZOOM + PAN ────────────────────────────────────────────
 let zoom = 1.0
 let panX = 0, panY = 0
-const ZOOM_MIN = 0.4, ZOOM_MAX = 5.0
+const ZOOM_MIN = 0.3, ZOOM_MAX = 6.0
 let isPanning = false
 let panDragOriginX = 0, panDragOriginY = 0
 
+// ─── ANIMACIÓN DE CÁMARA ───────────────────────────────────
+let camAnim = null  // { fromZoom, fromX, fromY, toZoom, toX, toY, t0, dur }
+
+function animateCameraTo(toZoom, toX, toY, dur = 700) {
+  camAnim = {
+    fromZoom: zoom, fromX: panX, fromY: panY,
+    toZoom, toX, toY,
+    t0: performance.now(), dur
+  }
+}
+
+function tickCamera() {
+  if (!camAnim) return
+  const t   = Math.min(1, (performance.now() - camAnim.t0) / camAnim.dur)
+  const ease = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t  // easeInOutQuad
+  zoom = lerp(camAnim.fromZoom, camAnim.toZoom, ease)
+  panX = lerp(camAnim.fromX,   camAnim.toX,   ease)
+  panY = lerp(camAnim.fromY,   camAnim.toY,   ease)
+  if (t >= 1) camAnim = null
+}
+
+// Calcula zoom + pan para ver el mapa completo centrado en el canvas
+function fitViewToMap(mapW, mapH) {
+  const cw     = canvas.width  || 800
+  const ch     = canvas.height || 440
+  const mapPxW = (mapW ?? 40) * CELL
+  const mapPxH = (mapH ?? 22) * CELL
+  const z      = Math.min(cw / mapPxW, ch / mapPxH) * 0.96
+  const fz     = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, z))
+  return { zoom: fz, panX: (cw - mapPxW * fz) / 2, panY: (ch - mapPxH * fz) / 2 }
+}
+
+// Redimensiona el canvas al contenedor real — hace el canvas responsivo
+function resizeCanvasToWrapper() {
+  const wrapper = canvas.parentElement
+  if (!wrapper) return
+  const newW = Math.max(400, wrapper.clientWidth  - 24)
+  const newH = Math.max(300, wrapper.clientHeight - 24)
+  if (canvas.width !== newW || canvas.height !== newH) {
+    canvas.width  = newW
+    canvas.height = newH
+  }
+}
+
 function resetView() {
-  zoom = 1.0; panX = 0; panY = 0
+  if (currSnapshot) {
+    const { mapWidth, mapHeight } = currSnapshot
+    const f = fitViewToMap(mapWidth, mapHeight)
+    animateCameraTo(f.zoom, f.panX, f.panY, 500)
+  } else {
+    zoom = 1.0; panX = 0; panY = 0
+  }
+}
+
+// ─── CINEMATIC INTRO — al iniciar misión ──────────────────
+let pendingCinematic = false
+
+function triggerMissionStartCamera(snap) {
+  const base = snap.entities.find(e => e.type === "base")
+  const bx   = base ? (base.x + 0.5) * CELL : snap.mapWidth  * CELL / 2
+  const by   = base ? (base.y + 0.5) * CELL : snap.mapHeight * CELL / 2
+
+  // 1. Instantáneo: close-up en la base del jugador (zoom 3.5×)
+  const closeZoom = 3.5
+  zoom = closeZoom
+  panX = canvas.width  / 2 - bx * closeZoom
+  panY = canvas.height / 2 - by * closeZoom
+
+  // 2. Tras 500ms: zoom out suave al mapa completo
+  setTimeout(() => {
+    const f = fitViewToMap(snap.mapWidth, snap.mapHeight)
+    animateCameraTo(f.zoom, f.panX, f.panY, 1100)
+  }, 500)
 }
 
 // Convierte posición de pantalla → tile del mapa
@@ -600,6 +806,7 @@ function drawGrassPatch(px, py, h) {
 function drawTile(x, y, type, tiles) {
   const px = x * CELL, py = y * CELL
   ctx.shadowBlur = 0
+  const th = FACTION_THEMES[currentFaction] ?? FACTION_THEMES.nexus
 
   // ── Vecinos (compartidos por floor y wall) ──────────────
   const top = tiles?.[y - 1]?.[x]     === "#"
@@ -612,111 +819,209 @@ function drawTile(x, y, type, tiles) {
   const br  = tiles?.[y + 1]?.[x + 1] === "#"
 
   if (type === "floor") {
-    // Base del piso — azul-oscuro profundo
-    ctx.fillStyle = "#060f1e"
+    // ── 1. Color base de la facción ───────────────────────
+    ctx.fillStyle = th.floorBase
     ctx.fillRect(px, py, CELL, CELL)
 
-    // ── Esquinas cóncavas: donde dos muros se unen en L ──
-    // Da la ilusión de que los muros se curvan al unirse
-    const CR = 5  // radio cóncavo
-    ctx.fillStyle = "#0e1628"  // color del muro nivel 1
+    // ── 2. Micro-variación por tile (hash determinista) ───
+    // Crea sensación de paneles/piedra irregulares — rompe la monotonía del flat
+    const hv = terrainHash(x * 7 + 3, y * 11 + 5)
+    if (hv > 0.68) {
+      // Panel levantado / zona iluminada
+      ctx.fillStyle = th.floorVarLight
+      ctx.fillRect(px + 1, py + 1, CELL - 2, CELL - 2)
+    } else if (hv < 0.22) {
+      // Panel hundido / grieta
+      ctx.fillStyle = th.floorVarDark
+      ctx.fillRect(px, py, CELL, CELL)
+    }
+
+    // ── 3. AO — ambient occlusion ─────────────────────────
+    // Cuantos más muros rodean el tile, más oscuro se vuelve.
+    // Efecto: espacios abiertos se ven más claros, rincones más profundos.
+    const aoRaw = (top ? 1.0 : 0) + (bot ? 0.65 : 0) +
+                  (lft ? 0.85 : 0) + (rgt ? 0.55 : 0) +
+                  (tl  ? 0.30 : 0) + (tr  ? 0.30 : 0) +
+                  (bl  ? 0.30 : 0) + (br  ? 0.30 : 0)
+    const ao = Math.min(1, aoRaw / 4.25)
+    if (ao > 0.04) {
+      ctx.fillStyle = `rgba(0,0,0,${(ao * (th.aoStrength ?? 0.44)).toFixed(3)})`
+      ctx.fillRect(px, py, CELL, CELL)
+    }
+
+    // ── 4. Grid de circuitos (NEXUS / Convergencia) ───────
+    // Dibujado DESPUÉS del AO para que las líneas siempre sean visibles
+    if (th.hasGrid) {
+      ctx.fillStyle = th.gridColor
+      ctx.fillRect(px, py + CELL - 1, CELL, 1)
+      ctx.fillRect(px + CELL - 1, py, 1, CELL)
+    }
+
+    // ── 5. Esquinas cóncavas — donde dos muros se unen en L
+    const CR = 5
+    ctx.fillStyle = th.concaveColor
     if (top && lft && !tl) {
-      ctx.beginPath()
-      ctx.moveTo(px, py)
+      ctx.beginPath(); ctx.moveTo(px, py)
       ctx.lineTo(px + CR, py)
       ctx.arc(px, py, CR, 0, Math.PI * 0.5)
       ctx.closePath(); ctx.fill()
     }
     if (top && rgt && !tr) {
-      ctx.beginPath()
-      ctx.moveTo(px + CELL, py)
+      ctx.beginPath(); ctx.moveTo(px + CELL, py)
       ctx.lineTo(px + CELL - CR, py)
       ctx.arc(px + CELL, py, CR, Math.PI * 0.5, Math.PI)
       ctx.closePath(); ctx.fill()
     }
     if (bot && lft && !bl) {
-      ctx.beginPath()
-      ctx.moveTo(px, py + CELL)
+      ctx.beginPath(); ctx.moveTo(px, py + CELL)
       ctx.lineTo(px, py + CELL - CR)
       ctx.arc(px, py + CELL, CR, -Math.PI * 0.5, 0)
       ctx.closePath(); ctx.fill()
     }
     if (bot && rgt && !br) {
-      ctx.beginPath()
-      ctx.moveTo(px + CELL, py + CELL)
+      ctx.beginPath(); ctx.moveTo(px + CELL, py + CELL)
       ctx.lineTo(px + CELL - CR, py + CELL)
       ctx.arc(px + CELL, py + CELL, CR, Math.PI, Math.PI * 1.5)
       ctx.closePath(); ctx.fill()
     }
 
-    // ── Sombra proyectada desde muro superior ──────────────
+    // ── 6. Bleed muro→suelo (gradiente tintado con color del muro) ─
+    // En lugar de sombras negras puras, usamos el color del muro de la facción.
+    // Crea una transición suave y con identidad — no un corte abrupto.
+    const wb = th.wallBleedRGB ?? "0,0,0"
+    // Norte: bleed largo y fuerte (muro arriba proyecta mayor sombra)
     if (top) {
-      const gs = ctx.createLinearGradient(px, py, px, py + 7)
-      gs.addColorStop(0, "rgba(0,0,0,0.60)")
-      gs.addColorStop(1, "rgba(0,0,0,0)")
+      const gs = ctx.createLinearGradient(px, py, px, py + 14)
+      gs.addColorStop(0.0, `rgba(${wb},0.78)`)
+      gs.addColorStop(0.4, `rgba(${wb},0.35)`)
+      gs.addColorStop(1.0, `rgba(${wb},0)`)
       ctx.fillStyle = gs
-      ctx.fillRect(px, py, CELL, 7)
+      ctx.fillRect(px, py, CELL, 14)
     }
-    // ── Sombra proyectada desde muro izquierdo ─────────────
+    // Oeste: bleed lateral moderado
     if (lft) {
-      const gs = ctx.createLinearGradient(px, py, px + 5, py)
-      gs.addColorStop(0, "rgba(0,0,0,0.30)")
-      gs.addColorStop(1, "rgba(0,0,0,0)")
+      const gs = ctx.createLinearGradient(px, py, px + 9, py)
+      gs.addColorStop(0, `rgba(${wb},0.45)`)
+      gs.addColorStop(1, `rgba(${wb},0)`)
       ctx.fillStyle = gs
-      ctx.fillRect(px, py, 5, CELL)
+      ctx.fillRect(px, py, 9, CELL)
+    }
+    // Este: bleed corto (luz entra ligeramente desde la izquierda)
+    if (rgt) {
+      const gs = ctx.createLinearGradient(px + CELL, py, px + CELL - 5, py)
+      gs.addColorStop(0, `rgba(${wb},0.25)`)
+      gs.addColorStop(1, `rgba(${wb},0)`)
+      ctx.fillStyle = gs
+      ctx.fillRect(px + CELL - 5, py, 5, CELL)
+    }
+    // Sur: bleed muy corto
+    if (bot) {
+      const gs = ctx.createLinearGradient(px, py + CELL, px, py + CELL - 4)
+      gs.addColorStop(0, `rgba(${wb},0.18)`)
+      gs.addColorStop(1, `rgba(${wb},0)`)
+      ctx.fillStyle = gs
+      ctx.fillRect(px, py + CELL - 4, CELL, 4)
     }
 
-    // ── Parche de musgo/pasto (determinista por posición) ──
-    const hg = terrainHash(x * 3 + 7, y * 5 + 13)
-    if (hg < 0.15) drawGrassPatch(px, py, hg / 0.15)
+    // ── 7. Pasto / manchas orgánicas (Forjadores) ─────────
+    if (th.hasGrass) {
+      const hg = terrainHash(x * 3 + 7, y * 5 + 13)
+      if (hg < 0.15) drawGrassPatch(px, py, hg / 0.15)
+    }
 
     return
   }
 
-  // ── WALL — esquinas curvas según vecinos ────────────────
-  const h     = terrainHash(x, y)
-  const level = h < 0.20 ? 0 : h < 0.55 ? 1 : h < 0.85 ? 2 : 3
+  // ── WALL — profundidad volumétrica estilo Screeps ────────
+  // El color del tile depende de cuántos vecinos son también muro.
+  // Núcleo interior (rodeado de muros) → casi negro.
+  // Borde exterior (toca suelo) → color base de la facción.
 
-  // Radio base por nivel de altura del muro
-  const Rbase = [4, 5, 6, 8][level]
+  // Cálculo de profundidad — radio 1 (pesos: cardinal 1.0, diagonal 0.7)
+  const wallScore1 =
+    (top ? 1.0 : 0) + (bot ? 1.0 : 0) + (lft ? 1.0 : 0) + (rgt ? 1.0 : 0) +
+    (tl  ? 0.7 : 0) + (tr  ? 0.7 : 0) + (bl  ? 0.7 : 0) + (br  ? 0.7 : 0)
+  // Radio 2 — cardinales a 2 tiles (suaviza el gradiente)
+  const t2 = tiles?.[y - 2]?.[x]     === "#"
+  const b2 = tiles?.[y + 2]?.[x]     === "#"
+  const l2 = tiles?.[y]?.[x - 2]     === "#"
+  const r2 = tiles?.[y]?.[x + 2]     === "#"
+  const wallScore2 = (t2 ? 0.4 : 0) + (b2 ? 0.4 : 0) + (l2 ? 0.4 : 0) + (r2 ? 0.4 : 0)
+  // depth = 0 (borde del muro, toca suelo) → 1 (núcleo interior)
+  const depth = Math.min(1, (wallScore1 + wallScore2) / 8.4)
 
-  // Radio por esquina: grande si expuesta, pequeño si semi, 0 si interior
-  const rTL = (!top && !lft) ? Rbase : (!top || !lft) ? 2 : 0
-  const rTR = (!top && !rgt) ? Rbase : (!top || !rgt) ? 2 : 0
-  const rBR = (!bot && !rgt) ? Rbase : (!bot || !rgt) ? 2 : 0
-  const rBL = (!bot && !lft) ? Rbase : (!bot || !lft) ? 2 : 0
+  // Radio por esquina: borde = más redondo (forma natural), núcleo = mínimo
+  // NEXUS: siempre 0 (bordes cortantes industriales)
+  const Rbase = th.wallRound ? Math.round(lerp(8, 2, depth)) : 0
+  const rTL = th.wallRound ? ((!top && !lft) ? Rbase : (!top || !lft) ? Math.min(Rbase, 3) : 0) : 0
+  const rTR = th.wallRound ? ((!top && !rgt) ? Rbase : (!top || !rgt) ? Math.min(Rbase, 3) : 0) : 0
+  const rBR = th.wallRound ? ((!bot && !rgt) ? Rbase : (!bot || !rgt) ? Math.min(Rbase, 3) : 0) : 0
+  const rBL = th.wallRound ? ((!bot && !lft) ? Rbase : (!bot || !lft) ? Math.min(Rbase, 3) : 0) : 0
 
-  // Fondo del muro con esquinas curvas
-  const wallColors = ["#0c1220", "#0f1628", "#111b30", "#131e36"]
-  ctx.fillStyle = wallColors[level]
+  // ── A. Color base (edge color de la facción) ───────────
+  ctx.fillStyle = th.wallEdgeBase
   ctx.beginPath()
-  ctx.roundRect(px, py, CELL, CELL, [rTL, rTR, rBR, rBL])
+  if (th.wallRound) {
+    ctx.roundRect(px, py, CELL, CELL, [rTL, rTR, rBR, rBL])
+  } else {
+    ctx.rect(px, py, CELL, CELL)
+  }
   ctx.fill()
 
-  // ── Bevel: highlight arriba + izquierda ────────────────
-  const hlAlpha = [0.07, 0.11, 0.16, 0.22][level]
-  ctx.fillStyle = `rgba(80,130,220,${hlAlpha})`
-  // Solo pintar highlight en bordes expuestos al piso
-  if (!top) ctx.fillRect(px + rTL, py,     CELL - rTL - rTR, 2)
-  if (!lft) ctx.fillRect(px,       py + rTL, 2, CELL - rTL - rBL)
+  // ── B. Overlay de profundidad — oscurece según depth ───
+  // depth=0 → 0% oscuro (borde expuesto), depth=1 → wallCoreAlpha oscuro (núcleo)
+  const coreAlpha = depth * (th.wallCoreAlpha ?? 0.80)
+  if (coreAlpha > 0.01) {
+    ctx.fillStyle = `rgba(0,0,0,${coreAlpha.toFixed(3)})`
+    ctx.fillRect(px, py, CELL, CELL)  // fillRect cubre todo; el roundRect ya está debajo
+  }
 
-  // ── Bevel: sombra abajo + derecha ─────────────────────
-  const shAlpha = [0.28, 0.38, 0.48, 0.58][level]
-  ctx.fillStyle = `rgba(0,0,0,${shAlpha})`
+  // ── C. Micro-variación de textura (hash) ───────────────
+  // Añade irregularidad al material: bloques ligeramente más claros/oscuros
+  const hw = terrainHash(x * 13 + 1, y * 17 + 3)
+  const varA = (hw - 0.5) * 0.08   // ±4% brillo
+  ctx.fillStyle = varA > 0
+    ? `rgba(255,255,255,${varA.toFixed(3)})`
+    : `rgba(0,0,0,${(-varA).toFixed(3)})`
+  ctx.fillRect(px, py, CELL, CELL)
+
+  // ── D. Bevel highlight — solo en bordes expuestos al suelo ─
+  // Los tiles de núcleo (depth~1) no tienen bordes expuestos → sin bevel
+  const hlAlpha = lerp(0.18, 0.06, depth)  // borde brillante, núcleo tenue
+
+  if (th.wallEdgeGlow && depth < 0.7) {
+    ctx.save()
+    ctx.shadowColor = th.wallEdgeColor
+    ctx.shadowBlur  = lerp(th.wallEdgeBlur, 0, depth / 0.7)
+    ctx.fillStyle   = `rgba(${th.hlRGB},${hlAlpha})`
+    if (!top) ctx.fillRect(px + rTL, py,       CELL - rTL - rTR, 2)
+    if (!lft) ctx.fillRect(px,       py + rTL, 2, CELL - rTL - rBL)
+    ctx.restore()
+  } else if (!th.wallEdgeGlow) {
+    ctx.fillStyle = `rgba(${th.hlRGB},${hlAlpha})`
+    if (!top) ctx.fillRect(px + rTL, py,       CELL - rTL - rTR, 2)
+    if (!lft) ctx.fillRect(px,       py + rTL, 2, CELL - rTL - rBL)
+  }
+
+  // ── E. Bevel sombra abajo + derecha ────────────────────
+  ctx.shadowBlur = 0
+  const shAlpha = lerp(0.50, 0.15, depth)
+  ctx.fillStyle = `rgba(0,0,0,${shAlpha.toFixed(3)})`
   if (!bot) ctx.fillRect(px + rBL, py + CELL - 2, CELL - rBL - rBR, 2)
   if (!rgt) ctx.fillRect(px + CELL - 2, py + rTR,  2, CELL - rTR - rBR)
 
-  // Detalle pico — solo muros altos con exposición superior
-  if (level === 3 && !top) {
+  // ── F. Detalle de pico — solo tiles de borde alto ──────
+  // Solo cuando están muy expuestos (depth < 0.3) y no bloqueados arriba
+  if (depth < 0.30 && !top) {
     const cx2 = px + CELL / 2
-    ctx.fillStyle = "rgba(60,110,200,0.15)"
+    ctx.fillStyle = `rgba(${th.peakAccentRGB},${lerp(0.20, 0, depth / 0.3).toFixed(3)})`
     ctx.beginPath()
     ctx.moveTo(cx2, py + 4)
     ctx.lineTo(cx2 - 3, py + 10)
     ctx.lineTo(cx2 + 3, py + 10)
     ctx.closePath()
     ctx.fill()
-    ctx.fillStyle = "rgba(80,140,255,0.05)"
+    ctx.fillStyle = th.peakFillRGBA
     ctx.fillRect(px + 4, py + 4, CELL - 8, CELL - 8)
   }
 }
@@ -891,16 +1196,20 @@ function drawBase(px, py, cx, cy, isAI) {
 
 // ─── SOURCE — 3 capas estilo Screeps ──────────────────────
 function drawSource(px, py, cx, cy, e) {
-  const energy     = e.source ? e.source.energy / e.source.max : 1
+  const energy      = e.source ? e.source.energy / e.source.max : 1
   const isHarvested = !!e.isHarvested
-  const pulse      = 0.5 + 0.5 * Math.sin(animFrame * 0.07 + cx * 0.15)
+  const pulse       = 0.5 + 0.5 * Math.sin(animFrame * 0.07 + cx * 0.15)
   const activePulse = isHarvested ? (0.5 + 0.5 * Math.sin(animFrame * 0.20)) : 0
-  const r          = CELL * 0.36
+  const r           = CELL * 0.36
+  const th          = FACTION_THEMES[currentFaction] ?? FACTION_THEMES.nexus
 
-  // Agotado: hueco oscuro, sin ruido visual
+  // Helper: color de facción como string rgba
+  const rgba = (rgb, a) => `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${a})`
+
+  // Agotado: hueco oscuro
   if (energy <= 0) {
     ctx.shadowBlur  = 0
-    ctx.strokeStyle = "rgba(80,60,10,0.30)"
+    ctx.strokeStyle = "rgba(60,40,40,0.30)"
     ctx.lineWidth   = 1
     ctx.beginPath()
     ctx.arc(cx, cy, r * 0.65, 0, Math.PI * 2)
@@ -912,8 +1221,8 @@ function drawSource(px, py, cx, cy, e) {
   if (isHarvested) {
     const harvestR = r * (2.8 + 0.6 * activePulse)
     const hh = ctx.createRadialGradient(cx, cy, r * 0.5, cx, cy, harvestR)
-    hh.addColorStop(0, `rgba(255,200,0,${0.22 * activePulse})`)
-    hh.addColorStop(1, "rgba(255,180,0,0)")
+    hh.addColorStop(0, rgba(th.srcHarvestHalo, 0.22 * activePulse))
+    hh.addColorStop(1, rgba(th.srcHarvestHalo, 0))
     ctx.shadowBlur = 0
     ctx.fillStyle  = hh
     ctx.beginPath()
@@ -921,9 +1230,9 @@ function drawSource(px, py, cx, cy, e) {
     ctx.fill()
 
     // Anillo pulsante de actividad
-    ctx.strokeStyle = `rgba(255,220,60,${0.35 * activePulse})`
+    ctx.strokeStyle = rgba(th.srcHarvestRing, 0.35 * activePulse)
     ctx.lineWidth   = 1.5
-    ctx.shadowColor = "#ffdd00"
+    ctx.shadowColor = th.srcShadowColor
     ctx.shadowBlur  = 8 * activePulse
     ctx.beginPath()
     ctx.arc(cx, cy, r * (1.4 + 0.3 * activePulse), 0, Math.PI * 2)
@@ -934,8 +1243,8 @@ function drawSource(px, py, cx, cy, e) {
   // Capa 1 — halo exterior base
   const haloR = r * (1.8 + 0.4 * pulse)
   const halo  = ctx.createRadialGradient(cx, cy, r * 0.4, cx, cy, haloR)
-  halo.addColorStop(0, `rgba(220,160,0,${(0.18 + 0.12 * activePulse) * energy})`)
-  halo.addColorStop(1, "rgba(220,160,0,0)")
+  halo.addColorStop(0, rgba(th.srcHaloOuter, (0.18 + 0.12 * activePulse) * energy))
+  halo.addColorStop(1, rgba(th.srcHaloOuter, 0))
   ctx.shadowBlur = 0
   ctx.fillStyle  = halo
   ctx.beginPath()
@@ -947,12 +1256,12 @@ function drawSource(px, py, cx, cy, e) {
     cx - r * 0.22, cy - r * 0.22, 0,
     cx, cy, r
   )
-  core.addColorStop(0,    `rgba(255,248,180,${0.98 * energy})`)
-  core.addColorStop(0.40, `rgba(240,180,20,${0.90 * energy})`)
-  core.addColorStop(0.80, `rgba(180,100,0,${0.75 * energy})`)
-  core.addColorStop(1,    `rgba(80,40,0,${0.60 * energy})`)
+  core.addColorStop(0,    rgba(th.srcCoreHigh,  0.98 * energy))
+  core.addColorStop(0.40, rgba(th.srcCoreMid,   0.90 * energy))
+  core.addColorStop(0.80, rgba(th.srcCoreLow,   0.75 * energy))
+  core.addColorStop(1,    rgba(th.srcCoreDeep,  0.60 * energy))
 
-  ctx.shadowColor = "#ffcc00"
+  ctx.shadowColor = th.srcShadowColor
   ctx.shadowBlur  = (4 + pulse * 6 + activePulse * 8) * energy
   ctx.fillStyle   = core
   ctx.beginPath()
@@ -961,16 +1270,16 @@ function drawSource(px, py, cx, cy, e) {
 
   // Borde nítido
   ctx.shadowBlur  = 0
-  ctx.strokeStyle = `rgba(255,220,60,${0.55 + energy * 0.35})`
+  ctx.strokeStyle = rgba(th.srcEdgeRGB, 0.55 + energy * 0.35)
   ctx.lineWidth   = isHarvested ? 1.5 : 1
   ctx.beginPath()
   ctx.arc(cx, cy, r, 0, Math.PI * 2)
   ctx.stroke()
 
   // Capa 3 — chispa central
-  ctx.shadowColor = "#fff8aa"
+  ctx.shadowColor = rgba(th.srcSparkRGB, 1)
   ctx.shadowBlur  = 3 + pulse * 4
-  ctx.fillStyle   = `rgba(255,252,220,${0.7 + 0.3 * pulse * energy})`
+  ctx.fillStyle   = rgba(th.srcSparkRGB, 0.7 + 0.3 * pulse * energy)
   ctx.beginPath()
   ctx.arc(cx - r * 0.18, cy - r * 0.18, 2 * pulse, 0, Math.PI * 2)
   ctx.fill()
@@ -983,18 +1292,22 @@ function drawWorker(px, py, cx, cy, e, isAI) {
   const isHarvest = e.state === "harvesting"
   const isReturn  = e.state === "returning"
   const energy    = e.energy ? e.energy.current / e.energy.capacity : 0
-  const color     = isAI ? "#cc3300" : (isIdle ? "#1a2d40" : "#0077bb")
-  const glow      = isAI ? "#ff5500" : (isIdle ? "#2a3d50" : "#00aaff")
   const r         = CELL * 0.39
-  const icon      = isAI ? "⬟" : "◈"
   const pulse     = 0.5 + 0.5 * Math.sin(animFrame * 0.09 + cx * 0.3)
+  const th        = FACTION_THEMES[currentFaction] ?? FACTION_THEMES.nexus
+
+  // Colores según facción (jugador) o IA (siempre rojo)
+  const bg    = isAI ? "#100100" : th.workerBg
+  const color = isAI ? "#cc3300" : (isIdle ? th.workerColor : th.workerColor)
+  const glow  = isAI ? "#ff5500" : th.workerGlowColor
+  const icon  = isAI ? "⬟" : (th.workerIcon ?? "◈")
 
   ctx.save()
   if (isIdle) ctx.globalAlpha = 0.40
 
   // 1. Fondo del círculo
   ctx.shadowBlur = 0
-  ctx.fillStyle  = isAI ? "#100100" : "#000810"
+  ctx.fillStyle  = bg
   ctx.beginPath()
   ctx.arc(cx, cy, r, 0, Math.PI * 2)
   ctx.fill()
@@ -1002,7 +1315,6 @@ function drawWorker(px, py, cx, cy, e, isAI) {
   // 2. Llenado interior — líquido que sube de abajo hacia arriba
   if (energy > 0.01) {
     ctx.save()
-    // Clip al círculo interior
     ctx.beginPath()
     ctx.arc(cx, cy, r - 1.5, 0, Math.PI * 2)
     ctx.clip()
@@ -1010,23 +1322,28 @@ function drawWorker(px, py, cx, cy, e, isAI) {
     const fillH = (r * 2 - 3) * energy
     const fillY = cy + (r - 1.5) - fillH
 
-    // Gradiente vertical del líquido
+    // Gradiente del líquido — AI rojo, jugador = color de facción
     const lg = ctx.createLinearGradient(0, fillY, 0, fillY + fillH)
     if (isAI) {
       lg.addColorStop(0, `rgba(255,120,0,${0.15 + energy * 0.35})`)
       lg.addColorStop(1, `rgba(220,40,0,${0.35 + energy * 0.40})`)
     } else {
-      lg.addColorStop(0, `rgba(0,180,255,${0.12 + energy * 0.30})`)
-      lg.addColorStop(1, `rgba(0,100,220,${0.30 + energy * 0.40})`)
+      const [gr, gg, gb] = th.srcCoreMid   // reutiliza el color mid del source
+      const [tr, tg, tb] = th.srcCoreHigh
+      lg.addColorStop(0, `rgba(${tr},${tg},${tb},${0.12 + energy * 0.30})`)
+      lg.addColorStop(1, `rgba(${gr},${gg},${gb},${0.30 + energy * 0.40})`)
     }
     ctx.fillStyle = lg
     ctx.fillRect(cx - r, fillY, r * 2, fillH + 2)
 
     // Borde superior del líquido — línea brillante que ondula
     const waveY = fillY + Math.sin(animFrame * 0.15 + cx) * 1.2
-    ctx.strokeStyle = isAI
-      ? `rgba(255,180,60,${0.5 + energy * 0.4})`
-      : `rgba(80,220,255,${0.5 + energy * 0.4})`
+    if (isAI) {
+      ctx.strokeStyle = `rgba(255,180,60,${0.5 + energy * 0.4})`
+    } else {
+      const [er, eg, eb] = th.srcEdgeRGB
+      ctx.strokeStyle = `rgba(${er},${eg},${eb},${0.5 + energy * 0.4})`
+    }
     ctx.lineWidth  = 1
     ctx.shadowBlur = 0
     ctx.beginPath()
@@ -1040,7 +1357,7 @@ function drawWorker(px, py, cx, cy, e, isAI) {
   // 3. Borde exterior
   ctx.shadowColor = glow
   ctx.shadowBlur  = isReturn ? 10 : (isHarvest ? 5 : 2)
-  ctx.strokeStyle = isReturn ? glow : color
+  ctx.strokeStyle = isReturn ? glow : (isIdle ? glow : glow)
   ctx.lineWidth   = isReturn ? 2.5 : 1.5
   ctx.beginPath()
   ctx.arc(cx, cy, r, 0, Math.PI * 2)
@@ -1061,7 +1378,7 @@ function drawWorker(px, py, cx, cy, e, isAI) {
   // 5. Icono de facción
   ctx.shadowColor  = glow
   ctx.shadowBlur   = isReturn ? 7 : 3
-  ctx.fillStyle    = isReturn ? glow : (isIdle ? "#2a3d50" : color)
+  ctx.fillStyle    = isReturn ? glow : (isIdle ? glow : glow)
   ctx.font         = `bold ${Math.floor(CELL * 0.40)}px 'Courier New'`
   ctx.textAlign    = "center"
   ctx.textBaseline = "middle"
@@ -3241,6 +3558,15 @@ function launchMission(id) {
   currentGameMode  = "campaign"
   currentMissionId = id
   selectedMission  = id
+  // Determinar facción según el mundo al que pertenece la misión
+  for (const [, world] of Object.entries(WORLDS)) {
+    if (world.missions && world.missions.includes(id)) {
+      currentFaction = world.factionKey ?? "nexus"
+      break
+    }
+  }
+  // Forzar reconstrucción del noise canvas con nueva facción
+  noiseSeedW = 0
   setSandboxUI(false)
   freshGameMinTick = Date.now() // marcar reset — ignorar victorias hasta tick fresco
   resetView()
