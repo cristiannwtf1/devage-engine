@@ -255,8 +255,8 @@ function buildWallsM3(gs: GameState): void {
 
 function buildWorldM3(gs: GameState): void {
   buildWallsM3(gs)
-  gs.maxPlayerWorkers = 4
-  gs.aiMaxWorkers     = 6   // M3: 2 sources (más difícil que M2 en mecánica, no en workers)
+  gs.maxPlayerWorkers = 6   // M3: 2 sources × 3 workers — mecánica difícil, cap igual a IA
+  gs.aiMaxWorkers     = 6
 
   const addSource = (x: number, y: number, isPlayer: boolean) => {
     const id: EntityId = gs.createEntity()
@@ -401,8 +401,8 @@ function buildWallsM4(gs: GameState): void {
 
 function buildWorldM4(gs: GameState): void {
   buildWallsM4(gs)
-  gs.maxPlayerWorkers = 4
-  gs.aiMaxWorkers     = 6   // M4: 2 sources
+  gs.maxPlayerWorkers = 6   // M4: 2 sources × 3 workers = 6 (igual que IA)
+  gs.aiMaxWorkers     = 6
 
   const addSource = (x: number, y: number, isPlayer: boolean) => {
     const id: EntityId = gs.createEntity()
