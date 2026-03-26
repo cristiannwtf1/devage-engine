@@ -55,6 +55,11 @@ export class GameState {
   // Límite de workers del jugador — varía por misión (M1=3, M2=6, ...)
   public maxPlayerWorkers: number = 3
 
+  // Límite de workers de la IA por misión — escala con dificultad narrativa
+  // Satura el source: ~3 workers por source (Screeps-style)
+  // M1=3, M2=6, M3=6, M4=6, M5=4, M6=8
+  public aiMaxWorkers: number = 3
+
   // ── Balance por facción ───────────────────────────────────
   // Capacidad de carga del worker — define el estilo de juego:
   //   NEXUS (S1):       10 — ciclos cortos y rápidos (volumen)

@@ -73,25 +73,43 @@ export class TargetSystem {
     return best
   }
 
-  // Tile adyacente al source más cercano al worker
+  // Tile adyacente al source más cercano al worker, evitando tiles ya reclamados.
+  // Screeps-style: cada worker ocupa su propio tile (range 1 del source).
   private findHarvestTile(
     gameState: GameState,
     sourceX: number, sourceY: number,
     workerX: number, workerY: number,
     selfId: number
   ): { x: number; y: number } {
-    const offsets = [{ x: 1, y: 0 }, { x: -1, y: 0 }, { x: 0, y: 1 }, { x: 0, y: -1 }]
-    let bestX = sourceX, bestY = sourceY
-    let bestDist = Infinity
+    // Tiles ya reclamados por otros workers este tick
+    const claimed = new Set<string>()
+    for (const [id, target] of gameState.targets) {
+      if (id !== selfId) claimed.add(`${target.targetX},${target.targetY}`)
+    }
 
+    const offsets = [{ x: 1, y: 0 }, { x: -1, y: 0 }, { x: 0, y: 1 }, { x: 0, y: -1 }]
+
+    // Primer pasada: tile libre más cercano
+    let bestX = -1, bestY = -1, bestDist = Infinity
     for (const off of offsets) {
       const ax = sourceX + off.x, ay = sourceY + off.y
       if (!gameState.worldMap.isWalkable(ax, ay)) continue
+      if (claimed.has(`${ax},${ay}`)) continue
       const d = Math.abs(ax - workerX) + Math.abs(ay - workerY)
       if (d < bestDist) { bestDist = d; bestX = ax; bestY = ay }
     }
 
-    return { x: bestX, y: bestY }
+    // Fallback: todos los tiles adyacentes están ocupados — tomar el más cercano sin importar
+    if (bestX === -1) {
+      for (const off of offsets) {
+        const ax = sourceX + off.x, ay = sourceY + off.y
+        if (!gameState.worldMap.isWalkable(ax, ay)) continue
+        const d = Math.abs(ax - workerX) + Math.abs(ay - workerY)
+        if (d < bestDist) { bestDist = d; bestX = ax; bestY = ay }
+      }
+    }
+
+    return bestX !== -1 ? { x: bestX, y: bestY } : { x: sourceX, y: sourceY }
   }
 
 }

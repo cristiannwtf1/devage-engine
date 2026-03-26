@@ -45,14 +45,16 @@ export class AISystem {
   public update(gs: GameState): void {
     if (gs.aiBaseId === null) return
 
-    // Ventaja inicial al jugador: activar workers IA al llegar al tick del delay
-    if (gs.tick === this.cfg.startDelay && this.cfg.startDelay > 0) {
+    // Activar workers iniciales de la IA al llegar al tick del delay.
+    // tick nunca es 0 (se incrementa al inicio de step), así que usamos max(1, delay).
+    const activateTick = Math.max(1, this.cfg.startDelay)
+    if (gs.tick === activateTick) {
       for (const id of gs.aiWorkers) {
         const b = gs.behaviors.get(id)
         if (b && b.state === "idle") b.state = "harvesting"
       }
     }
-    if (gs.tick < this.cfg.startDelay) return
+    if (gs.tick < activateTick) return
 
     const aiBaseStorage  = gs.energyStorages.get(gs.aiBaseId)
     const aiBasePosition = gs.positions.get(gs.aiBaseId)
@@ -104,7 +106,9 @@ export class AISystem {
     aiBasePosition: { x: number; y: number }
   ): void {
     if (this.spawnCooldown > 0) { this.spawnCooldown--; return }
-    if (gs.aiWorkers.size >= this.cfg.maxWorkers) return
+    // Respeta el cap narrativo por misión (gs.aiMaxWorkers) — limita según saturación del source
+    const cap = Math.min(this.cfg.maxWorkers, gs.aiMaxWorkers)
+    if (gs.aiWorkers.size >= cap) return
     if (aiBaseStorage.current < this.cfg.spawnCost) return
 
     const spawnPos = this.findFreeSpawnTile(gs, aiBasePosition.x, aiBasePosition.y)

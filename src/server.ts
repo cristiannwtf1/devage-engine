@@ -54,6 +54,7 @@ function buildWallsM1(gs: GameState): void {
 function buildWorldM1(gs: GameState): void {
   buildWallsM1(gs)
   gs.maxPlayerWorkers = 3
+  gs.aiMaxWorkers     = 3   // M1: 1 source × 3 workers = saturación exacta
   // (terrain orgánico se añade al final, tras colocar entidades)
 
   const addSource = (x: number, y: number, isPlayer: boolean) => {
@@ -152,6 +153,7 @@ function buildWallsM2(gs: GameState): void {
 function buildWorldM2(gs: GameState): void {
   buildWallsM2(gs)
   gs.maxPlayerWorkers = 6
+  gs.aiMaxWorkers     = 6   // M2: 2 sources × 3 workers
 
   const addSource = (x: number, y: number, isPlayer: boolean) => {
     const id: EntityId = gs.createEntity()
@@ -254,6 +256,7 @@ function buildWallsM3(gs: GameState): void {
 function buildWorldM3(gs: GameState): void {
   buildWallsM3(gs)
   gs.maxPlayerWorkers = 4
+  gs.aiMaxWorkers     = 6   // M3: 2 sources (más difícil que M2 en mecánica, no en workers)
 
   const addSource = (x: number, y: number, isPlayer: boolean) => {
     const id: EntityId = gs.createEntity()
@@ -399,6 +402,7 @@ function buildWallsM4(gs: GameState): void {
 function buildWorldM4(gs: GameState): void {
   buildWallsM4(gs)
   gs.maxPlayerWorkers = 4
+  gs.aiMaxWorkers     = 6   // M4: 2 sources
 
   const addSource = (x: number, y: number, isPlayer: boolean) => {
     const id: EntityId = gs.createEntity()
@@ -472,6 +476,7 @@ function buildWallsM5(gs: GameState): void {
 function buildWorldM5(gs: GameState): void {
   buildWallsM5(gs)
   gs.maxPlayerWorkers = 5
+  gs.aiMaxWorkers     = 4   // M5: 1 source rico — boss de ritmo, no de cantidad
 
   const addSource = (x: number, y: number, isPlayer: boolean) => {
     const id: EntityId = gs.createEntity()
@@ -571,6 +576,7 @@ function buildWallsM6(gs: GameState): void {
 function buildWorldM6(gs: GameState): void {
   buildWallsM6(gs)
   gs.maxPlayerWorkers = 6
+  gs.aiMaxWorkers     = 9   // M6 boss: 3 sources × 3 workers — el reto final de Season I
 
   const addSource = (x: number, y: number, isPlayer: boolean, energy = 100) => {
     const id: EntityId = gs.createEntity()
